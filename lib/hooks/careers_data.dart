@@ -76,13 +76,13 @@ class CareersDataService {
         nombre: 'Administración de Empresas',
         codigo: 'ADM-EMP',
         icon: Icons.business_center,
-        color: const Color(0xFF77B0AA),
+        color: const Color(0xFF135D66),
       ),
       Career(
         nombre: 'Derecho',
         codigo: 'DER',
         icon: Icons.gavel,
-        color: const Color(0xFFE3FEF7),
+        color: const Color(0xFF135D66),
       ),
     ];
   }

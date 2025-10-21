@@ -179,52 +179,117 @@ class _CareerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Extraer el color base sin opacidad
+    final baseColor = career.color.withOpacity(1.0);
+  
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: baseColor.withOpacity(0.4),
+          width: 2,
+        ),
         boxShadow: [
+          BoxShadow(
+            color: baseColor.withOpacity(0.2),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        leading: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: career.color.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            career.icon,
-            color: const Color(0xFF003C43),
-            size: 28,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            // TODO: Navegar a evaluación de docentes
+            print('Seleccionada: ${career.nombre}');
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                // Icono con diseño mejorado
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        baseColor.withOpacity(0.25),
+                        baseColor.withOpacity(0.15),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: baseColor.withOpacity(0.4),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Icon(
+                    career.icon,
+                    color: const Color(0xFF003C43),
+                    size: 28,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                // Texto
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        career.nombre,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Color(0xFF003C43),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: baseColor.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              career.codigo,
+                              style: const TextStyle(
+                                color: Color(0xFF003C43),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Flecha
+                Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: baseColor.withOpacity(0.7),
+                ),
+              ],
+            ),
           ),
         ),
-        title: Text(
-          career.nombre,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
-        ),
-        subtitle: Text(
-          career.codigo,
-          style: TextStyle(
-            color: Colors.grey[600],
-            fontSize: 14,
-          ),
-        ),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () {
-          // TODO: Navegar a evaluación de docentes
-          print('Seleccionada: ${career.nombre}');
-        },
       ),
     );
   }
