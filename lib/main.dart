@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'UTS SelfEvaluate',
+      title: 'Eval+',
       home: const SplashScreen(),
       routes: {
         HomeScreen.routename: (context) => const HomeScreen(),
