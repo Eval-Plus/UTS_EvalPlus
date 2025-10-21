@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:eval_plus/screen/splash_screen.dart';
 import 'package:eval_plus/screen/home_screen.dart';
 import 'package:eval_plus/screen/inside/careers_screen.dart';
+import 'package:eval_plus/screen/inside/evaluations_screen.dart';
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -23,8 +24,8 @@ class MyApp extends StatelessWidget {
       title: 'UTS SelfEvaluate',
       home: const SplashScreen(),
       routes: {
-        CareersScreen.routename: (context) => const CareersScreen(),
         HomeScreen.routename: (context) => const HomeScreen(),
+        CareersScreen.routename: (context) => const CareersScreen(),
       },
     );
   }

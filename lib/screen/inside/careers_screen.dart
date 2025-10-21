@@ -9,74 +9,35 @@ import 'package:eval_plus/widgets/custom_top_bar.dart';
 // Hooks
 import 'package:eval_plus/hooks/careers_data.dart';
 
+// Screens
+import 'package:eval_plus/screen/inside/evaluations_screen.dart';
+
+// Layouts
+import 'package:eval_plus/layouts/base_screen_layout.dart';
+
 class CareersScreen extends StatelessWidget {
   static const String routename = 'CareersScreen';
-
-  // Configuración
-  static const double verticalPadding = 80.0; // Margenes arriba/abajo
-  static const bool centerContent = true;    // true = centrado, false = distribuido
   
   const CareersScreen({super.key});
   
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    return Scaffold(
-      extendBody: true, // Contenido detras de la navBar
-      body: Stack(
-        children: [
-          // Fondo blanco
-          Container(color: Colors.grey[50]),
-          
-          // Header con onda
-          const CustomHeaderWave(),
-          
-          // Contenido principal
-          SafeArea(
-            child: Column(
-              children: [
-                // Barra superior con info del usuario
-                CustomTopBar(
-                  title: '¡Hola, Estudiante!',
-                  subtitle: 'Selecciona tu programa',
-                  onLogoutPressed: () {
-                    // Implementar cierre de sesión posteriormente
-                    Navigator.pop(context);
-                  },
-                ),
-                
-                // Opción 1: Padding fijo
-                if (!centerContent)
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(
-                        vertical: verticalPadding,
-                      ),
-                      child: const _CarrerasContent(),
-                    ),
-                  ),
-
-                // Opción 2: Centrado con spacer
-                if (centerContent) ...[
-                  const Spacer(flex: 1),
-                  const Flexible(
-                    flex: 3,
-                    child: _CarrerasContent(),
-                  ),
-                  const Spacer(flex: 1),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-      bottomNavigationBar: CustomBottomNavBar(
-        currentIndex: 0,
-        onTap: (index) {
-          // Manejar logica de navegación
-          print('Tap en indice: $index');
-        },
-      ),
+    return BaseScreenLayout(
+      topBarTitle: '¡Hola, Estudiante',
+      topBarSubtitle: 'Selecciona tu carrera',
+      currentNavIndex: 0,
+      centerContent: false,
+      paddingTop: 120.0,
+      paddingBottom: 20.0,
+      onLogoutPressed: () {
+        // Cierre de sesión
+        Navigator.pop(context);
+      },
+      onNavTap: (index) {
+        // Logica de navegación
+        print('Tap en indice: $index');
+      },
+      child: const _CarrerasContent(),
     );
   }
 }
