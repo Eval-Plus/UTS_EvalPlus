@@ -14,7 +14,7 @@ class CareersScreen extends StatelessWidget {
 
   // Configuración
   static const double verticalPadding = 80.0; // Margenes arriba/abajo
-  static const bool centerContent = false;    // true = centrado, false = distribuido
+  static const bool centerContent = true;    // true = centrado, false = distribuido
   
   const CareersScreen({super.key});
   
@@ -22,6 +22,7 @@ class CareersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
     return Scaffold(
+      extendBody: true, // Contenido detras de la navBar
       body: Stack(
         children: [
           // Fondo blanco
