@@ -27,10 +27,6 @@ class EvaluationsScreen extends StatelessWidget {
         // Implementar cierre de sesión posteriormente
         Navigator.pop(context);
       },
-      onNavTap: (index) {
-        // Manejar logica de navegación
-        print('Tap en indice: $index');
-      },
       child: const _EvaluationsList(),
     );
   }

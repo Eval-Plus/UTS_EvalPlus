@@ -10,6 +10,13 @@ class CustomBottomNavBar extends StatelessWidget {
     this.onTap,
   });
   
+  // Configuración de los items del NavBar
+  static const List<_NavBarItem> _items = [
+    _NavBarItem(icon: Icons.school, label: 'Carreras'),
+    _NavBarItem(icon: Icons.assignment_turned_in, label: 'Evaluaciones'),
+    _NavBarItem(icon: Icons.person, label: 'Perfil'),
+  ];
+  
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -35,26 +42,15 @@ class CustomBottomNavBar extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildNavItem(
-                icon: Icons.school,
-                label: 'Carreras',
-                isSelected: currentIndex == 0,
-                onTap: () => onTap?.call(0),
+            children: List.generate(
+              _items.length,
+              (index) => _buildNavItem(
+                icon: _items[index].icon,
+                label: _items[index].label,
+                isSelected: currentIndex == index,
+                onTap: () => onTap?.call(index),
               ),
-              _buildNavItem(
-                icon: Icons.assignment_turned_in,
-                label: 'Evaluaciones',
-                isSelected: currentIndex == 1,
-                onTap: () => onTap?.call(1),
-              ),
-              _buildNavItem(
-                icon: Icons.person,
-                label: 'Perfil',
-                isSelected: currentIndex == 2,
-                onTap: () => onTap?.call(2),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -108,4 +104,15 @@ class CustomBottomNavBar extends StatelessWidget {
       ),
     );
   }
+}
+
+// Clase privada para representar un item del NavBar
+class _NavBarItem {
+  final IconData icon;
+  final String label;
+  
+  const _NavBarItem({
+    required this.icon,
+    required this.label,
+  });
 }

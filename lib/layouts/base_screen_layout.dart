@@ -5,6 +5,9 @@ import 'package:eval_plus/widgets/custom_bottom_nav_bar.dart';
 import 'package:eval_plus/widgets/custom_header_wave.dart';
 import 'package:eval_plus/widgets/custom_top_bar.dart';
 
+// Utils
+import 'package:eval_plus/utils/navigation_helper.dart';
+
 /// Layout base reutilizable para las pantallas de la aplicación
 /// 
 /// Este widget encapsula la estructura común de las pantallas:
@@ -121,8 +124,8 @@ class BaseScreenLayout extends StatelessWidget {
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: currentNavIndex,
         onTap: onNavTap ?? (index) {
-          // Implementar lógica de navegación posteriormente
-          debugPrint('Tap en índice: $index');
+          // NavigationHelper para manejar la navegación
+          NavigationHelper.navigateToIndex(context, index, currentNavIndex);
         },
       ),
     );

@@ -27,10 +27,6 @@ class ProfileScreen extends StatelessWidget {
         // Cierre de sesión
         Navigator.pop(context);
       },
-      onNavTap: (index) {
-        // Logica de navegación
-        print('Tap en indice: $index');
-      },
       child: const _ProfileContent(),
     );
   }
