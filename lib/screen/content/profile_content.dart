@@ -73,7 +73,7 @@ class ProfileContent extends StatelessWidget {
             // Divider sutil
             Container(
               height: 1,
-              color: const Color(0xFF003C43).withOpacity(0.1),
+              color: const Color(0xFF003C43).withOpacity(0.2),
             ),
             
             const SizedBox(height: 24),

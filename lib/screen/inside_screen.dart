@@ -110,11 +110,11 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return BaseScreenLayout(
-      topBarTitle: 'Hola, Javier Socha',
-      topBarSubtitle: '...',
+      topBarTitle: 'Hola, Luis Lozano',
+      topBarSubtitle: '@Unidades Tecnológicas de Santander',
       currentNavIndex: _currentIndex,
       centerContent: false,
-      paddingTop: 120.0,
+      paddingTop: 100.0,
       paddingBottom: 20.0,
       onLogoutPressed: () {
         // Cierre de sesión
