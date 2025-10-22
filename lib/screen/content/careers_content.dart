@@ -1,46 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// Widgets
-import 'package:eval_plus/widgets/custom_bottom_nav_bar.dart';
-import 'package:eval_plus/widgets/custom_header_wave.dart';
-import 'package:eval_plus/widgets/custom_top_bar.dart';
-
 // Hooks
 import 'package:eval_plus/hooks/careers_data.dart';
 
-// Screens
-import 'package:eval_plus/screen/inside/evaluations_screen.dart';
-
-// Layouts
-import 'package:eval_plus/layouts/base_screen_layout.dart';
-
-class CareersScreen extends StatelessWidget {
-  static const String routename = 'CareersScreen';
-  
-  const CareersScreen({super.key});
-  
-  @override
-  Widget build(BuildContext context) {
-    return BaseScreenLayout(
-      topBarTitle: '¡Hola, Estudiante',
-      topBarSubtitle: 'Selecciona tu carrera',
-      currentNavIndex: 0,
-      centerContent: false,
-      paddingTop: 120.0,
-      paddingBottom: 20.0,
-      onLogoutPressed: () {
-        // Cierre de sesión
-        Navigator.pop(context);
-      },
-      child: const _CarrerasContent(),
-    );
-  }
-}
-
 // Contenido de carreras con FutureBuilder
-class _CarrerasContent extends StatelessWidget {
-  const _CarrerasContent();
+class CarrerasContent extends StatelessWidget {
+  const CarrerasContent({super.key});
 
   @override
   Widget build(BuildContext context) {

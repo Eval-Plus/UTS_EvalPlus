@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 // Screens
-import 'package:eval_plus/screen/inside/careers_screen.dart';
+import 'package:eval_plus/screen/inside_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   static const String routename = 'HomeScreen';
@@ -75,7 +75,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                     child: MaterialButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, CareersScreen.routename);
+                        Navigator.pushNamed(context, InsideScreen.routename);
                       },
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),

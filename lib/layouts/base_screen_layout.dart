@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
+
 // Widgets
 import 'package:eval_plus/widgets/custom_bottom_nav_bar.dart';
 import 'package:eval_plus/widgets/custom_header_wave.dart';
 import 'package:eval_plus/widgets/custom_top_bar.dart';
-// Utils
-import 'package:eval_plus/utils/navigation_helper.dart';
 
 class BaseScreenLayout extends StatelessWidget {
   final String topBarTitle;
@@ -12,7 +11,7 @@ class BaseScreenLayout extends StatelessWidget {
   final int currentNavIndex;
   final Widget child;
   final VoidCallback? onLogoutPressed;
-  final Function(int)? onNavTap;
+  final ValueChanged<int>? onNavIndexChanged;
   
   // Opciones de layout
   final bool centerContent;
@@ -29,7 +28,7 @@ class BaseScreenLayout extends StatelessWidget {
     required this.currentNavIndex,
     required this.child,
     this.onLogoutPressed,
-    this.onNavTap,
+    this.onNavIndexChanged,
     this.centerContent = false,
     this.paddingTop = 120.0,
     this.paddingBottom = 20.0,
@@ -91,9 +90,9 @@ class BaseScreenLayout extends StatelessWidget {
       ),
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: currentNavIndex,
-        onTap: onNavTap ?? (index) {
-          // Usar el NavigationHelper para manejar la navegación
-          NavigationHelper.navigateToIndex(context, index, currentNavIndex);
+        onTap: (index) {
+          // Notificar el cambio de indice
+          onNavIndexChanged?.call(index);
         },
       ),
     );
