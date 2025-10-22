@@ -54,7 +54,7 @@ class ProfileContent extends StatelessWidget {
             
             // Nombre del usuario
             const Text(
-              'Javier Socha',
+              'Luis Lozano',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -118,7 +118,7 @@ class ProfileContent extends StatelessWidget {
       ),
       child: const Center(
         child: Text(
-          'JS',
+          'LL',
           style: TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.bold,
@@ -150,7 +150,7 @@ class ProfileContent extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           const Text(
-            'jsocha@example.edu.co',
+            'luisgarces@uts.edu.co',
             style: TextStyle(
               fontSize: 13,
               color: Color(0xFF003C43),
