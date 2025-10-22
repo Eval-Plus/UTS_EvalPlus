@@ -117,13 +117,7 @@ class _CareerCard extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: baseColor.withOpacity(0.2),
-            blurRadius: 15,
             offset: const Offset(0, 4),
-          ),
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
           ),
         ],
       ),
