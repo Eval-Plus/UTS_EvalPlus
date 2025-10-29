@@ -4,15 +4,47 @@ import 'package:flutter/services.dart';
 // Hooks
 import 'package:eval_plus/hooks/careers_data.dart';
 
-// Contenido de carreras con FutureBuilder
-class CarrerasContent extends StatelessWidget {
+// Contenido
+import 'package:eval_plus/screen/content/subjects_content.dart';
+
+// <CarrerasContent cambia de ser un StatelessWidget a un StatefulWidget>
+class CarrerasContent extends StatefulWidget {
   const CarrerasContent({super.key});
 
   @override
+  State<CarrerasContent> createState() => _CarrerasContentState();
+}
+
+class _CarrerasContentState extends State<CarrerasContent> {
+  Career? _selectedCareer;
+
+  void _onCareerSelected(Career career) {
+    setState(() {
+      _selectedCareer = career;
+    });
+  }
+
+  void _onBackToCareersList() {
+    setState(() {
+      _selectedCareer = null;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // Si hay una carrera seleccionada, mostrar materias
+    if (_selectedCareer != null) {
+      return SubjectsContent(
+        career: _selectedCareer!,
+        onBack: _onBackToCareersList,
+      );
+    }
+
+    // Si no, mostrar lista de carreras (Cuando era un StatelessWidget)
     return FutureBuilder<List<Career>>(
       future: CareersDataService.getCareers(),
       builder: (context, snapshot) {
+      
         // Mientras carga
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
@@ -86,7 +118,10 @@ class CarrerasContent extends StatelessWidget {
           itemCount: carreras.length,
           itemBuilder: (context, index) {
             final carrera = carreras[index];
-            return _CareerCard(career: carrera);
+            return _CareerCard(
+              career: carrera,
+              onTap: () => _onCareerSelected(carrera),
+            );
           },
         );
       },
@@ -97,8 +132,12 @@ class CarrerasContent extends StatelessWidget {
 // Widget separado para la tarjeta de carrera
 class _CareerCard extends StatelessWidget {
   final Career career;
+  final VoidCallback onTap;
 
-  const _CareerCard({required this.career});
+  const _CareerCard({
+    required this.career,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -125,10 +164,7 @@ class _CareerCard extends StatelessWidget {
         color: Colors.transparent,
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            // TODO: Navegar a evaluación de docentes
-            print('Seleccionada: ${career.nombre}');
-          },
+          onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Row(

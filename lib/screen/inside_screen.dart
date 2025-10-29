@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// Screens
+// Contenido
 import 'package:eval_plus/screen/content/careers_content.dart';
 import 'package:eval_plus/screen/content/evaluations_content.dart';
 import 'package:eval_plus/screen/content/profile_content.dart';
