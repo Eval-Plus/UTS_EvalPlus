@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
+
+// Hooks
 import 'package:eval_plus/hooks/subjects_data.dart';
 import 'package:eval_plus/hooks/careers_data.dart';
+
+// Modal
+import 'package:eval_plus/widgets/evaluation_modal.dart';
 
 class SubjectsContent extends StatelessWidget {
   final Career career;
@@ -519,8 +524,13 @@ class _SubjectCardState extends State<_SubjectCard>
                             child: InkWell(
                               borderRadius: BorderRadius.circular(10),
                               onTap: () {
-                                // TODO: Navegar a evaluación
-                                print('Evaluar a ${widget.subject.professorName}');
+                                // Abrir modal de evaluación
+                                showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return EvaluationModal(subject: widget.subject);
+                                  },
+                                );
                               },
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
