@@ -114,7 +114,7 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
       topBarSubtitle: '@Unidades Tecnológicas de Santander',
       currentNavIndex: _currentIndex,
       centerContent: false,
-      paddingTop: 100.0,
+      paddingTop: 80.0,
       paddingBottom: 20.0,
       onLogoutPressed: () {
         // Cierre de sesión
