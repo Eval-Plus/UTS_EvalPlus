@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 // Hooks
 import 'package:eval_plus/hooks/careers_data.dart';
 
-// Contenido
+// Content
 import 'package:eval_plus/screen/content/subjects_content.dart';
 
 // <CarrerasContent cambia de ser un StatelessWidget a un StatefulWidget>
