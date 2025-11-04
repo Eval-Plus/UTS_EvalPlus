@@ -87,7 +87,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('¡Evaluación enviada exitosamente!'),
-          backgroundColor: const Color(0xFF003C43),
+          backgroundColor: const Color(0xFFCAD225),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
@@ -114,7 +114,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF003C43),
+                        color: Color(0xFFCAD225),
                       ),
                     );
                   }
@@ -173,7 +173,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.close, color: Color(0xFF003C43)),
+                icon: const Icon(Icons.close, color: Color(0xFF1A1A1A)),
                 onPressed: () => Navigator.of(context).pop(),
               ),
               const SizedBox(width: 8),
@@ -186,7 +186,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF003C43),
+                        color: Color(0xFF1A1A1A),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -268,12 +268,12 @@ class _EvaluationModalState extends State<EvaluationModal> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF003C43).withOpacity(0.1),
+                  color: const Color(0xFFCAD225).withOpacity(0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.assignment,
-                  color: Color(0xFF003C43),
+                  color: Color(0xFF1A1A1A),
                   size: 28,
                 ),
               ),
@@ -284,7 +284,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Color(0xFF003C43),
+                    color: Color(0xFF1A1A1A),
                   ),
                 ),
               ),
@@ -303,10 +303,10 @@ class _EvaluationModalState extends State<EvaluationModal> {
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.blue[50],
+              color: const Color(0xFFCAD225).withOpacity(0.15),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Colors.blue[200]!,
+                color: const Color(0xFFA8B820).withOpacity(0.4),
                 width: 1,
               ),
             ),
@@ -315,7 +315,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
                 Icon(
                   Icons.info_outline,
                   size: 20,
-                  color: Colors.blue[700],
+                  color: const Color(0xFF1A1A1A),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -323,7 +323,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
                     'Todas las preguntas son obligatorias',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.blue[900],
+                      color: const Color(0xFF1A1A1A),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -357,7 +357,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
             children: [
               const Icon(
                 Icons.comment_outlined,
-                color: Color(0xFF003C43),
+                color: Color(0xFF1A1A1A),
                 size: 22,
               ),
               const SizedBox(width: 8),
@@ -366,7 +366,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF003C43),
+                  color: Color(0xFF1A1A1A),
                 ),
               ),
               const SizedBox(width: 8),
@@ -401,7 +401,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
                 borderSide: const BorderSide(
-                  color: Color(0xFF003C43),
+                  color: Color(0xFFCAD225),
                   width: 2,
                 ),
               ),
@@ -421,9 +421,11 @@ class _EvaluationModalState extends State<EvaluationModal> {
           : () => _submitEvaluation(questions),
       style: ElevatedButton.styleFrom(
         backgroundColor: allAnswered
-            ? const Color(0xFF003C43)
+            ? const Color(0xFFCAD225)
             : Colors.grey[400],
-        foregroundColor: Colors.white,
+        foregroundColor: allAnswered
+            ? const Color(0xFF1A1A1A)
+            : Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
@@ -436,7 +438,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
               width: 20,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A1A1A)),
               ),
             )
           : Row(

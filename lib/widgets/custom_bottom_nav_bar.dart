@@ -25,13 +25,13 @@ class CustomBottomNavBar extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF003C43),
-            Color(0xFF004d56),
+            Color(0xFFCAD225),
+            Color(0xFFB8BE20),
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF003C43).withOpacity(0.3),
+            color: const Color(0xFFCAD225).withOpacity(0.3),
             offset: const Offset(0, -8),
           ),
         ],
@@ -68,8 +68,8 @@ class CustomBottomNavBar extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(15),
-          splashColor: Colors.white.withOpacity(0.2),
-          highlightColor: Colors.white.withOpacity(0.1),
+          splashColor: const Color(0xFF1A1A1A).withOpacity(0.15),
+          highlightColor: const Color(0xFF1A1A1A).withOpacity(0.08),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
@@ -87,8 +87,8 @@ class CustomBottomNavBar extends StatelessWidget {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              Colors.white.withOpacity(0.25),
-                              Colors.white.withOpacity(0.15),
+                              const Color(0xFF1A1A1A).withOpacity(0.15),
+                              const Color(0xFF1A1A1A).withOpacity(0.10),
                             ],
                           )
                         : null,
@@ -97,7 +97,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     boxShadow: isSelected
                         ? [
                             BoxShadow(
-                              color: Colors.white.withOpacity(0.3),
+                              color: const Color(0xFF1A1A1A).withOpacity(0.2),
                               blurRadius: 8,
                               spreadRadius: 1,
                             ),
@@ -110,7 +110,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     curve: Curves.easeInOut,
                     child: Icon(
                       icon,
-                      color: isSelected ? Colors.white : Colors.white60,
+                      color: isSelected ? const Color(0xFF1A1A1A) : const Color(0xFF4A4A4A),
                       size: isSelected ? 26 : 24,
                     ),
                   ),
@@ -120,7 +120,7 @@ class CustomBottomNavBar extends StatelessWidget {
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
                   style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white60,
+                    color: isSelected ? const Color(0xFF1A1A1A) : const Color(0xFF4A4A4A),
                     fontSize: isSelected ? 12 : 11,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),

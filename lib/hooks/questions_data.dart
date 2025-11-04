@@ -46,42 +46,106 @@ class QuestionsDataService {
     return [
       // Pregunta 1
       Question(
-        categoria: 'Respeto, buen trato, trabajo en equipo',
+        categoria: 'Competencia Disciplinaria',
         nroPregunta: 1,
-        aspecto: 'Ético - Social',
-        enunciado: 'Inspira respeto y confiabilidad en su desempeño docente.',
+        aspecto: 'Formativo',
+        enunciado: 'Demuestra dominio y actualización en la presentación de los temas del curso.',
       ),
       
       // Pregunta 2
       Question(
         categoria: 'Conocimiento y dominio de la materia',
         nroPregunta: 2,
-        aspecto: 'Académico',
-        enunciado: 'Demuestra dominio y actualización en los contenidos de la asignatura.',
+        aspecto: 'Formativo',
+        enunciado: 'Orienta de manera clara los conceptos y teorias del curso.',
       ),
       
       // Pregunta 3
       Question(
-        categoria: 'Metodología y estrategias de enseñanza',
+        categoria: 'Dominio de una segunda lengua',
         nroPregunta: 3,
-        aspecto: 'Pedagógico',
-        enunciado: 'Utiliza métodos y recursos didácticos que facilitan el aprendizaje.',
+        aspecto: 'Formativo',
+        enunciado: 'Promueve el uso de textos u otros materiales en idioma extranjero.',
       ),
       
       // Pregunta 4
       Question(
-        categoria: 'Comunicación y relación con estudiantes',
+        categoria: 'Planeación y organización del trabajo pedagógico',
         nroPregunta: 4,
-        aspecto: 'Ético - Social',
-        enunciado: 'Se comunica de manera clara y mantiene una actitud receptiva ante consultas.',
+        aspecto: 'Destrezas para desarrollar el proceso de enseñanza y aprendizaje',
+        enunciado: 'Presenta el plan de curso y explica su importancia para la formación profesional de los estudiantes.',
       ),
       
       // Pregunta 5
       Question(
-        categoria: 'Evaluación y retroalimentación',
+        categoria: 'Manejo de estrategias didácticas para el aprendizaje',
         nroPregunta: 5,
-        aspecto: 'Académico',
-        enunciado: 'Proporciona retroalimentación oportuna y constructiva sobre las evaluaciones.',
+        aspecto: 'Destrezas para desarrollar el proceso de enseñanza y aprendizaje',
+        enunciado: 'Explica con claridad las actividades y los aprendizajes que se pretenden alcanzar.',
+      ),
+      
+      // Pregunta 6
+      Question(
+        categoria: 'Gestión de TIC y Recursos para el aprendizaje',
+        nroPregunta: 6,
+        aspecto: 'Destrezas para desarrollar el proceso de enseñanza y aprendizaje',
+        enunciado: 'Utiliza el aula virtual institucional para compartir recursos y materiales que complementan los procesos de enseñanza y aprendizaje.',
+      ),
+      
+      // Pregunta 7
+      Question(
+        categoria: 'Evaluación del aprendizaje',
+        nroPregunta: 7,
+        aspecto: 'Destrezas para desarrollar el proceso de enseñanza y aprendizaje',
+        enunciado: 'Realiza evaluaciones coherentes con los contenidos desarrollados en clase y con los aprendizajes esperados.',
+      ),
+      
+      // Pregunta 8
+      Question(
+        categoria: 'Evaluación del aprendizaje',
+        nroPregunta: 8,
+        aspecto: 'Comunicación',
+        enunciado: 'Escribe recomendaciones públicas y privadas en el aula virtual del curso a partir de los resultados de las evaluaciones para mejorar el proceso de aprendizaje.',
+      ),
+      
+      // Pregunta 9
+      Question(
+        categoria: 'Gestión del aprendizaje autónomo y autoregulado',
+        nroPregunta: 9,
+        aspecto: 'Destrezas para desarrollar el proceso de enseñanza y aprendizaje',
+        enunciado: 'Propone actividades de aprendizaje fuera del aula orientadas a preparar o complementar los contenidos del curso.',
+      ),
+      
+      // Pregunta 10
+      Question(
+        categoria: 'Gestión de un clima favorable para el desarrollo del aprendizaje',
+        nroPregunta: 10,
+        aspecto: 'Comunicación',
+        enunciado: 'Establece normas y acuerdos para que exista un clima de respeto mutuo.',
+      ),
+      
+      // Pregunta 11
+      Question(
+        categoria: 'Comunicación asertiva',
+        nroPregunta: 11,
+        aspecto: 'Comunicación',
+        enunciado: 'Se expresa con claridad, coherencia y precisión.',
+      ),
+      
+      // Pregunta 12
+      Question(
+        categoria: 'Observancia de los principios institucionales',
+        nroPregunta: 12,
+        aspecto: 'Ético - Social',
+        enunciado: 'Comienza y termina las clases a la hora prevista.',
+      ),
+      
+      // Pregunta 13
+      Question(
+        categoria: 'Respeto, buen trato, trabajo en Equipo',
+        nroPregunta: 13,
+        aspecto: 'Ético - Social',
+        enunciado: 'Inspira respeto y confiabilidad en su desempeño docente.',
       ),
     ];
   }

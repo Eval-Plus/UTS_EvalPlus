@@ -114,10 +114,10 @@ class EvaluationsList extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF003C43).withOpacity(0.05),
+        color: const Color(0xFFCAD225).withOpacity(0.15),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.black.withOpacity(0.2),
+          color: const Color(0xFFA8B820).withOpacity(0.4),
           width: 2,
         ),
       ),
@@ -128,12 +128,12 @@ class EvaluationsList extends StatelessWidget {
             icon: Icons.assignment_rounded,
             label: 'Total',
             value: '$total',
-            color: const Color(0xFF003C43),
+            color: const Color(0xFF1A1A1A),
           ),
           Container(
             width: 1,
             height: 40,
-            color: const Color(0xFF003C43).withOpacity(0.2),
+            color: const Color(0xFFA8B820).withOpacity(0.3),
           ),
           _buildStatItem(
             icon: Icons.check_circle_rounded,
@@ -144,7 +144,7 @@ class EvaluationsList extends StatelessWidget {
           Container(
             width: 1,
             height: 40,
-            color: const Color(0xFF003C43).withOpacity(0.2),
+            color: const Color(0xFFA8B820).withOpacity(0.3),
           ),
           _buildStatItem(
             icon: Icons.pending_rounded,
@@ -180,7 +180,7 @@ class EvaluationsList extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 11,
-            color: const Color(0xFF003C43).withOpacity(0.6),
+            color: const Color(0xFF1A1A1A).withOpacity(0.6)
           ),
         ),
       ],
@@ -211,12 +211,12 @@ class EvaluationsList extends StatelessWidget {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFF135D66).withOpacity(0.4),
+              color: const Color(0xFFA8B820).withOpacity(0.4),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF135D66).withOpacity(0.2),
+                color: const Color(0xFFA8B820).withOpacity(0.2),
                 offset: const Offset(0, 4),
               ),
             ],
@@ -240,7 +240,7 @@ class EvaluationsList extends StatelessWidget {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF003C43),
+                          color: Color(0xFF1A1A1A),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -285,7 +285,7 @@ class EvaluationsList extends StatelessWidget {
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 16,
-                      color: const Color(0xFF003C43).withOpacity(0.3),
+                      color: const Color(0xFF1A1A1A).withOpacity(0.3),
                     ),
                   ],
                 ),
@@ -310,22 +310,22 @@ class EvaluationsList extends StatelessWidget {
                   Colors.green.shade700,
                 ]
               : [
-                  const Color(0xFF003C43),
-                  const Color(0xFF003C43).withOpacity(0.8),
+                  const Color(0xFFCAD225),
+                  const Color(0xFFA8B820),
                 ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCompleted ? Colors.green.shade700 : const Color(0xFF003C43),
+          color: isCompleted ? Colors.green.shade700 : const Color(0xFFA8B820),
           width: 2,
         ),
       ),
       child: Icon(
         Icons.person_rounded,
         size: 28,
-        color: Colors.white,
+        color: isCompleted ? Colors.white : const Color(0xFF1A1A1A),
       ),
     );
   }
@@ -335,14 +335,14 @@ class EvaluationsList extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF003C43).withOpacity(0.08),
+        color: const Color(0xFFCAD225).withOpacity(0.15), 
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
         period,
         style: const TextStyle(
           fontSize: 11,
-          color: Color(0xFF003C43),
+          color: Color(0xFF1A1A1A),
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -379,7 +379,7 @@ class EvaluationsList extends StatelessWidget {
         color: isCompleted ? Colors.green.shade600 : Colors.white,
         shape: BoxShape.circle,
         border: Border.all(
-          color: isCompleted ? Colors.green.shade700 : const Color(0xFF003C43).withOpacity(0.3),
+          color: isCompleted ? Colors.green.shade700 : const Color(0xFFA8B820).withOpacity(0.5),
           width: 2,
         ),
       ),

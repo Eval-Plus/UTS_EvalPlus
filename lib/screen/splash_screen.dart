@@ -33,7 +33,7 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
       backgroundColor: Colors.black,
       body: Center(
         child: Lottie.asset(
-          'assets/animations/uts_animation_cyan-teal.json',
+          'assets/animations/eval_uts_animation.json',
           controller: _controller,
           onLoaded: (composition) async {
             // Ajusta la duración

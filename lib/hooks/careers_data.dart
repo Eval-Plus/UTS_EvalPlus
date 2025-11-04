@@ -70,19 +70,19 @@ class CareersDataService {
         nombre: 'Ingeniería de Sistemas',
         codigo: 'ING-SIS',
         icon: Icons.computer,
-        color: const Color(0xFF135D66),
+        color: const Color(0xFFA8B820),
       ),
       Career(
         nombre: 'Administración de Empresas',
         codigo: 'ADM-EMP',
         icon: Icons.business_center,
-        color: const Color(0xFF135D66),
+        color: const Color(0xFFA8B820),
       ),
       Career(
         nombre: 'Derecho',
         codigo: 'DER',
         icon: Icons.gavel,
-        color: const Color(0xFF135D66),
+        color: const Color(0xFFA8B820),
       ),
     ];
   }

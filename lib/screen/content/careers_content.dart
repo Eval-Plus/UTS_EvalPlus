@@ -49,7 +49,7 @@ class _CarrerasContentState extends State<CarrerasContent> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: CircularProgressIndicator(
-              color: Color(0xFF003C43),
+              color: Color(0xFFCAD225),
             ),
           );
         }
@@ -189,7 +189,7 @@ class _CareerCard extends StatelessWidget {
                   ),
                   child: Icon(
                     career.icon,
-                    color: const Color(0xFF003C43),
+                    color: const Color(0xFF1A1A1A),
                     size: 28,
                   ),
                 ),
@@ -204,7 +204,7 @@ class _CareerCard extends StatelessWidget {
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: Color(0xFF003C43),
+                          color: Color(0xFF1A1A1A),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -222,7 +222,7 @@ class _CareerCard extends StatelessWidget {
                             child: Text(
                               career.codigo,
                               style: const TextStyle(
-                                color: Color(0xFF003C43),
+                                color: Color(0xFF1A1A1A),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                               ),

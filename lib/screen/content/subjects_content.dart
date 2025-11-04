@@ -35,7 +35,7 @@ class SubjectsContent extends StatelessWidget {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: CircularProgressIndicator(
-                    color: Color(0xFF003C43),
+                    color: Color(0xFFCAD225),
                   ),
                 );
               }
@@ -144,13 +144,13 @@ class _BackButton extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFF003C43).withOpacity(0.12),
-                  const Color(0xFF003C43).withOpacity(0.08),
+                  const Color(0xFFCAD225).withOpacity(0.15),
+                  const Color(0xFFA8B820).withOpacity(0.10),
                 ],
               ),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: const Color(0xFF003C43).withOpacity(0.3),
+                color: const Color(0xFFA8B820).withOpacity(0.4),
                 width: 2,
               ),
             ),
@@ -160,13 +160,13 @@ class _BackButton extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF003C43).withOpacity(0.15),
+                    color: const Color(0xFFCAD225).withOpacity(0.20),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
                     Icons.arrow_back_ios_new,
                     size: 16,
-                    color: Color(0xFF003C43),
+                    color: Color(0xFF1A1A1A),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -179,7 +179,7 @@ class _BackButton extends StatelessWidget {
                         'Volver a carreras',
                         style: TextStyle(
                           fontSize: 15,
-                          color: Color(0xFF003C43),
+                          color: Color(0xFF1A1A1A),
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.2,
                         ),
@@ -189,7 +189,7 @@ class _BackButton extends StatelessWidget {
                         careerName,
                         style: const TextStyle(
                           fontSize: 13,
-                          color: Color(0xFF003C43),
+                          color: Color(0xFF1A1A1A),
                           fontWeight: FontWeight.w500,
                         ),
                         maxLines: 1,
@@ -309,7 +309,7 @@ class _SubjectCardState extends State<_SubjectCard>
                       ),
                       child: const Icon(
                         Icons.menu_book_rounded,
-                        color: Color(0xFF003C43),
+                        color: Color(0xFF1A1A1A),
                         size: 24,
                       ),
                     ),
@@ -324,7 +324,7 @@ class _SubjectCardState extends State<_SubjectCard>
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 15,
-                              color: Color(0xFF003C43),
+                              color: Color(0xFF1A1A1A),
                               letterSpacing: 0.2,
                             ),
                           ),
@@ -347,7 +347,7 @@ class _SubjectCardState extends State<_SubjectCard>
                                 child: Text(
                                   widget.subject.codigo,
                                   style: const TextStyle(
-                                    color: Color(0xFF003C43),
+                                    color: Color(0xFF1A1A1A),
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -368,13 +368,13 @@ class _SubjectCardState extends State<_SubjectCard>
                                     Icon(
                                       Icons.school,
                                       size: 12,
-                                      color: const Color(0xFF003C43).withOpacity(0.7),
+                                      color: const Color(0xFF1A1A1A).withOpacity(0.7),
                                     ),
                                     const SizedBox(width: 4),
                                     Text(
                                       'Sem ${widget.subject.semestre}',
                                       style: TextStyle(
-                                        color: const Color(0xFF003C43).withOpacity(0.8),
+                                        color: const Color(0xFF1A1A1A).withOpacity(0.8),
                                         fontSize: 11,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -399,7 +399,7 @@ class _SubjectCardState extends State<_SubjectCard>
                         ),
                         child: Icon(
                           Icons.keyboard_arrow_down_rounded,
-                          color: const Color(0xFF003C43),
+                          color: const Color(0xFF1A1A1A),
                           size: 24,
                         ),
                       ),
@@ -463,7 +463,7 @@ class _SubjectCardState extends State<_SubjectCard>
                               ),
                               child: const Icon(
                                 Icons.person,
-                                color: Color(0xFF003C43),
+                                color: Color(0xFF1A1A1A),
                                 size: 28,
                               ),
                             ),
@@ -477,7 +477,7 @@ class _SubjectCardState extends State<_SubjectCard>
                                     'Docente',
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Color(0xFF003C43),
+                                      color: Color(0xFF1A1A1A),
                                       fontWeight: FontWeight.w500,
                                       letterSpacing: 0.5,
                                     ),
@@ -487,7 +487,7 @@ class _SubjectCardState extends State<_SubjectCard>
                                     widget.subject.professorName,
                                     style: const TextStyle(
                                       fontSize: 16,
-                                      color: Color(0xFF003C43),
+                                      color: Color(0xFF1A1A1A),
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.2,
                                     ),

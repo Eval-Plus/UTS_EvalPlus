@@ -33,12 +33,12 @@ class ProfileContent extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF135D66).withOpacity(0.4),
+          color: const Color(0xFFA8B820).withOpacity(0.4),
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF135D66).withOpacity(0.2),
+            color: const Color(0xFFA8B820).withOpacity(0.2),
             offset: const Offset(0, 4),
           ),
         ],
@@ -58,7 +58,7 @@ class ProfileContent extends StatelessWidget {
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF003C43),
+                color: Color(0xFF1A1A1A),
               ),
               textAlign: TextAlign.center,
             ),
@@ -73,7 +73,7 @@ class ProfileContent extends StatelessWidget {
             // Divider sutil
             Container(
               height: 1,
-              color: const Color(0xFF003C43).withOpacity(0.2),
+              color: const Color(0xFFA8B820).withOpacity(0.2),
             ),
             
             const SizedBox(height: 24),
@@ -98,19 +98,19 @@ class ProfileContent extends StatelessWidget {
         shape: BoxShape.circle,
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF003C43),
-            const Color(0xFF003C43).withOpacity(0.8),
+            const Color(0xFFCAD225),
+            const Color(0xFFA8B820),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         border: Border.all(
-          color: const Color(0xFF003C43),
+          color: const Color(0xFFA8B820),
           width: 3,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF003C43).withOpacity(0.2),
+            color: const Color(0xFFA8B820).withOpacity(0.2),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -137,7 +137,7 @@ class ProfileContent extends StatelessWidget {
         vertical: 8,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFF003C43).withOpacity(0.08),
+        color: const Color(0xFFCAD225).withOpacity(0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -146,14 +146,14 @@ class ProfileContent extends StatelessWidget {
           Icon(
             Icons.email_rounded,
             size: 16,
-            color: const Color(0xFF003C43).withOpacity(0.7),
+            color: const Color(0xFF1A1A1A).withOpacity(0.7),
           ),
           const SizedBox(width: 8),
           const Text(
             'luisgarces@uts.edu.co',
             style: TextStyle(
               fontSize: 13,
-              color: Color(0xFF003C43),
+              color: Color(0xFF1A1A1A),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -175,22 +175,22 @@ class ProfileContent extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xFF003C43).withOpacity(0.1),
-                const Color(0xFF003C43).withOpacity(0.05),
+                const Color(0xFFCAD225).withOpacity(0.15),
+                const Color(0xFFCAD225).withOpacity(0.08),
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: const Color(0xFF003C43).withOpacity(0.2),
+              color: const Color(0xFFA8B820).withOpacity(0.3),
               width: 1,
             ),
           ),
           child: Icon(
             icon,
             size: 20,
-            color: const Color(0xFF003C43),
+            color: const Color(0xFF1A1A1A),
           ),
         ),
         const SizedBox(width: 12),
@@ -198,7 +198,7 @@ class ProfileContent extends StatelessWidget {
           label,
           style: TextStyle(
             fontSize: 15,
-            color: const Color(0xFF003C43).withOpacity(0.8),
+            color: const Color(0xFF1A1A1A).withOpacity(0.8),
             fontWeight: FontWeight.w500,
           ),
         ),

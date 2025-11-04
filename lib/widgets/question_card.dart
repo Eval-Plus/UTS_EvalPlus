@@ -26,14 +26,12 @@ class QuestionCard extends StatelessWidget {
       case 'ético - social':
       case 'etico - social':
         return const Color(0xFF4CAF50); // Verde
-      case 'académico':
-      case 'academico':
+      case 'formativo':
         return const Color(0xFF2196F3); // Azul
-      case 'pedagógico':
-      case 'pedagogico':
+      case 'destrezas para desarrollar el proceso de enseñanza y aprendizaje':
         return const Color(0xFFFF9800); // Naranja
       default:
-        return const Color(0xFF003C43); // Color por defecto
+        return const Color(0xFFCAD225); // Verde lima
     }
   }
 
@@ -134,7 +132,7 @@ class QuestionCard extends StatelessWidget {
               question.enunciado,
               style: const TextStyle(
                 fontSize: 15,
-                color: Color(0xFF003C43),
+                color: Color(0xFF1A1A1A),
                 fontWeight: FontWeight.w600,
                 height: 1.4,
               ),

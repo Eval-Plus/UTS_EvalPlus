@@ -7,7 +7,7 @@ class CustomHeaderWave extends StatelessWidget {
   const CustomHeaderWave({
     super.key,
     this.height = 200,
-    this.color = const Color(0xFF003C43),
+    this.color = const Color(0xFFCAD225),
   });
 
   @override
@@ -24,7 +24,7 @@ class CustomHeaderWave extends StatelessWidget {
 
 class WavePainter extends CustomPainter {
   final Color color;
-  WavePainter({this.color = const Color(0xFF003C43)});
+  WavePainter({this.color = const Color(0xFFCAD225)});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -35,7 +35,7 @@ class WavePainter extends CustomPainter {
     _drawWave(
       canvas, 
       size, 
-      color.withOpacity(0.3), 
+      color.withOpacity(0.5), 
       0.75, // Desplazamiento vertical
       0.9, 
       0.6,
@@ -54,7 +54,7 @@ class WavePainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
-        colors: [waveColor, waveColor.withOpacity(0.7)],
+        colors: [waveColor, waveColor.withOpacity(0.8)],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
       ..style = PaintingStyle.fill;
 

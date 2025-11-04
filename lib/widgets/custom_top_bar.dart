@@ -15,9 +15,9 @@ class CustomTopBar extends StatelessWidget {
     required this.subtitle,
     this.onLogoutPressed,
     this.showLogoutButton = true,
-    this.titleColor = Colors.white,
-    this.subtitleColor = Colors.white70,
-    this.logoutIconColor = Colors.white,
+    this.titleColor = const Color(0xFF2C2C2C),      // Gris carbón
+    this.subtitleColor = const Color(0xFF4A4A4A),   // Gris medio
+    this.logoutIconColor = const Color(0xFF2C2C2C),
   });
 
   @override
