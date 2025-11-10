@@ -6,91 +6,12 @@ import 'package:flutter_svg/flutter_svg.dart';
 // Screens
 import 'package:eval_plus/screen/inside_screen.dart';
 
+// Utils
+import 'package:eval_plus/utils/auth_controller.dart';
+
 class HomeScreen extends StatelessWidget {
   static const String routename = 'HomeScreen';
   const HomeScreen({super.key});
-
-  // Método para mostrar el modal de selección
-  void _showRoleSelectionModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (BuildContext context) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(25),
-              topRight: Radius.circular(25),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Indicador superior
-                Container(
-                  width: 50,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                
-                // Título del modal
-                const Text(
-                  "Selecciona tu rol",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1A1A1A),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  "¿Cómo deseas ingresar?",
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 32),
-                
-                // Botón Estudiante
-                _RoleButton(
-                  icon: Icons.school,
-                  title: "Estudiante",
-                  description: "Evaluar a mis docentes",
-                  color: const Color(0xFF4285F4),
-                  onTap: () {
-                    Navigator.pop(context); // Cerrar modal
-                    Navigator.pushNamed(context, InsideScreen.routename);
-                  },
-                ),
-                const SizedBox(height: 12),
-                
-                // Botón Docente
-                _RoleButton(
-                  icon: Icons.person,
-                  title: "Docente",
-                  description: "Ver mis evaluaciones",
-                  color: const Color(0xFF34A853),
-                  onTap: () {
-                    Navigator.pop(context); // Cerrar modal
-                    Navigator.pushNamed(context, InsideScreen.routename);
-                  },
-                ),
-                const SizedBox(height: 12),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
   
   @override
   Widget build(BuildContext context) {
@@ -153,8 +74,9 @@ class HomeScreen extends StatelessWidget {
                       ],
                     ),
                     child: MaterialButton(
-                      onPressed: () {
-                        _showRoleSelectionModal(context);
+                      onPressed: () async {
+                        await AuthController.signInWithMicrosoft(context);
+                        //Navigator.pushNamed(context, InsideScreen.routename);
                       },
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
@@ -281,90 +203,4 @@ class _BoxPainter extends CustomPainter{
     return true;
   }
 
-}
-
-// Widget personalizado para los botones de rol
-class _RoleButton extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _RoleButton({
-    required this.icon,
-    required this.title,
-    required this.description,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!, width: 1.5),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
-            children: [
-              // Icono circular
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 16),
-              
-              // Texto
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Icono de flecha
-              Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.grey[400],
-                size: 18,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }

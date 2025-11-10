@@ -55,9 +55,9 @@ class CustomTopBar extends StatelessWidget {
           // Botón de cerrar sesión (condicional)
           if (showLogoutButton)
             IconButton(
-              onPressed: onLogoutPressed ?? () => Navigator.pop(context),
-              icon: Icon(Icons.logout, color: logoutIconColor),
-              tooltip: 'Cerrar sesión',
+             onPressed: onLogoutPressed,
+             icon: Icon(Icons.logout, color: logoutIconColor),
+             tooltip: 'Cerrar sesión',
             ),
         ],
       ),

@@ -16,6 +16,9 @@ dependencies:
   lottie: ^3.3.2
   ms_undraw: ^4.1.1
   flutter_svg: ^2.2.1
+  webview_flutter: ^4.13.0
+  flutter_secure_storage: ^9.2.4
+  http: ^1.5.0
 
 dev_dependencies:
   flutter_test:
@@ -27,15 +30,15 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icon/uts_icon3.png"
-  adaptive_icon_background: "#CAD225"
-  adaptive_icon_foreground: "assets/icon/uts_icon3.png"
+  image_path: "assets/icon/uts_icon5.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/icon/uts_icon5.png"
 
 flutter_native_splash:
-  color: "#CAD225"
-  image: assets/icon/uts_icon3.png
+  color: "#FFFFFF"
+  image: assets/icon/uts_icon5.png
   android_12:
-    image: assets/icon/uts_icon3.png
+    image: assets/icon/uts_icon5.png
     color: "#CAD225"
 
 flutter:

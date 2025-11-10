@@ -9,6 +9,12 @@ import 'package:eval_plus/screen/content/profile_content.dart';
 // Layouts
 import 'package:eval_plus/layouts/base_screen_layout.dart';
 
+// Screens
+import 'package:eval_plus/screen/home_screen.dart';
+
+// Utils
+import 'package:eval_plus/utils/auth_storage_service.dart';
+
 class InsideScreen extends StatefulWidget {
   static const String routename = 'InsideScreen';
   const InsideScreen({super.key});
@@ -107,19 +113,71 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
     _animationController.forward();
   }
 
+  // Función de logout
+  Future<void> _handleLogout() async {
+    debugPrint('🔴 Logout initiated from InsideScreen');
+    
+    final confirm = await showDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Cerrar sesión'),
+        content: const Text('¿Estás seguro que deseas cerrar sesión?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Cerrar sesión'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        debugPrint('🔴 Clearing auth data...');
+        await AuthStorageService.clearAuthData();
+        debugPrint('🔴 Auth data cleared');
+        
+        if (mounted) {
+          debugPrint('🔴 Navigating to HomeScreen...');
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            HomeScreen.routename,
+            (route) => false,
+          );
+          debugPrint('🔴 Navigation completed');
+        }
+      } catch (e) {
+        debugPrint('🔴 ERROR: $e');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Error al cerrar sesión'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BaseScreenLayout(
-      topBarTitle: 'Hola, Luis Lozano',
+      topBarTitle: 'Hola, Estudiante',
       topBarSubtitle: '@Unidades Tecnológicas de Santander',
       currentNavIndex: _currentIndex,
       centerContent: false,
       paddingTop: 80.0,
       paddingBottom: 20.0,
-      onLogoutPressed: () {
-        // Cierre de sesión
-        Navigator.pop(context);
-      },
+      onLogoutPressed: _handleLogout,
       onNavIndexChanged: _onNavIndexChanged,
       child: AnimatedBuilder(
         animation: _animationController,
