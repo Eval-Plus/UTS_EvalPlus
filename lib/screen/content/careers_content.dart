@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// Hooks
-import 'package:eval_plus/hooks/careers_data.dart';
+// Data
+import 'package:eval_plus/data/careers_data.dart';
 
 // Content
 import 'package:eval_plus/screen/content/subjects_content.dart';

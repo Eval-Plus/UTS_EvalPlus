@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 
+// Models
+import 'package:eval_plus/models/user_model.dart';
+
 /// Contenedor del perfil del usuario
 /// Muestra información básica: avatar y correo institucional
 class ProfileContent extends StatelessWidget {
-  const ProfileContent({super.key});
+  final UserModel? user;
+
+  const ProfileContent({
+    super.key,
+    this.user,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,8 +61,8 @@ class ProfileContent extends StatelessWidget {
             const SizedBox(height: 20),
             
             // Nombre del usuario
-            const Text(
-              'Luis Lozano',
+            Text(
+              user?.nombreCompleto ?? 'Estudiante',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -116,9 +124,9 @@ class ProfileContent extends StatelessWidget {
           ),
         ],
       ),
-      child: const Center(
+      child: Center(
         child: Text(
-          'LL',
+          user?.initials ?? 'US',
           style: TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.bold,
@@ -149,8 +157,8 @@ class ProfileContent extends StatelessWidget {
             color: const Color(0xFF1A1A1A).withOpacity(0.7),
           ),
           const SizedBox(width: 8),
-          const Text(
-            'luisgarces@uts.edu.co',
+          Text(
+            user?.email ?? 'correo@uts.edu.co',
             style: TextStyle(
               fontSize: 13,
               color: Color(0xFF1A1A1A),

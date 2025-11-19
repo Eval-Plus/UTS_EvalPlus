@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-// Hooks
-import 'package:eval_plus/hooks/subjects_data.dart';
-import 'package:eval_plus/hooks/careers_data.dart';
+// Data
+import 'package:eval_plus/data/subjects_data.dart';
+import 'package:eval_plus/data/careers_data.dart';
 
-// Modal
-import 'package:eval_plus/widgets/evaluation_modal.dart';
+// Widgets
+import 'package:eval_plus/widgets/evaluation/evaluation_modal.dart';
 
 class SubjectsContent extends StatelessWidget {
   final Career career;

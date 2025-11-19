@@ -6,8 +6,8 @@ import 'package:flutter_svg/flutter_svg.dart';
 // Screens
 import 'package:eval_plus/screen/inside_screen.dart';
 
-// Utils
-import 'package:eval_plus/utils/auth_controller.dart';
+// Controllers
+import 'package:eval_plus/controllers/auth_controller.dart';
 
 class HomeScreen extends StatelessWidget {
   static const String routename = 'HomeScreen';

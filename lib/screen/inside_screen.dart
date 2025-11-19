@@ -12,8 +12,14 @@ import 'package:eval_plus/layouts/base_screen_layout.dart';
 // Screens
 import 'package:eval_plus/screen/home_screen.dart';
 
-// Utils
-import 'package:eval_plus/utils/auth_storage_service.dart';
+// Services
+import 'package:eval_plus/services/storage/auth_storage_service.dart';
+
+// Controllers
+import 'package:eval_plus/controllers/user_controller.dart';
+
+// Models
+import 'package:eval_plus/models/user_model.dart';
 
 class InsideScreen extends StatefulWidget {
   static const String routename = 'InsideScreen';
@@ -25,21 +31,27 @@ class InsideScreen extends StatefulWidget {
 
 class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderStateMixin {
   int _currentIndex = 0;
+  UserModel? _currentUser;
+  String _welcomeMessage = 'Bienvenido';
+  
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
   // Lista de los diferentes contenidos
-  final List<Widget> _contents = const [
-    CarrerasContent(),
-    EvaluationsList(),
-    ProfileContent(),
+  List<Widget> get _contents => [
+    const CarrerasContent(),
+    const EvaluationsList(),
+    ProfileContent(user: _currentUser),
   ];
 
   @override
   void initState() {
     super.initState();
+
+    // Cargar datos del usuario
+    _loadUserData();
     
     // Configurar el AnimationController
     _animationController = AnimationController(
@@ -113,6 +125,18 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
     _animationController.forward();
   }
 
+  // Cargar Estudiante
+  Future<void> _loadUserData() async {
+    final user = await UserController.loadUserProfile();
+    
+    if (mounted && user != null) {
+      setState(() {
+        _currentUser = user;
+        _welcomeMessage = 'Bienvenido, ${user.firstName}';
+      });
+    }
+  }
+
   // Función de logout
   Future<void> _handleLogout() async {
     debugPrint('🔴 Logout initiated from InsideScreen');
@@ -171,8 +195,8 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
   @override
   Widget build(BuildContext context) {
     return BaseScreenLayout(
-      topBarTitle: 'Hola, Estudiante',
-      topBarSubtitle: '@Unidades Tecnológicas de Santander',
+      topBarTitle: _welcomeMessage,
+      topBarSubtitle: '@Panel de estudiante',
       currentNavIndex: _currentIndex,
       centerContent: false,
       paddingTop: 80.0,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-
 // Widgets
-import 'package:eval_plus/widgets/custom_bottom_nav_bar.dart';
-import 'package:eval_plus/widgets/custom_header_wave.dart';
-import 'package:eval_plus/widgets/custom_top_bar.dart';
-
+import 'package:eval_plus/widgets/common/custom_bottom_nav_bar.dart';
+import 'package:eval_plus/widgets/common/custom_header_wave.dart';
+import 'package:eval_plus/widgets/common/custom_top_bar.dart';
+// Models
+import 'package:eval_plus/models/user_model.dart';
 class BaseScreenLayout extends StatelessWidget {
   final String topBarTitle;
   final String topBarSubtitle;
@@ -12,7 +12,7 @@ class BaseScreenLayout extends StatelessWidget {
   final Widget child;
   final VoidCallback? onLogoutPressed;
   final ValueChanged<int>? onNavIndexChanged;
-  
+
   // Opciones de layout
   final bool centerContent;
   final double paddingTop;
@@ -20,7 +20,7 @@ class BaseScreenLayout extends StatelessWidget {
   final int topSpacerFlex;
   final int contentFlex;
   final int bottomSpacerFlex;
-  
+
   const BaseScreenLayout({
     super.key,
     required this.topBarTitle,
@@ -36,7 +36,7 @@ class BaseScreenLayout extends StatelessWidget {
     this.contentFlex = 3,
     this.bottomSpacerFlex = 2,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,10 +45,10 @@ class BaseScreenLayout extends StatelessWidget {
         children: [
           // Fondo blanco
           Container(color: Colors.grey[50]),
-          
+
           // Header con onda
           const CustomHeaderWave(),
-          
+
           // Contenido principal
           SafeArea(
             child: Column(
@@ -61,7 +61,7 @@ class BaseScreenLayout extends StatelessWidget {
                     Navigator.pop(context);
                   },
                 ),
-                
+
                 // Opción 1: Padding fijo
                 if (!centerContent)
                   Expanded(
@@ -73,7 +73,7 @@ class BaseScreenLayout extends StatelessWidget {
                       child: child,
                     ),
                   ),
-                
+
                 // Opción 2: Centrado con spacer
                 if (centerContent) ...[
                   Spacer(flex: topSpacerFlex),
