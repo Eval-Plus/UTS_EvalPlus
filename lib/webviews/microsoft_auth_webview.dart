@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:convert';
+import 'dart:io';
+
+// Webviews
+import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
 class MicrosoftAuthWebView extends StatefulWidget {
   final String authUrl;
@@ -67,12 +71,34 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView> {
   Future<void> _loadAuthUrl() async {
     try {
       await _controller.loadRequest(Uri.parse(widget.authUrl));
+    } on SocketException {
+      // Error de conexión
+      if (mounted && !_authProcessed) {
+        _showConnectionErrorDialog();
+      }
     } catch (e) {
       debugPrint('Error loading auth URL: $e');
       if (mounted && !_authProcessed) {
         widget.onAuthError();
       }
     }
+  }
+
+  void _showConnectionErrorDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => MessageDialogWidget.connectionError(
+        onRetry: () {
+          Navigator.of(context).pop();
+          _loadAuthUrl();
+        },
+        onCancel: () {
+          Navigator.of(context).pop();
+          Navigator.of(context).pop();
+        },
+        cancelButtonText: 'Volver',
+      ),
+    );
   }
 
   Future<void> _checkForAuthResponse() async {

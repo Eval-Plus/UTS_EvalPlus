@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:http/http.dart' as http;
 import 'dart:io' show Platform;
 
 // WebViews
@@ -14,12 +15,23 @@ import 'package:eval_plus/screen/inside_screen.dart';
 
 // Widgets
 import 'package:eval_plus/widgets/auth/jwt_auth.dart';
+import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
 class AuthController {
   static const String _authUrl = 'https://evalplus-api.emprenet.work/api/auth/microsoft';
 
   /// Inicia el flujo de autenticación con Microsoft
   static Future<void> signInWithMicrosoft(BuildContext context) async {
+    // Verificar conexión a internet
+    final hasConnection = await _checkInternetConnection();
+
+    if (!hasConnection) {
+      if (context.mounted) {
+        _showConnectionError(context);
+      }
+      return;
+    } 
+  
     // Verificar si estamos en una plataforma que soporta WebView
     if (!_supportsWebView()) {
       Navigator.of(context).push(
@@ -108,6 +120,38 @@ class AuthController {
         _handleAuthError(context);
       }
     }
+  }
+
+  /// Verifica si hay conexión a internet
+  static Future<bool> _checkInternetConnection() async {
+    try {
+      final result = await http.get(
+        Uri.parse('https://www.google.com'),
+      ).timeout(const Duration(seconds: 5));
+      
+      return result.statusCode == 200;
+    } catch (e) {
+      debugPrint('No hay conexión a internet: $e');
+      return false;
+    }
+  }
+
+  /// Muestra el error de conexión
+  static void _showConnectionError(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => MessageDialogWidget.connectionError(
+        onRetry: () {
+          Navigator.of(context).pop();
+          signInWithMicrosoft(context);
+        },
+        onCancel: () {
+          Navigator.of(context).pop();
+        },
+        cancelButtonText: 'Cancelar',
+      ),
+    );
   }
 
   /// Maneja errores en la autenticación

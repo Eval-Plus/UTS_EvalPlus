@@ -3,6 +3,9 @@ import 'package:eval_plus/services/api/auth_api_service.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 import 'package:eval_plus/screen/inside_screen.dart';
 
+// Widgets
+import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
+
 class ManualJwtAuthWidget extends StatefulWidget {
   final VoidCallback? onCancel;
   final Function(String token)? onTokenSubmit;
@@ -32,7 +35,7 @@ class _ManualJwtAuthWidgetState extends State<ManualJwtAuthWidget> {
 
     // Validación básica
     if (token.isEmpty) {
-      _showErrorSnackBar('El token no puede estar vacío');
+      _showErrorDialog('El token no puede estar vacío');
       return;
     }
 
@@ -43,7 +46,6 @@ class _ManualJwtAuthWidgetState extends State<ManualJwtAuthWidget> {
     try {
       print('🔐 Validando token...');
 
-      // Validar token con el backend
       final validationResult = await AuthApiService.validateToken(token);
 
       print('📋 Resultado: $validationResult');
@@ -64,24 +66,14 @@ class _ManualJwtAuthWidgetState extends State<ManualJwtAuthWidget> {
         }
 
         if (mounted) {
-          _showSuccessSnackBar('Token validado correctamente');
-          
-          // Esperar un momento para que se vea el mensaje
-          await Future.delayed(const Duration(milliseconds: 500));
-          
-          if (mounted) {
-            // Navegar a InsideScreen
-            Navigator.of(context).pushReplacementNamed(
-              InsideScreen.routename,
-            );
-          }
+          _showSuccessDialog();
         }
       } else {
         // Token inválido
         print('❌ Token inválido');
         
         if (mounted) {
-          _showErrorSnackBar(
+          _showErrorDialog(
             validationResult['message'] ?? 'Token inválido',
           );
         }
@@ -90,7 +82,7 @@ class _ManualJwtAuthWidgetState extends State<ManualJwtAuthWidget> {
       print('💥 Error: $e');
       
       if (mounted) {
-        _showErrorSnackBar(
+        _showErrorDialog(
           'Error al validar el token. Verifica tu conexión.',
         );
       }
@@ -103,22 +95,32 @@ class _ManualJwtAuthWidgetState extends State<ManualJwtAuthWidget> {
     }
   }
 
-  void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        duration: const Duration(seconds: 3),
+  // Nuevos métodos para mostrar diálogos
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => MessageDialogWidget.error(
+        title: 'Error de validación',
+        message: message,
+        onAccept: () => Navigator.of(context).pop(),
       ),
     );
   }
 
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => MessageDialogWidget.success(
+        title: 'Token validado',
+        message: 'Tu token ha sido validado correctamente. Bienvenido a Eval+.',
+        onContinue: () {
+          Navigator.of(context).pop(); // Cerrar diálogo
+          Navigator.of(context).pushReplacementNamed(
+            InsideScreen.routename,
+          );
+        },
       ),
     );
   }
