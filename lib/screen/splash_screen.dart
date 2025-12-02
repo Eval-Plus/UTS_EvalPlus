@@ -32,11 +32,10 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
 
   Future<void> _validateStoredToken() async {
     try {
-      // 1. Obtener token almacenado
       final token = await AuthStorageService.getToken();
 
       if (token == null) {
-        debugPrint('❌ No hay token almacenado');
+        // Sin token → ir a login
         setState(() {
           _isAuthenticated = false;
           _validationComplete = true;
@@ -44,49 +43,45 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
         return;
       }
 
-      debugPrint('🔐 Validando token almacenado...');
-
-      // 2. Validar token con el backend
+      // ✅ VALIDACIÓN OBLIGATORIA con el backend
       final validationResult = await AuthApiService.validateToken(token);
 
       if (validationResult['valid'] == true) {
-        debugPrint('✅ Token válido');
-
-        // 3. Cargar perfil completo del usuario
-        final userProfile = await UserController.loadUserProfile();
-
-        if (userProfile != null) {
-          debugPrint('👤 Perfil cargado: ${userProfile.nombreCompleto}');
-        } else {
-          debugPrint('⚠️ No se pudo cargar el perfil (usando cache si existe)');
-        }
-
+        // Token válido → cargar perfil y continuar
+        await UserController.loadUserProfile();
+        
         setState(() {
           _isAuthenticated = true;
           _validationComplete = true;
         });
       } else {
-        debugPrint('❌ Token inválido: ${validationResult['message']}');
-
-        // Limpiar todos los datos
-        await AuthStorageService.clearAuthData();
-        await UserController.clearUserProfile();
-
+        // Token inválido → limpiar y enviar a login
+        await _clearAndResetSession();
+        
         setState(() {
           _isAuthenticated = false;
           _validationComplete = true;
         });
       }
+      
     } catch (e) {
-      debugPrint('💥 Error al validar token: $e');
-
-      // Opción 1: Permitir acceso si hay token (mejor UX offline)
-      final token = await AuthStorageService.getToken();
-      setState(() {
-        _isAuthenticated = token != null;
-        _validationComplete = true;
-      });
+      // ❌ ERROR DE RED → mostrar mensaje y permitir reintentar
+      debugPrint('💥 Error de conexión: $e');
+      
+      if (mounted) {
+        _showConnectionError();
+      }
     }
+  }
+
+  Future<void> _clearAndResetSession() async {
+    await AuthStorageService.clearAuthData();
+    await UserController.clearUserProfile();
+  }
+
+  void _showConnectionError() {
+    // Mostrar un diálogo o pantalla de error
+    // con opción de "Reintentar" o "Continuar sin conexión" (opcional)
   }
 
   void _navigateToNextScreen() {
