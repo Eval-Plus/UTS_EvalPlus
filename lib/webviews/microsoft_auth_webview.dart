@@ -154,15 +154,15 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Iniciar sesión con Microsoft'),
+        title: const Text('Ingresar con Microsoft'),
         backgroundColor: const Color(0xFF6366F1),
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () {
-            if (!_authProcessed) {
+            /*if (!_authProcessed) {
               widget.onAuthError();
-            }
+            }*/
             Navigator.of(context).pop();
           },
         ),

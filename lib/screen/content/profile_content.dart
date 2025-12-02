@@ -89,7 +89,7 @@ class ProfileContent extends StatelessWidget {
             // Información adicional
             _buildInfoRow(
               icon: Icons.school_rounded,
-              label: 'Estudiante',
+              label: user?.primaryRoleDisplay ?? 'Usuario',
             ),
           ],
         ),
