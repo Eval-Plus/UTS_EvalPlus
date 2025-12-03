@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/config/constants.dart';
+import 'package:eval_plus/controllers/user_session_controller.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -12,21 +14,45 @@ class CustomBottomNavBar extends StatelessWidget {
     this.onTap,
   });
   
-  // Configuración de los items del NavBar
-  static const List<_NavBarItem> _items = [
-    _NavBarItem(icon: Icons.school, label: 'Carreras'),
-    _NavBarItem(icon: Icons.assignment_turned_in, label: 'Evaluaciones'),
-    _NavBarItem(icon: Icons.person, label: 'Perfil'),
+  // 👇 NUEVO: Configuración completa de items con restricciones de rol
+  static const List<_NavBarItem> _allItems = [
+    _NavBarItem(
+      icon: Icons.school,
+      label: 'Carreras',
+      roles: [UserRole.student], // Solo estudiantes
+    ),
+    _NavBarItem(
+      icon: Icons.assignment_turned_in,
+      label: 'Evaluaciones',
+      roles: [UserRole.student, UserRole.teacher, UserRole.admin], // Todos
+    ),
+    _NavBarItem(
+      icon: Icons.person,
+      label: 'Perfil',
+      roles: [UserRole.student, UserRole.teacher, UserRole.admin], // Todos
+    ),
   ];
+  
+  /// Filtra los items según el rol del usuario
+  static List<_NavBarItem> _getItemsForRole(UserRole role) {
+    return _allItems.where((item) => item.roles.contains(role)).toList();
+  }
   
   @override
   Widget build(BuildContext context) {
+    // Obtener la sesión del usuario
+    final session = context.watch<UserSessionController>();
+    final palette = session.palette;
+    
+    // 👇 Filtrar items según el rol
+    final visibleItems = _getItemsForRole(session.currentRole);
+    
     return Container(
       decoration: BoxDecoration(
-        gradient: AppColors.primaryGradient, // Usando gradiente centralizado
+        gradient: palette.primaryGradient,
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadowLight, // Usando sombra centralizada
+            color: palette.shadowLight,
             offset: const Offset(0, -8),
           ),
         ],
@@ -37,10 +63,10 @@ class CustomBottomNavBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(
-              _items.length,
+              visibleItems.length,
               (index) => _buildNavItem(
-                icon: _items[index].icon,
-                label: _items[index].label,
+                icon: visibleItems[index].icon,
+                label: visibleItems[index].label,
                 isSelected: currentIndex == index,
                 onTap: () => onTap?.call(index),
               ),
@@ -63,8 +89,8 @@ class CustomBottomNavBar extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(15),
-          splashColor: AppColors.overlayDark, // Usando overlay centralizado
-          highlightColor: AppColors.overlayLight, // Usando overlay centralizado
+          splashColor: AppColors.overlayDark,
+          highlightColor: AppColors.overlayLight,
           child: AnimatedContainer(
             duration: AppConstants.animationDuration,
             curve: Curves.easeInOut,
@@ -77,7 +103,7 @@ class CustomBottomNavBar extends StatelessWidget {
                   curve: Curves.easeInOut,
                   padding: EdgeInsets.all(isSelected ? 8 : 4),
                   decoration: BoxDecoration(
-                    gradient: isSelected ? AppColors.selectedGradient : null, // 🎨
+                    gradient: isSelected ? AppColors.selectedGradient : null,
                     color: isSelected ? null : Colors.transparent,
                     shape: BoxShape.circle,
                     boxShadow: isSelected
@@ -97,8 +123,8 @@ class CustomBottomNavBar extends StatelessWidget {
                     child: Icon(
                       icon,
                       color: isSelected 
-                          ? AppColors.selected   // Color seleccionado
-                          : AppColors.unselected, // Color no seleccionado
+                          ? AppColors.selected
+                          : AppColors.unselected,
                       size: isSelected ? 26 : 24,
                     ),
                   ),
@@ -109,8 +135,8 @@ class CustomBottomNavBar extends StatelessWidget {
                   curve: Curves.easeInOut,
                   style: TextStyle(
                     color: isSelected 
-                        ? AppColors.selected   // 
-                        : AppColors.unselected, // 
+                        ? AppColors.selected
+                        : AppColors.unselected,
                     fontSize: isSelected ? 12 : 11,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                   ),
@@ -125,13 +151,15 @@ class CustomBottomNavBar extends StatelessWidget {
   }
 }
 
-// Clase privada para representar un item del NavBar
+// 👇 Clase privada actualizada con roles permitidos
 class _NavBarItem {
   final IconData icon;
   final String label;
+  final List<UserRole> roles; // 👈 NUEVO: roles que pueden ver este item
   
   const _NavBarItem({
     required this.icon,
     required this.label,
+    required this.roles,
   });
 }

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 // Models
 import 'package:eval_plus/models/user_model.dart';
+
+// Controllers
+import 'package:eval_plus/controllers/user_session_controller.dart';
 
 /// Contenedor del perfil del usuario
 /// Muestra información básica: avatar y correo institucional
@@ -15,6 +19,9 @@ class ProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Obtener el displayName del rol desde la sesión
+    final session = context.watch<UserSessionController>();
+    
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
       child: Padding(
@@ -23,10 +30,7 @@ class ProfileContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 20),
-            
-            // Tarjeta de perfil
-            _buildProfileCard(),
-            
+            _buildProfileCard(session.roleDisplayName), // Pasar displayName
             const SizedBox(height: 20),
           ],
         ),
@@ -35,7 +39,7 @@ class ProfileContent extends StatelessWidget {
   }
 
   /// Construye la tarjeta principal del perfil
-  Widget _buildProfileCard() {
+  Widget _buildProfileCard(String roleDisplay) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -89,7 +93,7 @@ class ProfileContent extends StatelessWidget {
             // Información adicional
             _buildInfoRow(
               icon: Icons.school_rounded,
-              label: user?.primaryRoleDisplay ?? 'Usuario',
+              label: roleDisplay,
             ),
           ],
         ),

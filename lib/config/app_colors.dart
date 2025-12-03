@@ -1,36 +1,87 @@
 import 'package:flutter/material.dart';
 
+/// Enum para los diferentes roles de usuario
+enum UserRole {
+  student,
+  teacher,
+  admin,
+}
+
 /// Paleta de colores centralizada de Eval+
-/// Puedes cambiar fácilmente entre diferentes esquemas de color
 class AppColors {
-  // ==================== ESQUEMA ACTUAL (Amarillo/Verde) ====================
+  // ==================== COLORES POR ROL ====================
   
-  // Colores primarios - Header Wave & Bottom Nav Bar
-  static const Color primary = Color(0xFFCAD225);           // Amarillo-verde principal
-  static const Color primaryDark = Color(0xFFB8BE20);       // Amarillo-verde oscuro
-  static const Color primaryLight = Color(0xFFD9E02E);      // Amarillo-verde claro
+  /// Obtiene la paleta de colores según el rol del usuario
+  static RoleColorPalette getPaletteForRole(UserRole role) {
+    switch (role) {
+      case UserRole.student:
+        return _studentPalette;
+      case UserRole.teacher:
+        return _teacherPalette;
+      case UserRole.admin:
+        return _adminPalette;
+    }
+  }
+  
+  // Paleta para ESTUDIANTES (Amarillo-Verde actual)
+  static final RoleColorPalette _studentPalette = RoleColorPalette(
+    primary: const Color(0xFFCAD225),           // Amarillo-verde principal
+    primaryDark: const Color(0xFFB8BE20),       // Amarillo-verde oscuro
+    primaryLight: const Color(0xFFD9E02E),      // Amarillo-verde claro
+    primaryGradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFFCAD225), Color(0xFFB8BE20)],
+    ),
+  );
+  
+  // Paleta para PROFESORES (Verde más oscuro)
+  static final RoleColorPalette _teacherPalette = RoleColorPalette(
+    primary: const Color(0xFF8BC34A),           // Verde medio
+    primaryDark: const Color(0xFF689F38),       // Verde oscuro
+    primaryLight: const Color(0xFF9CCC65),      // Verde claro
+    primaryGradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF8BC34A), Color(0xFF689F38)],
+    ),
+  );
+  
+  // Paleta para ADMINISTRADORES (Verde muy oscuro)
+  static final RoleColorPalette _adminPalette = RoleColorPalette(
+    primary: const Color(0xFF4CAF50),           // Verde fuerte
+    primaryDark: const Color(0xFF388E3C),       // Verde muy oscuro
+    primaryLight: const Color(0xFF66BB6A),      // Verde medio
+    primaryGradient: const LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
+    ),
+  );
+  
+  // ==================== COLORES COMPARTIDOS ====================
   
   // Colores de fondo
-  static const Color background = Color(0xFFF5F5F5);        // Gris muy claro
-  static const Color surface = Color(0xFFFFFFFF);           // Blanco
+  static const Color background = Color(0xFFF5F5F5);
+  static const Color surface = Color(0xFFFFFFFF);
   
   // Colores de texto
-  static const Color textPrimary = Color(0xFF2C2C2C);       // Gris carbón oscuro
-  static const Color textSecondary = Color(0xFF4A4A4A);     // Gris medio
-  static const Color textTertiary = Color(0xFF6B6B6B);      // Gris claro
-  static const Color textOnPrimary = Color(0xFF1A1A1A);     // Negro suave (para usar sobre primary)
+  static const Color textPrimary = Color(0xFF2C2C2C);
+  static const Color textSecondary = Color(0xFF4A4A4A);
+  static const Color textTertiary = Color(0xFF6B6B6B);
+  static const Color textOnPrimary = Color(0xFF1A1A1A);
   
   // Colores de acento y funcionales
-  static const Color accent = Color(0xFF6366F1);            // Índigo (botones, enlaces)
-  static const Color success = Color(0xFF10B981);           // Verde éxito
-  static const Color warning = Color(0xFFF59E0B);           // Amarillo advertencia
-  static const Color error = Color(0xFFEF4444);             // Rojo error
-  static const Color info = Color(0xFF3B82F6);              // Azul información
+  static const Color accent = Color(0xFF6366F1);
+  static const Color success = Color(0xFF10B981);
+  static const Color warning = Color(0xFFF59E0B);
+  static const Color error = Color(0xFFEF4444);
+  static const Color info = Color(0xFF3B82F6);
   
   // Colores para estados
-  static const Color selected = Color(0xFF1A1A1A);          // Item seleccionado
-  static const Color unselected = Color(0xFF4A4A4A);        // Item no seleccionado
-  static const Color disabled = Color(0xFFBDBDBD);          // Deshabilitado
+  static const Color selected = Color(0xFF1A1A1A);
+  static const Color unselected = Color(0xFF4A4A4A);
+  static const Color disabled = Color(0xFFBDBDBD);
   
   // Sombras y overlays
   static Color shadowLight = const Color(0xFFCAD225).withOpacity(0.3);
@@ -44,8 +95,8 @@ class AppColors {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      Color(0xFFCAD225),  // primary
-      Color(0xFFB8BE20),  // primaryDark
+      Color(0xFFCAD225),
+      Color(0xFFB8BE20),
     ],
   );
   
@@ -70,69 +121,20 @@ class AppColors {
   );
 }
 
-// ==================== ESQUEMAS ALTERNATIVOS ====================
-
-/// Esquema Azul Profesional
-class BlueThemeColors {
-  static const Color primary = Color(0xFF2563EB);           // Azul
-  static const Color primaryDark = Color(0xFF1E40AF);       // Azul oscuro
-  static const Color primaryLight = Color(0xFF60A5FA);      // Azul claro
+/// Clase que encapsula una paleta de colores para un rol específico
+class RoleColorPalette {
+  final Color primary;
+  final Color primaryDark;
+  final Color primaryLight;
+  final LinearGradient primaryGradient;
   
-  static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF2563EB), Color(0xFF1E40AF)],
-  );
-}
-
-/// Esquema Púrpura Moderno
-class PurpleThemeColors {
-  static const Color primary = Color(0xFF8B5CF6);           // Púrpura
-  static const Color primaryDark = Color(0xFF7C3AED);       // Púrpura oscuro
-  static const Color primaryLight = Color(0xFFA78BFA);      // Púrpura claro
+  RoleColorPalette({
+    required this.primary,
+    required this.primaryDark,
+    required this.primaryLight,
+    required this.primaryGradient,
+  });
   
-  static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF8B5CF6), Color(0xFF7C3AED)],
-  );
-}
-
-/// Esquema Verde Naturaleza
-class GreenThemeColors {
-  static const Color primary = Color(0xFF10B981);           // Verde
-  static const Color primaryDark = Color(0xFF059669);       // Verde oscuro
-  static const Color primaryLight = Color(0xFF34D399);      // Verde claro
-  
-  static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF10B981), Color(0xFF059669)],
-  );
-}
-
-/// Esquema Naranja Energético
-class OrangeThemeColors {
-  static const Color primary = Color(0xFFF97316);           // Naranja
-  static const Color primaryDark = Color(0xFFEA580C);       // Naranja oscuro
-  static const Color primaryLight = Color(0xFFFB923C);      // Naranja claro
-  
-  static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFFF97316), Color(0xFFEA580C)],
-  );
-}
-
-/// Esquema Oscuro (Dark Mode)
-class DarkThemeColors {
-  static const Color primary = Color(0xFF1F2937);           // Gris oscuro
-  static const Color primaryDark = Color(0xFF111827);       // Gris muy oscuro
-  static const Color primaryLight = Color(0xFF374151);      // Gris medio
-  
-  static const LinearGradient primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [Color(0xFF1F2937), Color(0xFF111827)],
-  );
+  /// Genera sombra basada en el color primario
+  Color get shadowLight => primary.withOpacity(0.3);
 }

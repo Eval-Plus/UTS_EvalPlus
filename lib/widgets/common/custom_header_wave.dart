@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
 import 'package:eval_plus/config/app_colors.dart';
+
+// Controllers
+import 'package:eval_plus/controllers/user_session_controller.dart';
 
 class CustomHeaderWave extends StatelessWidget {
   final double height;
-  final Color? color; // Ahora es opcional
 
   const CustomHeaderWave({
     super.key,
     this.height = 200,
-    this.color, // Si no se proporciona, usa el color del tema
   });
 
   @override
   Widget build(BuildContext context) {
+    // Obtener la paleta actual del usuario
+    final palette = context.watch<UserSessionController>().palette;
+    
     return SizedBox(
       height: height,
       width: double.infinity,
       child: CustomPaint(
         painter: WavePainter(
-          color: color ?? AppColors.primary, // Usa color centralizado por defecto
+          color: palette.primary, // Usar color dinámico
         ),
       ),
     );
