@@ -7,7 +7,6 @@ import 'package:eval_plus/data/careers_data.dart';
 // Content
 import 'package:eval_plus/screen/content/subjects_content.dart';
 
-// <CarrerasContent cambia de ser un StatelessWidget a un StatefulWidget>
 class CarrerasContent extends StatefulWidget {
   const CarrerasContent({super.key});
 
@@ -17,6 +16,40 @@ class CarrerasContent extends StatefulWidget {
 
 class _CarrerasContentState extends State<CarrerasContent> {
   Career? _selectedCareer;
+  List<Career>? _careers;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCareers();
+  }
+
+  Future<void> _loadCareers() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final careers = await CareersDataService.getCareers();
+      
+      if (mounted) {
+        setState(() {
+          _careers = careers;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error al cargar carreras: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   void _onCareerSelected(Career career) {
     setState(() {
@@ -30,6 +63,10 @@ class _CarrerasContentState extends State<CarrerasContent> {
     });
   }
 
+  Future<void> _onRefresh() async {
+    await _loadCareers();
+  }
+
   @override
   Widget build(BuildContext context) {
     // Si hay una carrera seleccionada, mostrar materias
@@ -40,91 +77,125 @@ class _CarrerasContentState extends State<CarrerasContent> {
       );
     }
 
-    // Si no, mostrar lista de carreras (Cuando era un StatelessWidget)
-    return FutureBuilder<List<Career>>(
-      future: CareersDataService.getCareers(),
-      builder: (context, snapshot) {
-      
-        // Mientras carga
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(
-              color: Color(0xFFCAD225),
-            ),
-          );
-        }
+    // Mientras carga
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFCAD225),
+        ),
+      );
+    }
 
-        // Si hay error
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 60,
-                  color: Colors.red,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Error al cargar carreras',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '${snapshot.error}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+    // Si hay error
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 60,
+              color: Colors.red,
             ),
-          );
-        }
-
-        // Si no hay data
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.inbox_outlined,
-                  size: 60,
-                  color: Colors.grey[400],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No hay carreras disponibles',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
+            const SizedBox(height: 16),
+            Text(
+              'Error al cargar carreras',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
             ),
-          );
-        }
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                _errorMessage!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadCareers,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
-        // Mostrar lista de carreras
-        final carreras = snapshot.data!;
-        return ListView.builder(
-          padding: const EdgeInsets.all(20),
-          itemCount: carreras.length,
-          itemBuilder: (context, index) {
-            final carrera = carreras[index];
-            return _CareerCard(
-              career: carrera,
-              onTap: () => _onCareerSelected(carrera),
-            );
-          },
-        );
-      },
+    // Si no hay carreras
+    if (_careers == null || _careers!.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 60,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No hay carreras disponibles',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No tienes carreras asignadas',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadCareers,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Actualizar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mostrar lista de carreras con RefreshIndicator
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      color: const Color(0xFFCAD225),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(20),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _careers!.length,
+        itemBuilder: (context, index) {
+          final carrera = _careers![index];
+          return _CareerCard(
+            career: carrera,
+            onTap: () => _onCareerSelected(carrera),
+          );
+        },
+      ),
     );
   }
 }
@@ -157,6 +228,7 @@ class _CareerCard extends StatelessWidget {
           BoxShadow(
             color: baseColor.withOpacity(0.2),
             offset: const Offset(0, 4),
+            blurRadius: 8,
           ),
         ],
       ),

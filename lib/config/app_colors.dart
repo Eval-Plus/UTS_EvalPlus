@@ -58,6 +58,32 @@ class AppColors {
       colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
     ),
   );
+
+  // ==================== COLORES DE CARRERAS ====================
+  
+  /// Mapeo de colores por código de carrera
+  static Color getCareerColor(String careerCode) {
+    switch (careerCode.toUpperCase()) {
+      case 'ING-SIS':
+        return const Color(0xFF2196F3); // Azul
+      case 'ADM-EMP':
+        return const Color(0xFF4CAF50); // Verde
+      case 'DER':
+        return const Color(0xFFF44336); // Rojo
+      default:
+        return const Color(0xFFA8B820); // Amarillo-verde (default)
+    }
+  }
+
+  /// Obtiene un color desde string hexadecimal (ej: "0xFF2196F3")
+  static Color parseColorString(String colorString) {
+    try {
+      final hexColor = colorString.replaceAll('0x', '').replaceAll('#', '');
+      return Color(int.parse('0xFF$hexColor'));
+    } catch (e) {
+      return const Color(0xFFA8B820); // Color por defecto
+    }
+  }
   
   // ==================== COLORES COMPARTIDOS ====================
   
