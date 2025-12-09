@@ -7,7 +7,7 @@ import 'package:eval_plus/data/careers_data.dart';
 // Widgets
 import 'package:eval_plus/widgets/evaluation/evaluation_modal.dart';
 
-class SubjectsContent extends StatelessWidget {
+class SubjectsContent extends StatefulWidget {
   final Career career;
   final VoidCallback onBack;
 
@@ -18,102 +18,201 @@ class SubjectsContent extends StatelessWidget {
   });
 
   @override
+  State<SubjectsContent> createState() => _SubjectsContentState();
+}
+
+class _SubjectsContentState extends State<SubjectsContent> {
+  List<Subject>? _subjects;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSubjects();
+  }
+
+  /// Carga las materias de la carrera seleccionada
+  Future<void> _loadSubjects() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      debugPrint('📚 Cargando materias para: ${widget.career.nombre}');
+      debugPrint('   - Código: ${widget.career.codigo}');
+      debugPrint('   - ID: ${widget.career.id}');
+
+      final subjects = await SubjectsDataService.getSubjectsByCareer(
+        careerCodigo: widget.career.codigo,
+        careerId: widget.career.id,
+      );
+
+      if (mounted) {
+        setState(() {
+          _subjects = subjects;
+          _isLoading = false;
+        });
+        
+        debugPrint('✅ ${subjects.length} materias cargadas');
+      }
+    } catch (e) {
+      debugPrint('💥 Error cargando materias: $e');
+      
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error al cargar materias: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  /// Refresca las materias
+  Future<void> _onRefresh() async {
+    await _loadSubjects();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Column(
       children: [
         // Botón para volver
         _BackButton(
-          careerName: career.nombre,
-          onBack: onBack,
+          careerName: widget.career.nombre,
+          careerColor: widget.career.color,
+          onBack: widget.onBack,
         ),
+        
         // Lista de materias
         Expanded(
-          child: FutureBuilder<List<Subject>>(
-            future: SubjectsDataService.getSubjectsByCareer(career.codigo),
-            builder: (context, snapshot) {
-              // Mientras carga
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    color: Color(0xFFCAD225),
-                  ),
-                );
-              }
-
-              // Si hay error
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        size: 60,
-                        color: Colors.red,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error al cargar materias',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${snapshot.error}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[500],
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              // Si no hay data
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.inbox_outlined,
-                        size: 60,
-                        color: Colors.grey[400],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'No hay materias matriculadas',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }
-
-              // Mostrar lista de materias
-              final subjects = snapshot.data!;
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                itemCount: subjects.length,
-                itemBuilder: (context, index) {
-                  final subject = subjects[index];
-                  return _SubjectCard(
-                    subject: subject,
-                    color: career.color,
-                  );
-                },
-              );
-            },
-          ),
+          child: _buildContent(),
         ),
       ],
+    );
+  }
+
+  Widget _buildContent() {
+    // Mientras carga
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          color: Color(0xFFCAD225),
+        ),
+      );
+    }
+
+    // Si hay error
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 60,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error al cargar materias',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                _errorMessage!,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadSubjects,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Si no hay materias
+    if (_subjects == null || _subjects!.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.inbox_outlined,
+              size: 60,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No hay materias matriculadas',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No tienes materias en esta carrera',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _loadSubjects,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Actualizar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6366F1),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Mostrar lista de materias con RefreshIndicator
+    return RefreshIndicator(
+      onRefresh: _onRefresh,
+      color: const Color(0xFFCAD225),
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        physics: const AlwaysScrollableScrollPhysics(),
+        itemCount: _subjects!.length,
+        itemBuilder: (context, index) {
+          final subject = _subjects![index];
+          return _SubjectCard(
+            subject: subject,
+            color: widget.career.color,
+          );
+        },
+      ),
     );
   }
 }
@@ -121,15 +220,19 @@ class SubjectsContent extends StatelessWidget {
 // Botón de regreso personalizado
 class _BackButton extends StatelessWidget {
   final String careerName;
+  final Color careerColor;
   final VoidCallback onBack;
   
   const _BackButton({
     required this.careerName,
+    required this.careerColor,
     required this.onBack,
   });
 
   @override
   Widget build(BuildContext context) {
+    final baseColor = careerColor.withOpacity(1.0);
+    
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       child: Material(
@@ -144,13 +247,13 @@ class _BackButton extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  const Color(0xFFCAD225).withOpacity(0.15),
-                  const Color(0xFFA8B820).withOpacity(0.10),
+                  baseColor.withOpacity(0.15),
+                  baseColor.withOpacity(0.10),
                 ],
               ),
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: const Color(0xFFA8B820).withOpacity(0.4),
+                color: baseColor.withOpacity(0.4),
                 width: 2,
               ),
             ),
@@ -160,7 +263,7 @@ class _BackButton extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFCAD225).withOpacity(0.20),
+                    color: baseColor.withOpacity(0.20),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
