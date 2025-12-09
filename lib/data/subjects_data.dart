@@ -20,6 +20,10 @@ class Subject {
     this.semestre = 1,
   });
 
+  bool get hasTeacher =>
+    professorName.trim().isNotEmpty &&
+    professorName.toLowerCase() != 'sin profesor';
+
   // Factory constructor para crear desde la respuesta del API
   factory Subject.fromApiResponse(
     SubjectApiResponse apiResponse,

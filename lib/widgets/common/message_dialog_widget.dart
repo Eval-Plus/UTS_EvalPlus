@@ -104,6 +104,21 @@ class MessageDialogWidget extends StatelessWidget {
           secondaryButtonText: cancelButtonText ?? 'Cancelar',
         );
 
+  const MessageDialogWidget.info({
+    Key? key,
+    required String title,
+    required String message,
+    VoidCallback? onContinue,
+    String? continueButtonText,
+  }) : this(
+          key: key,
+          type: MessageType.info,
+          title: title,
+          message: message,
+          onPrimaryAction: onContinue,
+          primaryButtonText: continueButtonText ?? 'Entendido',
+        );
+
   @override
   Widget build(BuildContext context) {
     final config = _getConfigForType();

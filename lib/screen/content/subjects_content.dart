@@ -6,6 +6,7 @@ import 'package:eval_plus/data/careers_data.dart';
 
 // Widgets
 import 'package:eval_plus/widgets/evaluation/evaluation_modal.dart';
+import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
 class SubjectsContent extends StatefulWidget {
   final Career career;
@@ -587,7 +588,9 @@ class _SubjectCardState extends State<_SubjectCard>
                                   ),
                                   const SizedBox(height: 4),
                                   Text(
-                                    widget.subject.professorName,
+                                    widget.subject.hasTeacher 
+                                      ? widget.subject.professorName 
+                                      : 'Sin docente',
                                     style: const TextStyle(
                                       fontSize: 16,
                                       color: Color(0xFF1A1A1A),
@@ -605,51 +608,79 @@ class _SubjectCardState extends State<_SubjectCard>
                         Container(
                           width: double.infinity,
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: [
-                                baseColor.withOpacity(0.9),
-                                baseColor.withOpacity(0.7),
-                              ],
-                            ),
+                            gradient: widget.subject.hasTeacher
+                                ? LinearGradient(
+                                    begin: Alignment.centerLeft,
+                                    end: Alignment.centerRight,
+                                    colors: [
+                                      baseColor.withOpacity(0.9),
+                                      baseColor.withOpacity(0.7),
+                                    ],
+                                  )
+                                : null, // Sin gradiente si no hay profesor
+                            color: widget.subject.hasTeacher 
+                                ? null 
+                                : Colors.grey.withOpacity(0.3), // Color gris transparente
                             borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: baseColor.withOpacity(0.3),
-                                offset: const Offset(0, 3),
-                                blurRadius: 6,
-                              ),
-                            ],
+                            boxShadow: widget.subject.hasTeacher
+                                ? [
+                                    BoxShadow(
+                                      color: baseColor.withOpacity(0.3),
+                                      offset: const Offset(0, 3),
+                                      blurRadius: 6,
+                                    ),
+                                  ]
+                                : [], // Sin sombra si está deshabilitado
                           ),
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(10),
-                              onTap: () {
-                                // Abrir modal de evaluación
-                                showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return EvaluationModal(subject: widget.subject);
-                                  },
-                                );
-                              },
+                              onTap: widget.subject.hasTeacher
+                                  ? () {
+                                      // Abrir modal de evaluación
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return EvaluationModal(subject: widget.subject);
+                                        },
+                                      );
+                                    }
+                                  : () {
+                                      // Mostrar mensaje de error si no hay docente
+                                      showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) {
+                                          return MessageDialogWidget.info(
+                                            title: 'Evaluación no disponible',
+                                            message: 'No hay evaluación en esta materia porque no hay docente registrado.',
+                                            onContinue: () {
+                                              Navigator.of(context).pop();
+                                            },
+                                            continueButtonText: 'Entendido',
+                                          );
+                                        },
+                                      );
+                                    },
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    const Icon(
+                                    Icon(
                                       Icons.rate_review_rounded,
-                                      color: Colors.white,
+                                      color: widget.subject.hasTeacher 
+                                          ? Colors.white 
+                                          : Colors.grey.shade400,
                                       size: 20,
                                     ),
                                     const SizedBox(width: 10),
-                                    const Text(
+                                    Text(
                                       'Evaluar Docente',
                                       style: TextStyle(
-                                        color: Colors.white,
+                                        color: widget.subject.hasTeacher 
+                                            ? Colors.white 
+                                            : Colors.grey.shade400,
                                         fontSize: 15,
                                         fontWeight: FontWeight.bold,
                                         letterSpacing: 0.3,
