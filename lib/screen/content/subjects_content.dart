@@ -636,32 +636,36 @@ class _SubjectCardState extends State<_SubjectCard>
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(10),
-                              onTap: widget.subject.hasTeacher
-                                  ? () {
-                                      // Abrir modal de evaluación
-                                      showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return EvaluationModal(subject: widget.subject);
-                                        },
-                                      );
-                                    }
-                                  : () {
-                                      // Mostrar mensaje de error si no hay docente
-                                      showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          return MessageDialogWidget.info(
-                                            title: 'Evaluación no disponible',
-                                            message: 'No hay evaluación en esta materia porque no hay docente registrado.',
-                                            onContinue: () {
-                                              Navigator.of(context).pop();
-                                            },
-                                            continueButtonText: 'Entendido',
-                                          );
-                                        },
-                                      );
-                                    },
+                              onTap: widget.subject.canBeEvaluated // 🆕 Usar el nuevo getter
+                                ? () {
+                                    // Abrir modal de evaluación
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return EvaluationModal(subject: widget.subject);
+                                      },
+                                    );
+                                  }
+                                : () {
+                                    // Mostrar mensaje apropiado
+                                    String message = !widget.subject.hasTeacher
+                                        ? 'No hay docente registrado en esta materia.'
+                                        : 'No hay evaluación activa disponible en este momento.';
+                                        
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return MessageDialogWidget.info(
+                                          title: 'Evaluación no disponible',
+                                          message: message,
+                                          onContinue: () {
+                                            Navigator.of(context).pop();
+                                          },
+                                          continueButtonText: 'Entendido',
+                                        );
+                                      },
+                                    );
+                                  },
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
                                 child: Row(

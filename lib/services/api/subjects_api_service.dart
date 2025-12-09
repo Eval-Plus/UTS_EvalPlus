@@ -11,6 +11,9 @@ class SubjectApiResponse {
   final int semestre;
   final bool activo;
   final String teacher;
+  final int? evaluationId;
+  final bool hasActiveEvaluation;
+  final String? evaluationPeriod;
 
   SubjectApiResponse({
     required this.id,
@@ -19,6 +22,9 @@ class SubjectApiResponse {
     required this.semestre,
     required this.activo,
     required this.teacher,
+    this.evaluationId,
+    this.hasActiveEvaluation = false,
+    this.evaluationPeriod,
   });
 
   factory SubjectApiResponse.fromJson(Map<String, dynamic> json) {
@@ -29,6 +35,9 @@ class SubjectApiResponse {
       semestre: json['semestre'] as int,
       activo: json['activo'] as bool? ?? true,
       teacher: json['teacher'] as String,
+      evaluationId: json['evaluationId'] as int?,
+      hasActiveEvaluation: json['hasActiveEvaluation'] as bool? ?? false,
+      evaluationPeriod: json['evaluationPeriod'] as String?,
     );
   }
 
@@ -40,6 +49,9 @@ class SubjectApiResponse {
       'semestre': semestre,
       'activo': activo,
       'teacher': teacher,
+      'evaluationId': evaluationId,
+      'hasActiveEvaluation': hasActiveEvaluation,
+      'evaluationPeriod': evaluationPeriod,
     };
   }
 }

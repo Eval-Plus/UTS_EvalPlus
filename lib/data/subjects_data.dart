@@ -10,6 +10,9 @@ class Subject {
   final String careerCodigo; // Para asociarla con una carrera
   final String professorName;
   final int semestre;
+  final int? evaluationId;
+  final bool hasActiveEvaluation;
+  final String? evaluationPeriod;
 
   Subject({
     required this.id,
@@ -18,11 +21,16 @@ class Subject {
     required this.careerCodigo,
     required this.professorName,
     this.semestre = 1,
+    this.evaluationId,
+    this.hasActiveEvaluation = false,
+    this.evaluationPeriod,
   });
 
   bool get hasTeacher =>
     professorName.trim().isNotEmpty &&
     professorName.toLowerCase() != 'sin profesor';
+
+  bool get canBeEvaluated => hasTeacher && evaluationId != null;
 
   // Factory constructor para crear desde la respuesta del API
   factory Subject.fromApiResponse(
@@ -36,6 +44,9 @@ class Subject {
       careerCodigo: careerCodigo,
       professorName: apiResponse.teacher,
       semestre: apiResponse.semestre,
+      evaluationId: apiResponse.evaluationId,
+      hasActiveEvaluation: apiResponse.hasActiveEvaluation,
+      evaluationPeriod: apiResponse.evaluationPeriod,
     );
   }
 
@@ -60,6 +71,9 @@ class Subject {
       'careerCodigo': careerCodigo,
       'professorName': professorName,
       'semestre': semestre,
+      'evaluationId': evaluationId,
+      'hasActiveEvaluation': hasActiveEvaluation,
+      'evaluationPeriod': evaluationPeriod,
     };
   }
 }

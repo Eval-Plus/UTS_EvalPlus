@@ -1,6 +1,18 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+
+// Config
+import 'package:eval_plus/config/constants.dart';
+
+// Models
 import 'package:eval_plus/data/questions_data.dart';
 import 'package:eval_plus/data/subjects_data.dart';
+
+// Services
+import 'package:eval_plus/services/storage/auth_storage_service.dart';
+
+// Widgets
+import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 import 'package:eval_plus/widgets/evaluation/question_card.dart';
 
 class EvaluationModal extends StatefulWidget {
@@ -20,6 +32,14 @@ class _EvaluationModalState extends State<EvaluationModal> {
   final TextEditingController _commentController = TextEditingController();
   bool _isSubmitting = false;
   late Future<List<Question>> _questionsFuture;
+
+  static const Map<String, int> _responseValueMap = {
+    'N': 1,  // Nunca
+    'CN': 2, // Casi nunca
+    'AV': 3, // Algunas veces
+    'CS': 4, // Casi siempre
+    'S': 5,  // Siempre
+  };
 
   @override
   void initState() {
@@ -45,55 +65,155 @@ class _EvaluationModalState extends State<EvaluationModal> {
   }
 
   Future<void> _submitEvaluation(List<Question> questions) async {
+    // Validación: verificar si todas las preguntas están respondidas
     if (!_areAllQuestionsAnswered(questions.length)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Por favor responde todas las preguntas'),
-          backgroundColor: Colors.orange[700],
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return MessageDialogWidget.info(
+            title: 'Formulario incompleto',
+            message: 'Por favor, responde todas las preguntas obligatorias antes de enviar la evaluación.',
+            onContinue: () {
+              Navigator.of(context).pop();
+            },
+            continueButtonText: 'Entendido',
+          );
+        },
       );
       return;
     }
 
+    // Confirmación: preguntar al usuario si está seguro de enviar
+    final shouldSubmit = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return MessageDialogWidget.warning(
+          title: '¿Enviar evaluación?',
+          message: 'Una vez enviada, no podrás modificar tus respuestas. ¿Estás seguro de que deseas continuar?',
+          onAccept: () {
+            Navigator.of(context).pop(true); // Usuario confirma
+          },
+          onCancel: () {
+            Navigator.of(context).pop(false); // Usuario cancela
+          },
+          acceptButtonText: 'Sí, enviar',
+          cancelButtonText: 'Cancelar',
+        );
+      },
+    );
+
+    // Si el usuario canceló, no hacer nada
+    if (shouldSubmit != true) {
+      return;
+    }
+
+    // Mostrar indicador de carga
     setState(() {
       _isSubmitting = true;
     });
 
-    // Simular envío a API
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      // CONVERTIR RESPUESTAS AL FORMATO DEL BACKEND
+      final List<Map<String, dynamic>> responses = _answers.entries.map((entry) {
+        final questionId = entry.key;
+        final answerCode = entry.value; // "S", "CS", "AV", etc.
+        final numericValue = _responseValueMap[answerCode] ?? 3; // Default a 3 si no encuentra
 
-    // TODO: Implementar envío real a API
-    /*
-    final evaluationData = {
-      'subjectCode': widget.subject.codigo,
-      'professorName': widget.subject.professorName,
-      'answers': _answers,
-      'comment': _commentController.text,
-      'timestamp': DateTime.now().toIso8601String(),
-    };
-    */
+        return {
+          'questionId': questionId,
+          'valorNumerico': numericValue,
+        };
+      }).toList();
 
-    if (mounted) {
-      setState(() {
-        _isSubmitting = false;
-      });
+      // Obtener token
+      final token = await AuthStorageService.getToken();
+      
+      if (token == null) {
+        throw Exception('No se encontró el token de autenticación');
+      }
 
-      Navigator.of(context).pop();
+      // Preparar datos para enviar
+      final evaluationData = {
+        'responses': responses,
+        'comentario': _commentController.text.trim().isEmpty 
+            ? null 
+            : _commentController.text.trim(),
+      };
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('¡Evaluación enviada exitosamente!'),
-          backgroundColor: const Color(0xFFCAD225),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
+      debugPrint('📤 Enviando evaluación...');
+      debugPrint('Datos: ${jsonEncode(evaluationData)}');
+
+      // TODO: Implementar envío real a API
+      // Endpoint: POST /api/student-evaluations/:id/submit
+      /*
+      final response = await http.post(
+        Uri.parse('${AppConstants.baseUrl}/student-evaluations/${widget.subject.id}/submit'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode(evaluationData),
+      ).timeout(AppConstants.apiTimeout);
+
+      if (response.statusCode != 200) {
+        throw Exception('Error del servidor: ${response.statusCode}');
+      }
+
+      final responseData = jsonDecode(response.body);
+      if (responseData['success'] != true) {
+        throw Exception(responseData['message'] ?? 'Error desconocido');
+      }
+      */
+
+      // Simular envío exitoso (remover cuando implementes el API real)
+      await Future.delayed(const Duration(seconds: 2));
+
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+
+        // Cerrar el modal de evaluación
+        Navigator.of(context).pop();
+
+        // Mostrar mensaje de éxito con el MessageDialog
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return MessageDialogWidget.success(
+              title: '¡Evaluación enviada!',
+              message: 'Tu evaluación ha sido registrada exitosamente. Gracias por tu participación.',
+              onContinue: () {
+                Navigator.of(context).pop();
+              },
+              continueButtonText: 'Aceptar',
+            );
+          },
+        );
+      }
+    } catch (e) {
+      // Manejar errores
+      debugPrint('💥 Error enviando evaluación: $e');
+      
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return MessageDialogWidget.error(
+              title: 'Error al enviar',
+              message: 'Ocurrió un error al enviar tu evaluación. Por favor, intenta nuevamente.',
+              onAccept: () {
+                Navigator.of(context).pop();
+              },
+              acceptButtonText: 'Entendido',
+            );
+          },
+        );
+      }
     }
   }
 
