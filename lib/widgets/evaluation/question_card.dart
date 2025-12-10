@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:eval_plus/data/questions_data.dart';
+import 'package:eval_plus/models/question_model.dart';
 
 class QuestionCard extends StatelessWidget {
-  final Question question;
+  final QuestionModel question;
   final String? selectedAnswer;
   final Function(String) onAnswerChanged;
 
@@ -21,23 +21,9 @@ class QuestionCard extends StatelessWidget {
     {'value': 'S', 'label': 'Siempre'},
   ];
 
-  Color _getAspectColor(String aspecto) {
-    switch (aspecto.toLowerCase()) {
-      case 'ético - social':
-      case 'etico - social':
-        return const Color(0xFF4CAF50); // Verde
-      case 'formativo':
-        return const Color(0xFF2196F3); // Azul
-      case 'destrezas para desarrollar el proceso de enseñanza y aprendizaje':
-        return const Color(0xFFFF9800); // Naranja
-      default:
-        return const Color(0xFFCAD225); // Verde lima
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final aspectColor = _getAspectColor(question.aspecto);
+    final aspectColor = question.aspectColor;
 
     return Container(
       decoration: BoxDecoration(

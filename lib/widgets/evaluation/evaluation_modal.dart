@@ -5,10 +5,11 @@ import 'dart:convert';
 import 'package:eval_plus/config/constants.dart';
 
 // Models
-import 'package:eval_plus/data/questions_data.dart';
+import 'package:eval_plus/models/question_model.dart';
 import 'package:eval_plus/data/subjects_data.dart';
 
 // Services
+import 'package:eval_plus/services/questions_service.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 import 'package:eval_plus/services/api/student_evaluation_api_service.dart';
 
@@ -31,13 +32,14 @@ class EvaluationModal extends StatefulWidget {
 class _EvaluationModalState extends State<EvaluationModal> {
   final Map<int, String> _answers = {};
   final TextEditingController _commentController = TextEditingController();
+  final _questionsService = QuestionsService();
   
   bool _isSubmitting = false;
   bool _isInitializing = true;
   bool _hasError = false;
   String? _errorMessage;
   
-  late Future<List<Question>> _questionsFuture;
+  late Future<List<QuestionModel>> _questionsFuture;
   
   // ID de la evaluación de estudiante (retornado por /start)
   int? _studentEvaluationId;
@@ -56,7 +58,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
   @override
   void initState() {
     super.initState();
-    _questionsFuture = QuestionsDataService.getAllQuestions();
+    _questionsFuture = _questionsService.getAllQuestions();
     _initializeEvaluation();
   }
 
@@ -156,7 +158,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
     return _answers.length == totalQuestions;
   }
 
-  Future<void> _submitEvaluation(List<Question> questions) async {
+  Future<void> _submitEvaluation(List<QuestionModel> questions) async {
     // Validación: verificar si todas las preguntas están respondidas
     if (!_areAllQuestionsAnswered(questions.length)) {
       showDialog(
@@ -453,7 +455,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
   }
 
   Widget _buildContent() {
-    return FutureBuilder<List<Question>>(
+    return FutureBuilder<List<QuestionModel>>(
       future: _questionsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -685,7 +687,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
     );
   }
 
-  Widget _buildSubmitButton(List<Question> questions) {
+  Widget _buildSubmitButton(List<QuestionModel> questions) {
     final allAnswered = _areAllQuestionsAnswered(questions.length);
 
     return ElevatedButton(
