@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 
-// Data
-import 'package:eval_plus/data/subjects_data.dart';
-import 'package:eval_plus/models/career_model.dart'; // ← CAMBIADO: usar CareerModel
+// Models
+import 'package:eval_plus/models/career_model.dart';
+import 'package:eval_plus/models/subject_model.dart';
+
+// Services
+import 'package:eval_plus/services/subjects_service.dart';
 
 // Widgets
 import 'package:eval_plus/widgets/evaluation/evaluation_modal.dart';
 import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
 class SubjectsContent extends StatefulWidget {
-  final CareerModel career; // ← CAMBIADO: de Career a CareerModel
+  final CareerModel career;
   final VoidCallback onBack;
 
   const SubjectsContent({
@@ -23,7 +26,9 @@ class SubjectsContent extends StatefulWidget {
 }
 
 class _SubjectsContentState extends State<SubjectsContent> {
-  List<Subject>? _subjects;
+  final _subjectsService = SubjectsService();
+  
+  List<SubjectModel>? _subjects;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -34,7 +39,7 @@ class _SubjectsContentState extends State<SubjectsContent> {
   }
 
   /// Carga las materias de la carrera seleccionada
-  Future<void> _loadSubjects() async {
+  Future<void> _loadSubjects({bool forceRefresh = false}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -45,9 +50,10 @@ class _SubjectsContentState extends State<SubjectsContent> {
       debugPrint('   - Código: ${widget.career.codigo}');
       debugPrint('   - ID: ${widget.career.id}');
 
-      final subjects = await SubjectsDataService.getSubjectsByCareer(
+      final subjects = await _subjectsService.getSubjectsByCareer(
         careerCodigo: widget.career.codigo,
         careerId: widget.career.id,
+        forceRefresh: forceRefresh,
       );
 
       if (mounted) {
@@ -72,7 +78,7 @@ class _SubjectsContentState extends State<SubjectsContent> {
 
   /// Refresca las materias
   Future<void> _onRefresh() async {
-    await _loadSubjects();
+    await _loadSubjects(forceRefresh: true);
   }
 
   @override
@@ -82,7 +88,7 @@ class _SubjectsContentState extends State<SubjectsContent> {
         // Botón para volver
         _BackButton(
           careerName: widget.career.nombre,
-          careerColor: widget.career.colorValue, // ← CAMBIADO: .color a .colorValue
+          careerColor: widget.career.colorValue,
           onBack: widget.onBack,
         ),
         
@@ -210,7 +216,7 @@ class _SubjectsContentState extends State<SubjectsContent> {
           final subject = _subjects![index];
           return _SubjectCard(
             subject: subject,
-            color: widget.career.colorValue, // ← CAMBIADO: .color a .colorValue
+            color: widget.career.colorValue,
           );
         },
       ),
@@ -312,7 +318,7 @@ class _BackButton extends StatelessWidget {
 }
 
 class _SubjectCard extends StatefulWidget {
-  final Subject subject;
+  final SubjectModel subject;
   final Color color;
 
   const _SubjectCard({

@@ -6,7 +6,7 @@ import 'package:eval_plus/config/constants.dart';
 
 // Models
 import 'package:eval_plus/models/question_model.dart';
-import 'package:eval_plus/data/subjects_data.dart';
+import 'package:eval_plus/models/subject_model.dart';
 
 // Services
 import 'package:eval_plus/services/questions_service.dart';
@@ -18,7 +18,7 @@ import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 import 'package:eval_plus/widgets/evaluation/question_card.dart';
 
 class EvaluationModal extends StatefulWidget {
-  final Subject subject;
+  final SubjectModel subject;
 
   const EvaluationModal({
     super.key,
