@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
-// Data
-import 'package:eval_plus/data/careers_data.dart';
+// Services
+import 'package:eval_plus/services/careers_service.dart';
+
+// Models
+import 'package:eval_plus/models/career_model.dart';
 
 // Content
 import 'package:eval_plus/screen/content/subjects_content.dart';
+
+// NOTA: SubjectsContent necesita CareerModel, no Career
+// Asegúrate de actualizar subjects_content.dart para usar career.colorValue
 
 class CarrerasContent extends StatefulWidget {
   const CarrerasContent({super.key});
@@ -15,8 +20,10 @@ class CarrerasContent extends StatefulWidget {
 }
 
 class _CarrerasContentState extends State<CarrerasContent> {
-  Career? _selectedCareer;
-  List<Career>? _careers;
+  final _careersService = CareersService();
+  
+  CareerModel? _selectedCareer;
+  List<CareerModel>? _careers;
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -26,14 +33,16 @@ class _CarrerasContentState extends State<CarrerasContent> {
     _loadCareers();
   }
 
-  Future<void> _loadCareers() async {
+  Future<void> _loadCareers({bool forceRefresh = false}) async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final careers = await CareersDataService.getCareers();
+      final careers = await _careersService.getMyCareers(
+        forceRefresh: forceRefresh,
+      );
       
       if (mounted) {
         setState(() {
@@ -51,7 +60,7 @@ class _CarrerasContentState extends State<CarrerasContent> {
     }
   }
 
-  void _onCareerSelected(Career career) {
+  void _onCareerSelected(CareerModel career) {
     setState(() {
       _selectedCareer = career;
     });
@@ -64,7 +73,7 @@ class _CarrerasContentState extends State<CarrerasContent> {
   }
 
   Future<void> _onRefresh() async {
-    await _loadCareers();
+    await _loadCareers(forceRefresh: true);
   }
 
   @override
@@ -88,96 +97,12 @@ class _CarrerasContentState extends State<CarrerasContent> {
 
     // Si hay error
     if (_errorMessage != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.error_outline,
-              size: 60,
-              color: Colors.red,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Error al cargar carreras',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                _errorMessage!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[500],
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _loadCareers,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Reintentar'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+      return _buildErrorState();
     }
 
     // Si no hay carreras
     if (_careers == null || _careers!.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.inbox_outlined,
-              size: 60,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No hay carreras disponibles',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'No tienes carreras asignadas',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[500],
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _loadCareers,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Actualizar'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF6366F1),
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        ),
-      );
+      return _buildEmptyState();
     }
 
     // Mostrar lista de carreras con RefreshIndicator
@@ -198,11 +123,86 @@ class _CarrerasContentState extends State<CarrerasContent> {
       ),
     );
   }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.error_outline, size: 60, color: Colors.red),
+          const SizedBox(height: 16),
+          Text(
+            'Error al cargar carreras',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              _errorMessage!,
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _loadCareers,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Reintentar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inbox_outlined, size: 60, color: Colors.grey[400]),
+          const SizedBox(height: 16),
+          Text(
+            'No hay carreras disponibles',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No tienes carreras asignadas',
+            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+          ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _loadCareers,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Actualizar'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF6366F1),
+              foregroundColor: Colors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // Widget separado para la tarjeta de carrera
 class _CareerCard extends StatelessWidget {
-  final Career career;
+  final CareerModel career;
   final VoidCallback onTap;
 
   const _CareerCard({
@@ -212,18 +212,14 @@ class _CareerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Extraer el color base sin opacidad
-    final baseColor = career.color.withOpacity(1.0);
+    final baseColor = career.colorValue.withOpacity(1.0);
   
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: baseColor.withOpacity(0.4),
-          width: 2,
-        ),
+        border: Border.all(color: baseColor.withOpacity(0.4), width: 2),
         boxShadow: [
           BoxShadow(
             color: baseColor.withOpacity(0.2),
@@ -260,7 +256,7 @@ class _CareerCard extends StatelessWidget {
                     ),
                   ),
                   child: Icon(
-                    career.icon,
+                    career.iconData,
                     color: const Color(0xFF1A1A1A),
                     size: 28,
                   ),
@@ -280,27 +276,23 @@ class _CareerCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: baseColor.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              career.codigo,
-                              style: const TextStyle(
-                                color: Color(0xFF1A1A1A),
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: baseColor.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          career.codigo,
+                          style: const TextStyle(
+                            color: Color(0xFF1A1A1A),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
                           ),
-                        ],
+                        ),
                       ),
                     ],
                   ),

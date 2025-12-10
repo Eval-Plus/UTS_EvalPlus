@@ -7,7 +7,7 @@ class Subject {
   final int id;
   final String nombre;
   final String codigo;
-  final String careerCodigo; // Para asociarla con una carrera
+  final String careerCodigo;
   final String professorName;
   final int semestre;
   final int? evaluationId;
@@ -26,11 +26,16 @@ class Subject {
     this.evaluationPeriod,
   });
 
+  // ==================== GETTERS ====================
+
   bool get hasTeacher =>
     professorName.trim().isNotEmpty &&
     professorName.toLowerCase() != 'sin profesor';
 
   bool get canBeEvaluated => hasTeacher && evaluationId != null;
+
+  // ← AGREGADO: Getter faltante
+  bool get isEvaluationCompleted => false; // Por ahora siempre false, implementar lógica real después
 
   String get evaluationStatusText {
     if (!hasTeacher) return 'Sin profesor asignado';
@@ -46,7 +51,8 @@ class Subject {
     return Icons.assignment;
   }
 
-  // Factory constructor para crear desde la respuesta del API
+  // ==================== FACTORY CONSTRUCTORS ====================
+
   factory Subject.fromApiResponse(
     SubjectApiResponse apiResponse,
     String careerCodigo,
@@ -64,7 +70,6 @@ class Subject {
     );
   }
 
-  // Factory constructor para crear desde JSON (legacy/fallback)
   factory Subject.fromJson(Map<String, dynamic> json) {
     return Subject(
       id: json['id'] as int? ?? 0,
@@ -76,7 +81,8 @@ class Subject {
     );
   }
 
-  // Método para convertir a JSON
+  // ==================== SERIALIZATION ====================
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -102,7 +108,6 @@ class SubjectsDataService {
     try {
       debugPrint('🔍 Cargando materias para carrera: $careerCodigo (ID: $careerId)');
       
-      // Obtener token
       final token = await AuthStorageService.getToken();
       
       if (token == null) {
@@ -110,14 +115,12 @@ class SubjectsDataService {
         return _getFallbackSubjects(careerCodigo);
       }
 
-      // Fetch desde API
       final apiResponse = await SubjectsApiService.fetchSubjectsByCareer(
         token: token,
         careerId: careerId,
       );
 
       if (apiResponse != null && apiResponse.subjects.isNotEmpty) {
-        // Convertir respuesta del API a modelo Subject
         return apiResponse.subjects
             .where((subject) => subject.activo)
             .map((apiSubject) => Subject.fromApiResponse(
@@ -127,7 +130,6 @@ class SubjectsDataService {
             .toList();
       }
 
-      // Si no hay materias o hubo error, retornar fallback
       debugPrint('⚠️ No se obtuvieron materias del API, usando fallback');
       return _getFallbackSubjects(careerCodigo);
       
@@ -141,7 +143,6 @@ class SubjectsDataService {
   static Future<List<Subject>> _getFallbackSubjects(String careerCodigo) async {
     await Future.delayed(const Duration(milliseconds: 300));
     
-    // Todas las materias hardcodeadas
     final allSubjects = [
       // Materias de Ingeniería de Sistemas
       Subject(
@@ -230,7 +231,6 @@ class SubjectsDataService {
       ),
     ];
 
-    // Filtrar por código de carrera
     return allSubjects
         .where((subject) => subject.careerCodigo == careerCodigo)
         .toList();

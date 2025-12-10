@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 // Data
 import 'package:eval_plus/data/subjects_data.dart';
-import 'package:eval_plus/data/careers_data.dart';
+import 'package:eval_plus/models/career_model.dart'; // ← CAMBIADO: usar CareerModel
 
 // Widgets
 import 'package:eval_plus/widgets/evaluation/evaluation_modal.dart';
 import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
 class SubjectsContent extends StatefulWidget {
-  final Career career;
+  final CareerModel career; // ← CAMBIADO: de Career a CareerModel
   final VoidCallback onBack;
 
   const SubjectsContent({
@@ -82,7 +82,7 @@ class _SubjectsContentState extends State<SubjectsContent> {
         // Botón para volver
         _BackButton(
           careerName: widget.career.nombre,
-          careerColor: widget.career.color,
+          careerColor: widget.career.colorValue, // ← CAMBIADO: .color a .colorValue
           onBack: widget.onBack,
         ),
         
@@ -210,7 +210,7 @@ class _SubjectsContentState extends State<SubjectsContent> {
           final subject = _subjects![index];
           return _SubjectCard(
             subject: subject,
-            color: widget.career.color,
+            color: widget.career.colorValue, // ← CAMBIADO: .color a .colorValue
           );
         },
       ),
@@ -617,10 +617,10 @@ class _SubjectCardState extends State<_SubjectCard>
                                       baseColor.withOpacity(0.7),
                                     ],
                                   )
-                                : null, // Sin gradiente si no hay profesor
+                                : null,
                             color: widget.subject.hasTeacher 
                                 ? null 
-                                : Colors.grey.withOpacity(0.3), // Color gris transparente
+                                : Colors.grey.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(10),
                             boxShadow: widget.subject.hasTeacher
                                 ? [
@@ -630,15 +630,14 @@ class _SubjectCardState extends State<_SubjectCard>
                                       blurRadius: 6,
                                     ),
                                   ]
-                                : [], // Sin sombra si está deshabilitado
+                                : [],
                           ),
                           child: Material(
                             color: Colors.transparent,
                             child: InkWell(
                               borderRadius: BorderRadius.circular(10),
-                              onTap: widget.subject.canBeEvaluated // 🆕 Usar el nuevo getter
+                              onTap: widget.subject.canBeEvaluated
                                 ? () {
-                                    // Abrir modal de evaluación
                                     showDialog(
                                       context: context,
                                       builder: (BuildContext context) {
@@ -647,7 +646,6 @@ class _SubjectCardState extends State<_SubjectCard>
                                     );
                                   }
                                 : () {
-                                    // Mostrar mensaje apropiado
                                     String message = !widget.subject.hasTeacher
                                         ? 'No hay docente registrado en esta materia.'
                                         : 'No hay evaluación activa disponible en este momento.';
