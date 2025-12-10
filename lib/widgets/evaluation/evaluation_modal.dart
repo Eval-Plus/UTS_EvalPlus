@@ -10,6 +10,7 @@ import 'package:eval_plus/data/subjects_data.dart';
 
 // Services
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
+import 'package:eval_plus/services/api/student_evaluation_api_service.dart';
 
 // Widgets
 import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
@@ -30,8 +31,19 @@ class EvaluationModal extends StatefulWidget {
 class _EvaluationModalState extends State<EvaluationModal> {
   final Map<int, String> _answers = {};
   final TextEditingController _commentController = TextEditingController();
+  
   bool _isSubmitting = false;
+  bool _isInitializing = true;
+  bool _hasError = false;
+  String? _errorMessage;
+  
   late Future<List<Question>> _questionsFuture;
+  
+  // ID de la evaluación de estudiante (retornado por /start)
+  int? _studentEvaluationId;
+  
+  // Información de la evaluación iniciada
+  StartEvaluationResponse? _startedEvaluation;
 
   static const Map<String, int> _responseValueMap = {
     'N': 1,  // Nunca
@@ -44,14 +56,94 @@ class _EvaluationModalState extends State<EvaluationModal> {
   @override
   void initState() {
     super.initState();
-    // Cachear el Future para que solo se ejecute una vez
     _questionsFuture = QuestionsDataService.getAllQuestions();
+    _initializeEvaluation();
   }
 
   @override
   void dispose() {
     _commentController.dispose();
     super.dispose();
+  }
+
+  /// Inicializa la evaluación llamando al endpoint /start
+  Future<void> _initializeEvaluation() async {
+    try {
+      debugPrint('🎬 Inicializando evaluación...');
+      
+      // Validar que tenemos evaluationId
+      if (widget.subject.evaluationId == null) {
+        throw Exception('Esta materia no tiene una evaluación activa');
+      }
+
+      // Obtener token
+      final token = await AuthStorageService.getToken();
+      if (token == null) {
+        throw Exception('No se encontró el token de autenticación');
+      }
+
+      // Llamar al endpoint /start
+      final response = await StudentEvaluationApiService.startEvaluation(
+        token: token,
+        evaluationId: widget.subject.evaluationId!,
+      );
+
+      if (response == null) {
+        throw Exception('No se pudo iniciar la evaluación');
+      }
+
+      // Guardar el ID de la evaluación de estudiante
+      setState(() {
+        _studentEvaluationId = response.id;
+        _startedEvaluation = response;
+        _isInitializing = false;
+        _hasError = false;
+      });
+
+      // Determinar si es nueva o existente
+      final isExisting = response.evaluation == null;
+      
+      debugPrint('✅ Evaluación inicializada correctamente');
+      debugPrint('   ${isExisting ? '🔄 Continuando' : '🆕 Nueva'} evaluación');
+      debugPrint('   Student Evaluation ID: $_studentEvaluationId');
+      debugPrint('   Evaluation ID: ${response.evaluationId}');
+      debugPrint('   Completada: ${response.completada}');
+      
+    } catch (e) {
+      debugPrint('💥 Error inicializando evaluación: $e');
+      
+      setState(() {
+        _isInitializing = false;
+        _hasError = true;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+
+      // Mostrar error y cerrar modal
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _showErrorAndClose(_errorMessage!);
+        });
+      }
+    }
+  }
+
+  /// Muestra un error y cierra el modal
+  void _showErrorAndClose(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return MessageDialogWidget.error(
+          title: 'No se puede iniciar la evaluación',
+          message: message,
+          onAccept: () {
+            Navigator.of(dialogContext).pop(); // Cerrar diálogo
+            Navigator.of(context).pop(); // Cerrar modal
+          },
+          acceptButtonText: 'Entendido',
+        );
+      },
+    );
   }
 
   void _onAnswerChanged(int questionNumber, String answer) {
@@ -91,10 +183,10 @@ class _EvaluationModalState extends State<EvaluationModal> {
           title: '¿Enviar evaluación?',
           message: 'Una vez enviada, no podrás modificar tus respuestas. ¿Estás seguro de que deseas continuar?',
           onAccept: () {
-            Navigator.of(context).pop(true); // Usuario confirma
+            Navigator.of(context).pop(true);
           },
           onCancel: () {
-            Navigator.of(context).pop(false); // Usuario cancela
+            Navigator.of(context).pop(false);
           },
           acceptButtonText: 'Sí, enviar',
           cancelButtonText: 'Cancelar',
@@ -102,22 +194,26 @@ class _EvaluationModalState extends State<EvaluationModal> {
       },
     );
 
-    // Si el usuario canceló, no hacer nada
     if (shouldSubmit != true) {
       return;
     }
 
-    // Mostrar indicador de carga
+    // Validar que tenemos el studentEvaluationId
+    if (_studentEvaluationId == null) {
+      _showErrorDialog('Error interno: No se encontró el ID de la evaluación');
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      // CONVERTIR RESPUESTAS AL FORMATO DEL BACKEND
+      // Convertir respuestas al formato del backend
       final List<Map<String, dynamic>> responses = _answers.entries.map((entry) {
         final questionId = entry.key;
-        final answerCode = entry.value; // "S", "CS", "AV", etc.
-        final numericValue = _responseValueMap[answerCode] ?? 3; // Default a 3 si no encuentra
+        final answerCode = entry.value;
+        final numericValue = _responseValueMap[answerCode] ?? 3;
 
         return {
           'questionId': questionId,
@@ -127,56 +223,40 @@ class _EvaluationModalState extends State<EvaluationModal> {
 
       // Obtener token
       final token = await AuthStorageService.getToken();
-      
       if (token == null) {
         throw Exception('No se encontró el token de autenticación');
       }
 
-      // Preparar datos para enviar
-      final evaluationData = {
-        'responses': responses,
-        'comentario': _commentController.text.trim().isEmpty 
-            ? null 
-            : _commentController.text.trim(),
-      };
+      // Preparar comentario
+      final comentario = _commentController.text.trim().isEmpty 
+          ? null 
+          : _commentController.text.trim();
 
       debugPrint('📤 Enviando evaluación...');
-      debugPrint('Datos: ${jsonEncode(evaluationData)}');
+      debugPrint('   Student Evaluation ID: $_studentEvaluationId');
+      debugPrint('   Total respuestas: ${responses.length}');
 
-      // TODO: Implementar envío real a API
-      // Endpoint: POST /api/student-evaluations/:id/submit
-      /*
-      final response = await http.post(
-        Uri.parse('${AppConstants.baseUrl}/student-evaluations/${widget.subject.id}/submit'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token',
-        },
-        body: jsonEncode(evaluationData),
-      ).timeout(AppConstants.apiTimeout);
+      // Llamar al endpoint /submit
+      final success = await StudentEvaluationApiService.submitEvaluation(
+        token: token,
+        studentEvaluationId: _studentEvaluationId!,
+        responses: responses,
+        comentario: comentario,
+      );
 
-      if (response.statusCode != 200) {
-        throw Exception('Error del servidor: ${response.statusCode}');
+      if (!success) {
+        throw Exception('No se pudo enviar la evaluación');
       }
-
-      final responseData = jsonDecode(response.body);
-      if (responseData['success'] != true) {
-        throw Exception(responseData['message'] ?? 'Error desconocido');
-      }
-      */
-
-      // Simular envío exitoso (remover cuando implementes el API real)
-      await Future.delayed(const Duration(seconds: 2));
 
       if (mounted) {
         setState(() {
           _isSubmitting = false;
         });
 
-        // Cerrar el modal de evaluación
+        // Cerrar el modal
         Navigator.of(context).pop();
 
-        // Mostrar mensaje de éxito con el MessageDialog
+        // Mostrar mensaje de éxito
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -192,7 +272,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
         );
       }
     } catch (e) {
-      // Manejar errores
       debugPrint('💥 Error enviando evaluación: $e');
       
       if (mounted) {
@@ -200,21 +279,27 @@ class _EvaluationModalState extends State<EvaluationModal> {
           _isSubmitting = false;
         });
 
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return MessageDialogWidget.error(
-              title: 'Error al enviar',
-              message: 'Ocurrió un error al enviar tu evaluación. Por favor, intenta nuevamente.',
-              onAccept: () {
-                Navigator.of(context).pop();
-              },
-              acceptButtonText: 'Entendido',
-            );
-          },
+        _showErrorDialog(
+          e.toString().replaceAll('Exception: ', ''),
         );
       }
     }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return MessageDialogWidget.error(
+          title: 'Error al enviar',
+          message: message,
+          onAccept: () {
+            Navigator.of(context).pop();
+          },
+          acceptButtonText: 'Entendido',
+        );
+      },
+    );
   }
 
   @override
@@ -226,47 +311,14 @@ class _EvaluationModalState extends State<EvaluationModal> {
           children: [
             // Header personalizado
             _buildHeader(context),
+            
             // Contenido con scroll
             Expanded(
-              child: FutureBuilder<List<Question>>(
-                future: _questionsFuture, // Usar el Future cacheado
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFFCAD225),
-                      ),
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            size: 60,
-                            color: Colors.red,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(
-                            'Error al cargar preguntas',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }
-
-                  final questions = snapshot.data ?? [];
-
-                  return _buildContent(questions);
-                },
-              ),
+              child: _isInitializing
+                  ? _buildLoadingState()
+                  : _hasError
+                      ? _buildErrorState()
+                      : _buildContent(),
             ),
           ],
         ),
@@ -294,7 +346,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
             children: [
               IconButton(
                 icon: const Icon(Icons.close, color: Color(0xFF1A1A1A)),
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -331,38 +383,139 @@ class _EvaluationModalState extends State<EvaluationModal> {
     );
   }
 
-  Widget _buildContent(List<Question> questions) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+  Widget _buildLoadingState() {
+    return Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Título y descripción
-          _buildIntroCard(),
+          const CircularProgressIndicator(
+            color: Color(0xFFCAD225),
+            strokeWidth: 3,
+          ),
           const SizedBox(height: 24),
-          
-          // Preguntas
-          ...questions.map((question) => Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: QuestionCard(
-                  question: question,
-                  selectedAnswer: _answers[question.nroPregunta],
-                  onAnswerChanged: (answer) =>
-                      _onAnswerChanged(question.nroPregunta, answer),
-                ),
-              )),
-          
+          Text(
+            'Iniciando evaluación...',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const SizedBox(height: 8),
-          
-          // Sección de comentario
-          _buildCommentSection(),
-          const SizedBox(height: 24),
-          
-          // Botón de envío
-          _buildSubmitButton(questions),
-          const SizedBox(height: 40),
+          Text(
+            'Por favor espera un momento',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
         ],
       ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 80,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'No se pudo iniciar la evaluación',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A1A),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage ?? 'Ocurrió un error inesperado',
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.grey[600],
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return FutureBuilder<List<Question>>(
+      future: _questionsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: CircularProgressIndicator(
+              color: Color(0xFFCAD225),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(
+                  Icons.error_outline,
+                  size: 60,
+                  color: Colors.red,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Error al cargar preguntas',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final questions = snapshot.data ?? [];
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildIntroCard(),
+              const SizedBox(height: 24),
+              
+              ...questions.map((question) => Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: QuestionCard(
+                      question: question,
+                      selectedAnswer: _answers[question.nroPregunta],
+                      onAnswerChanged: (answer) =>
+                          _onAnswerChanged(question.nroPregunta, answer),
+                    ),
+                  )),
+              
+              const SizedBox(height: 8),
+              _buildCommentSection(),
+              const SizedBox(height: 24),
+              _buildSubmitButton(questions),
+              const SizedBox(height: 40),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -432,10 +585,10 @@ class _EvaluationModalState extends State<EvaluationModal> {
             ),
             child: Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.info_outline,
                   size: 20,
-                  color: const Color(0xFF1A1A1A),
+                  color: Color(0xFF1A1A1A),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -536,7 +689,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
     final allAnswered = _areAllQuestionsAnswered(questions.length);
 
     return ElevatedButton(
-      onPressed: _isSubmitting
+      onPressed: (_isSubmitting || !allAnswered)
           ? null
           : () => _submitEvaluation(questions),
       style: ElevatedButton.styleFrom(

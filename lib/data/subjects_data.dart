@@ -32,6 +32,20 @@ class Subject {
 
   bool get canBeEvaluated => hasTeacher && evaluationId != null;
 
+  String get evaluationStatusText {
+    if (!hasTeacher) return 'Sin profesor asignado';
+    if (evaluationId == null) return 'Sin evaluación activa';
+    if (isEvaluationCompleted) return 'Evaluación completada';
+    return 'Evaluación disponible';
+  }
+
+  IconData get evaluationStatusIcon {
+    if (!hasTeacher) return Icons.person_off;
+    if (evaluationId == null) return Icons.assignment_outlined;
+    if (isEvaluationCompleted) return Icons.check_circle;
+    return Icons.assignment;
+  }
+
   // Factory constructor para crear desde la respuesta del API
   factory Subject.fromApiResponse(
     SubjectApiResponse apiResponse,
