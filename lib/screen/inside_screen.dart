@@ -14,6 +14,9 @@ import 'package:eval_plus/screen/home_screen.dart';
 
 // Services
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
+import 'package:eval_plus/services/careers_service.dart';
+import 'package:eval_plus/services/questions_service.dart';
+import 'package:eval_plus/services/subjects_service.dart';
 
 // Controllers
 import 'package:eval_plus/controllers/user_controller.dart';
@@ -158,6 +161,11 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
             debugPrint('🔴 Clearing auth data...');
             await AuthStorageService.clearAuthData();
             await UserController.clearUserProfile();
+
+            CareersService().clearCache();
+            QuestionsService().clearCache();
+            SubjectsService().clearCache();
+            
             debugPrint('🔴 Auth data cleared');
             
             await Future.delayed(const Duration(milliseconds: 800));
