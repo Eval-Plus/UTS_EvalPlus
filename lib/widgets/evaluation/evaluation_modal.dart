@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
+import 'package:provider/provider.dart';
 
 // Config
 import 'package:eval_plus/config/constants.dart';
@@ -10,8 +10,9 @@ import 'package:eval_plus/models/subject_model.dart';
 
 // Services
 import 'package:eval_plus/services/questions_service.dart';
-import 'package:eval_plus/services/storage/auth_storage_service.dart';
-import 'package:eval_plus/services/api/student_evaluation_api_service.dart';
+
+// Controllers
+import 'package:eval_plus/controllers/evaluation_state_controller.dart';
 
 // Widgets
 import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
@@ -30,106 +31,44 @@ class EvaluationModal extends StatefulWidget {
 }
 
 class _EvaluationModalState extends State<EvaluationModal> {
-  final Map<int, String> _answers = {};
   final TextEditingController _commentController = TextEditingController();
   final _questionsService = QuestionsService();
   
-  bool _isSubmitting = false;
-  bool _isInitializing = true;
-  bool _hasError = false;
-  String? _errorMessage;
-  
   late Future<List<QuestionModel>> _questionsFuture;
-  
-  // ID de la evaluación de estudiante (retornado por /start)
-  int? _studentEvaluationId;
-  
-  // Información de la evaluación iniciada
-  StartEvaluationResponse? _startedEvaluation;
-
-  static const Map<String, int> _responseValueMap = {
-    'N': 1,  // Nunca
-    'CN': 2, // Casi nunca
-    'AV': 3, // Algunas veces
-    'CS': 4, // Casi siempre
-    'S': 5,  // Siempre
-  };
+  late EvaluationStateController _evalController;
 
   @override
   void initState() {
     super.initState();
     _questionsFuture = _questionsService.getAllQuestions();
+    
+    // Crear el controller y vincularlo al widget
+    _evalController = EvaluationStateController();
+    
+    // Inicializar la evaluación
     _initializeEvaluation();
   }
 
   @override
   void dispose() {
     _commentController.dispose();
+    _evalController.dispose();
     super.dispose();
   }
 
-  /// Inicializa la evaluación llamando al endpoint /start
   Future<void> _initializeEvaluation() async {
-    try {
-      debugPrint('🎬 Inicializando evaluación...');
-      
-      // Validar que tenemos evaluationId
-      if (widget.subject.evaluationId == null) {
-        throw Exception('Esta materia no tiene una evaluación activa');
-      }
+    if (widget.subject.evaluationId == null) {
+      _showErrorAndClose('Esta materia no tiene una evaluación activa');
+      return;
+    }
 
-      // Obtener token
-      final token = await AuthStorageService.getToken();
-      if (token == null) {
-        throw Exception('No se encontró el token de autenticación');
-      }
-
-      // Llamar al endpoint /start
-      final response = await StudentEvaluationApiService.startEvaluation(
-        token: token,
-        evaluationId: widget.subject.evaluationId!,
-      );
-
-      if (response == null) {
-        throw Exception('No se pudo iniciar la evaluación');
-      }
-
-      // Guardar el ID de la evaluación de estudiante
-      setState(() {
-        _studentEvaluationId = response.id;
-        _startedEvaluation = response;
-        _isInitializing = false;
-        _hasError = false;
-      });
-
-      // Determinar si es nueva o existente
-      final isExisting = response.evaluation == null;
-      
-      debugPrint('✅ Evaluación inicializada correctamente');
-      debugPrint('   ${isExisting ? '🔄 Continuando' : '🆕 Nueva'} evaluación');
-      debugPrint('   Student Evaluation ID: $_studentEvaluationId');
-      debugPrint('   Evaluation ID: ${response.evaluationId}');
-      debugPrint('   Completada: ${response.completada}');
-      
-    } catch (e) {
-      debugPrint('💥 Error inicializando evaluación: $e');
-      
-      setState(() {
-        _isInitializing = false;
-        _hasError = true;
-        _errorMessage = e.toString().replaceAll('Exception: ', '');
-      });
-
-      // Mostrar error y cerrar modal
-      if (mounted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _showErrorAndClose(_errorMessage!);
-        });
-      }
+    final success = await _evalController.initialize(widget.subject.evaluationId!);
+    
+    if (!success && mounted) {
+      _showErrorAndClose(_evalController.errorMessage ?? 'Error al inicializar la evaluación');
     }
   }
 
-  /// Muestra un error y cierra el modal
   void _showErrorAndClose(String message) {
     showDialog(
       context: context,
@@ -139,8 +78,8 @@ class _EvaluationModalState extends State<EvaluationModal> {
           title: 'No se puede iniciar la evaluación',
           message: message,
           onAccept: () {
-            Navigator.of(dialogContext).pop(); // Cerrar diálogo
-            Navigator.of(context).pop(); // Cerrar modal
+            Navigator.of(dialogContext).pop();
+            Navigator.of(context).pop();
           },
           acceptButtonText: 'Entendido',
         );
@@ -148,28 +87,16 @@ class _EvaluationModalState extends State<EvaluationModal> {
     );
   }
 
-  void _onAnswerChanged(int questionNumber, String answer) {
-    setState(() {
-      _answers[questionNumber] = answer;
-    });
-  }
-
-  bool _areAllQuestionsAnswered(int totalQuestions) {
-    return _answers.length == totalQuestions;
-  }
-
-  Future<void> _submitEvaluation(List<QuestionModel> questions) async {
-    // Validación: verificar si todas las preguntas están respondidas
-    if (!_areAllQuestionsAnswered(questions.length)) {
+  Future<void> _handleSubmit(List<QuestionModel> questions) async {
+    // Validación: todas las preguntas respondidas
+    if (!_evalController.areAllQuestionsAnswered(questions.length)) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return MessageDialogWidget.info(
             title: 'Formulario incompleto',
             message: 'Por favor, responde todas las preguntas obligatorias antes de enviar la evaluación.',
-            onContinue: () {
-              Navigator.of(context).pop();
-            },
+            onContinue: () => Navigator.of(context).pop(),
             continueButtonText: 'Entendido',
           );
         },
@@ -177,114 +104,47 @@ class _EvaluationModalState extends State<EvaluationModal> {
       return;
     }
 
-    // Confirmación: preguntar al usuario si está seguro de enviar
+    // Confirmación
     final shouldSubmit = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
         return MessageDialogWidget.warning(
           title: '¿Enviar evaluación?',
           message: 'Una vez enviada, no podrás modificar tus respuestas. ¿Estás seguro de que deseas continuar?',
-          onAccept: () {
-            Navigator.of(context).pop(true);
-          },
-          onCancel: () {
-            Navigator.of(context).pop(false);
-          },
+          onAccept: () => Navigator.of(context).pop(true),
+          onCancel: () => Navigator.of(context).pop(false),
           acceptButtonText: 'Sí, enviar',
           cancelButtonText: 'Cancelar',
         );
       },
     );
 
-    if (shouldSubmit != true) {
-      return;
-    }
+    if (shouldSubmit != true) return;
 
-    // Validar que tenemos el studentEvaluationId
-    if (_studentEvaluationId == null) {
-      _showErrorDialog('Error interno: No se encontró el ID de la evaluación');
-      return;
-    }
+    // Actualizar comentario en el controller
+    _evalController.updateComment(_commentController.text);
 
-    setState(() {
-      _isSubmitting = true;
-    });
+    // Enviar evaluación
+    final success = await _evalController.submitEvaluation();
 
-    try {
-      // Convertir respuestas al formato del backend
-      final List<Map<String, dynamic>> responses = _answers.entries.map((entry) {
-        final questionId = entry.key;
-        final answerCode = entry.value;
-        final numericValue = _responseValueMap[answerCode] ?? 3;
+    if (!mounted) return;
 
-        return {
-          'questionId': questionId,
-          'valorNumerico': numericValue,
-        };
-      }).toList();
-
-      // Obtener token
-      final token = await AuthStorageService.getToken();
-      if (token == null) {
-        throw Exception('No se encontró el token de autenticación');
-      }
-
-      // Preparar comentario
-      final comentario = _commentController.text.trim().isEmpty 
-          ? null 
-          : _commentController.text.trim();
-
-      debugPrint('📤 Enviando evaluación...');
-      debugPrint('   Student Evaluation ID: $_studentEvaluationId');
-      debugPrint('   Total respuestas: ${responses.length}');
-
-      // Llamar al endpoint /submit
-      final success = await StudentEvaluationApiService.submitEvaluation(
-        token: token,
-        studentEvaluationId: _studentEvaluationId!,
-        responses: responses,
-        comentario: comentario,
-      );
-
-      if (!success) {
-        throw Exception('No se pudo enviar la evaluación');
-      }
-
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-
-        // Cerrar el modal
-        Navigator.of(context).pop();
-
-        // Mostrar mensaje de éxito
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return MessageDialogWidget.success(
-              title: '¡Evaluación enviada!',
-              message: 'Tu evaluación ha sido registrada exitosamente. Gracias por tu participación.',
-              onContinue: () {
-                Navigator.of(context).pop();
-              },
-              continueButtonText: 'Aceptar',
-            );
-          },
-        );
-      }
-    } catch (e) {
-      debugPrint('💥 Error enviando evaluación: $e');
+    if (success) {
+      Navigator.of(context).pop();
       
-      if (mounted) {
-        setState(() {
-          _isSubmitting = false;
-        });
-
-        _showErrorDialog(
-          e.toString().replaceAll('Exception: ', ''),
-        );
-      }
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return MessageDialogWidget.success(
+            title: '¡Evaluación enviada!',
+            message: 'Tu evaluación ha sido registrada exitosamente. Gracias por tu participación.',
+            onContinue: () => Navigator.of(context).pop(),
+            continueButtonText: 'Aceptar',
+          );
+        },
+      );
+    } else {
+      _showErrorDialog(_evalController.errorMessage ?? 'Error al enviar la evaluación');
     }
   }
 
@@ -295,93 +155,300 @@ class _EvaluationModalState extends State<EvaluationModal> {
         return MessageDialogWidget.error(
           title: 'Error al enviar',
           message: message,
-          onAccept: () {
-            Navigator.of(context).pop();
-          },
+          onAccept: () => Navigator.of(context).pop(),
           acceptButtonText: 'Entendido',
         );
       },
     );
   }
 
+  Future<bool> _onWillPop() async {
+    // Si hay cambios sin guardar, preguntar antes de cerrar
+    if (_evalController.hasUnsavedChanges) {
+      final shouldSave = await showDialog<bool>(
+        context: context,
+        builder: (context) => MessageDialogWidget.warning(
+          title: 'Tienes cambios sin guardar',
+          message: '¿Deseas guardar tu progreso antes de salir?',
+          onAccept: () async {
+            Navigator.of(context).pop(true);
+          },
+          onCancel: () {
+            Navigator.of(context).pop(false);
+          },
+          acceptButtonText: 'Guardar y salir',
+          cancelButtonText: 'Salir sin guardar',
+        ),
+      );
+
+      if (shouldSave == true) {
+        await _evalController.saveProgress();
+      }
+    }
+    
+    _evalController.clear();
+    return true;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Dialog.fullscreen(
-      child: Container(
-        color: const Color(0xFFF5F5F5),
-        child: Column(
-          children: [
-            // Header personalizado
-            _buildHeader(context),
-            
-            // Contenido con scroll
-            Expanded(
-              child: _isInitializing
-                  ? _buildLoadingState()
-                  : _hasError
-                      ? _buildErrorState()
-                      : _buildContent(),
+    return ChangeNotifierProvider.value(
+      value: _evalController,
+      child: WillPopScope(
+        onWillPop: _onWillPop,
+        child: Dialog.fullscreen(
+          child: Container(
+            color: const Color(0xFFF5F5F5),
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(child: _buildContent()),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            offset: const Offset(0, 2),
-            blurRadius: 8,
-          ),
-        ],
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          child: Row(
-            children: [
-              IconButton(
-                icon: const Icon(Icons.close, color: Color(0xFF1A1A1A)),
-                onPressed: _isSubmitting ? null : () => Navigator.of(context).pop(),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.subject.nombre,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.subject.professorName,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
+    return Consumer<EvaluationStateController>(
+      builder: (context, controller, _) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                offset: const Offset(0, 2),
+                blurRadius: 8,
               ),
             ],
           ),
-        ),
-      ),
+          child: SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.close, color: Color(0xFF1A1A1A)),
+                        onPressed: controller.isSubmitting ? null : () => Navigator.of(context).pop(),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.subject.nombre,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1A1A1A),
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.subject.professorName,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Indicador de guardado
+                      if (controller.isSaving)
+                        Row(
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Guardando...',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        )
+                      else if (controller.lastSavedAt != null)
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.check_circle,
+                              size: 16,
+                              color: Colors.green[600],
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Guardado',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.green[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+                // Barra de progreso
+                _buildProgressBar(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProgressBar() {
+    return FutureBuilder<List<QuestionModel>>(
+      future: _questionsFuture,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return const SizedBox.shrink();
+        
+        final totalQuestions = snapshot.data!.length;
+        
+        return Consumer<EvaluationStateController>(
+          builder: (context, controller, _) {
+            final progress = controller.getProgress(totalQuestions);
+            
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${controller.answeredCount} de $totalQuestions preguntas',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                      Text(
+                        '${(progress * 100).toInt()}%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: Colors.grey[200],
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    const Color(0xFFCAD225),
+                  ),
+                  minHeight: 4,
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildContent() {
+    return Consumer<EvaluationStateController>(
+      builder: (context, controller, _) {
+        if (controller.isInitializing) {
+          return _buildLoadingState();
+        }
+
+        if (controller.hasError) {
+          return _buildErrorState(controller.errorMessage ?? 'Error desconocido');
+        }
+
+        return FutureBuilder<List<QuestionModel>>(
+          future: _questionsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFFCAD225),
+                ),
+              );
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 60,
+                      color: Colors.red,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error al cargar preguntas',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final questions = snapshot.data ?? [];
+
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  _buildIntroCard(),
+                  const SizedBox(height: 24),
+                  
+                  ...questions.map((question) => Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: QuestionCard(
+                          question: question,
+                          selectedAnswer: controller.answers[question.nroPregunta],
+                          onAnswerChanged: (answer) {
+                            controller.updateAnswer(question.nroPregunta, answer);
+                          },
+                        ),
+                      )),
+                  
+                  const SizedBox(height: 8),
+                  _buildCommentSection(),
+                  const SizedBox(height: 24),
+                  _buildSubmitButton(questions),
+                  const SizedBox(height: 40),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -416,7 +483,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
     );
   }
 
-  Widget _buildErrorState() {
+  Widget _buildErrorState(String errorMessage) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -440,7 +507,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
             ),
             const SizedBox(height: 12),
             Text(
-              _errorMessage ?? 'Ocurrió un error inesperado',
+              errorMessage,
               style: TextStyle(
                 fontSize: 15,
                 color: Colors.grey[600],
@@ -451,73 +518,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildContent() {
-    return FutureBuilder<List<QuestionModel>>(
-      future: _questionsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(
-              color: Color(0xFFCAD225),
-            ),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 60,
-                  color: Colors.red,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Error al cargar preguntas',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final questions = snapshot.data ?? [];
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildIntroCard(),
-              const SizedBox(height: 24),
-              
-              ...questions.map((question) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: QuestionCard(
-                      question: question,
-                      selectedAnswer: _answers[question.nroPregunta],
-                      onAnswerChanged: (answer) =>
-                          _onAnswerChanged(question.nroPregunta, answer),
-                    ),
-                  )),
-              
-              const SizedBox(height: 8),
-              _buildCommentSection(),
-              const SizedBox(height: 24),
-              _buildSubmitButton(questions),
-              const SizedBox(height: 40),
-            ],
-          ),
-        );
-      },
     );
   }
 
@@ -588,14 +588,14 @@ class _EvaluationModalState extends State<EvaluationModal> {
             child: Row(
               children: [
                 const Icon(
-                  Icons.info_outline,
+                  Icons.cloud_done,
                   size: 20,
                   color: Color(0xFF1A1A1A),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Todas las preguntas son obligatorias',
+                    'Tus respuestas se guardan automáticamente cada 30 segundos',
                     style: TextStyle(
                       fontSize: 13,
                       color: const Color(0xFF1A1A1A),
@@ -632,106 +632,4 @@ class _EvaluationModalState extends State<EvaluationModal> {
             children: [
               const Icon(
                 Icons.comment_outlined,
-                color: Color(0xFF1A1A1A),
-                size: 22,
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Comentarios adicionales',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                '(Opcional)',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[500],
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _commentController,
-            maxLines: 5,
-            maxLength: 500,
-            decoration: InputDecoration(
-              hintText: 'Comparte tus comentarios o sugerencias...',
-              hintStyle: TextStyle(color: Colors.grey[400]),
-              filled: true,
-              fillColor: Colors.grey[50],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(
-                  color: Color(0xFFCAD225),
-                  width: 2,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSubmitButton(List<QuestionModel> questions) {
-    final allAnswered = _areAllQuestionsAnswered(questions.length);
-
-    return ElevatedButton(
-      onPressed: (_isSubmitting || !allAnswered)
-          ? null
-          : () => _submitEvaluation(questions),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: allAnswered
-            ? const Color(0xFFCAD225)
-            : Colors.grey[400],
-        foregroundColor: allAnswered
-            ? const Color(0xFF1A1A1A)
-            : Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        elevation: allAnswered ? 4 : 0,
-      ),
-      child: _isSubmitting
-          ? const SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1A1A1A)),
-              ),
-            )
-          : Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.send, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  allAnswered
-                      ? 'Enviar Evaluación'
-                      : 'Completa todas las preguntas',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-}
+                color: Color(0xFF1

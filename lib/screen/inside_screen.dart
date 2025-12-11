@@ -4,11 +4,7 @@ import 'package:provider/provider.dart';
 
 // Config
 import 'package:eval_plus/config/app_colors.dart';
-
-// Contenido
-import 'package:eval_plus/screen/content/careers_content.dart';
-import 'package:eval_plus/screen/content/evaluations_content.dart';
-import 'package:eval_plus/screen/content/profile_content.dart';
+import 'package:eval_plus/config/navigation_config.dart';
 
 // Layouts
 import 'package:eval_plus/layouts/base_screen_layout.dart';
@@ -41,66 +37,37 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
   int _currentIndex = 0;
   UserModel? _currentUser;
   String _welcomeMessage = 'Bienvenido';
-  String _panelSubtittle = '@Panel de ...';
   
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
 
-  // Obtener contenidos segun rol
-  List<Widget> _getContentsForRole(UserRole role) {
-    switch (role) {
-      case UserRole.student:
-        // Estudiantes ven: Carreras, Evaluaciones, Perfil
-        return [
-          const CarrerasContent(),
-          const EvaluationsList(),
-          ProfileContent(user: _currentUser),
-        ];
-      
-      case UserRole.teacher:
-      case UserRole.admin:
-        // Profesores y admins ven: Evaluaciones, Perfil
-        return [
-          const EvaluationsList(),
-          ProfileContent(user: _currentUser),
-        ];
-    }
-  }
-
   @override
   void initState() {
     super.initState();
 
-    // Cargar datos del usuario
     _loadUserData();
 
-    // Cargar sesión del usuario (roles y tema)
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final session = context.read<UserSessionController>();
       
-      // Cargar sesión
       session.loadUserSession().then((_) {
-        // Resetear índice después de cargar el rol
         if (mounted) {
           setState(() {
-            _currentIndex = 0; // Siempre empezar en la primera pestaña
+            // 👇 Usar índice inicial seguro
+            _currentIndex = NavigationConfig.getInitialIndex();
           });
         }
       });
     });
     
-    // Configurar el AnimationController
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 450),
       vsync: this,
     );
 
-    // Inicializar animaciones
     _updateAnimations(isMovingRight: true);
-    
-    // Completar la animación inicial
     _animationController.value = 1.0;
   }
 
@@ -111,12 +78,10 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
   }
 
   void _updateAnimations({required bool isMovingRight}) {
-    // Dirección del movimiento
     final Offset beginOffset = isMovingRight
         ? const Offset(0.25, 0.0)
         : const Offset(-0.25, 0.0);
     
-    // Animación de desplazamiento
     _slideAnimation = Tween<Offset>(
       begin: beginOffset,
       end: Offset.zero,
@@ -125,7 +90,6 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
       curve: Curves.easeInOutCubic,
     ));
 
-    // Animación de opacidad
     _fadeAnimation = Tween<double>(
       begin: 0.0,
       end: 1.0,
@@ -134,7 +98,6 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
       curve: Curves.easeInOut,
     ));
 
-    // Animación de escala
     _scaleAnimation = Tween<double>(
       begin: 0.98,
       end: 1.0,
@@ -145,11 +108,10 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
   }
 
   void _onNavIndexChanged(int newIndex) {
-    // Validar que el índice sea válido para el rol actual
     final session = context.read<UserSessionController>();
-    final contents = _getContentsForRole(session.currentRole);
     
-    if (newIndex >= contents.length) {
+    // 👇 Validación centralizada
+    if (!NavigationConfig.isValidIndex(newIndex, session.currentRole)) {
       debugPrint('⚠️ Índice inválido: $newIndex para rol ${session.currentRole.name}');
       return;
     }
@@ -168,7 +130,6 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
     _animationController.forward();
   }
 
-  // Cargar Estudiante
   Future<void> _loadUserData() async {
     final user = await UserController.loadUserProfile();
     
@@ -180,11 +141,9 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
     }
   }
 
-  // Función de logout
   Future<void> _handleLogout() async {
     debugPrint('🔴 Logout initiated from InsideScreen');
     
-    // Mostrar diálogo de confirmación con el nuevo widget
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -192,9 +151,7 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
         title: '¿Cerrar sesión?',
         message: '¿Estás seguro que deseas salir de tu cuenta?',
         onAccept: () async {
-          Navigator.of(dialogContext).pop(); // Cerrar diálogo de confirmación
-          
-          // Mostrar diálogo de procesamiento
+          Navigator.of(dialogContext).pop();
           _showLogoutProcessingDialog();
           
           try {
@@ -203,13 +160,11 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
             await UserController.clearUserProfile();
             debugPrint('🔴 Auth data cleared');
             
-            // Pequeña pausa para que el usuario vea el proceso
             await Future.delayed(const Duration(milliseconds: 800));
             
             if (mounted) {
-              // Resetear tema al cerrar sesión
               context.read<UserSessionController>().resetSession();
-              Navigator.of(context).pop(); // Cerrar diálogo de procesamiento
+              Navigator.of(context).pop();
               
               debugPrint('🔴 Navigating to HomeScreen...');
               Navigator.of(context).pushNamedAndRemoveUntil(
@@ -222,9 +177,7 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
             debugPrint('🔴 ERROR: $e');
             
             if (mounted) {
-              Navigator.of(context).pop(); // Cerrar diálogo de procesamiento
-              
-              // Mostrar error con el nuevo widget
+              Navigator.of(context).pop();
               _showLogoutErrorDialog();
             }
           }
@@ -238,7 +191,6 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
     );
   }
 
-  // Nuevo método: Mostrar diálogo de procesamiento
   void _showLogoutProcessingDialog() {
     showDialog(
       context: context,
@@ -281,7 +233,6 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
     );
   }
 
-  // Nuevo método: Mostrar error de logout
   void _showLogoutErrorDialog() {
     showDialog(
       context: context,
@@ -297,7 +248,6 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Consumer<UserSessionController>(
       builder: (context, session, child) {
-        // Generar subtítulo dinámicamente basado en el rol
         String subtitle;
         switch (session.currentRole) {
           case UserRole.student:
@@ -311,13 +261,21 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
             break;
         }
 
-        // Obtener contenidos según el rol
-        final contents = _getContentsForRole(session.currentRole);
+        // 👇 Obtener contenidos desde configuración centralizada
+        final contents = NavigationConfig.getContentsForRole(
+          session.currentRole,
+          _currentUser,
+        );
+        
+        // 👇 Validar índice actual
+        final safeIndex = NavigationConfig.isValidIndex(_currentIndex, session.currentRole)
+            ? _currentIndex
+            : NavigationConfig.getInitialIndex();
         
         return BaseScreenLayout(
           topBarTitle: _welcomeMessage,
           topBarSubtitle: subtitle,
-          currentNavIndex: _currentIndex,
+          currentNavIndex: safeIndex,
           centerContent: false,
           paddingTop: 80.0,
           paddingBottom: 20.0,
@@ -333,7 +291,7 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
                   child: ScaleTransition(
                     scale: _scaleAnimation,
                     child: IndexedStack(
-                      index: _currentIndex,
+                      index: safeIndex,
                       children: contents,
                     ),
                   ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/config/constants.dart';
+import 'package:eval_plus/config/navigation_config.dart';
 import 'package:eval_plus/controllers/user_session_controller.dart';
 
 class CustomBottomNavBar extends StatelessWidget {
@@ -14,38 +15,18 @@ class CustomBottomNavBar extends StatelessWidget {
     this.onTap,
   });
   
-  // 👇 NUEVO: Configuración completa de items con restricciones de rol
-  static const List<_NavBarItem> _allItems = [
-    _NavBarItem(
-      icon: Icons.school,
-      label: 'Carreras',
-      roles: [UserRole.student], // Solo estudiantes
-    ),
-    _NavBarItem(
-      icon: Icons.assignment_turned_in,
-      label: 'Evaluaciones',
-      roles: [UserRole.student, UserRole.teacher, UserRole.admin], // Todos
-    ),
-    _NavBarItem(
-      icon: Icons.person,
-      label: 'Perfil',
-      roles: [UserRole.student, UserRole.teacher, UserRole.admin], // Todos
-    ),
-  ];
-  
-  /// Filtra los items según el rol del usuario
-  static List<_NavBarItem> _getItemsForRole(UserRole role) {
-    return _allItems.where((item) => item.roles.contains(role)).toList();
-  }
-  
   @override
   Widget build(BuildContext context) {
-    // Obtener la sesión del usuario
     final session = context.watch<UserSessionController>();
     final palette = session.palette;
     
-    // 👇 Filtrar items según el rol
-    final visibleItems = _getItemsForRole(session.currentRole);
+    // 👇 Usar configuración centralizada
+    final visibleTabs = NavigationConfig.getTabsForRole(session.currentRole);
+    
+    // Validación de seguridad
+    final safeIndex = NavigationConfig.isValidIndex(currentIndex, session.currentRole)
+        ? currentIndex
+        : 0;
     
     return Container(
       decoration: BoxDecoration(
@@ -63,11 +44,11 @@ class CustomBottomNavBar extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(
-              visibleItems.length,
+              visibleTabs.length,
               (index) => _buildNavItem(
-                icon: visibleItems[index].icon,
-                label: visibleItems[index].label,
-                isSelected: currentIndex == index,
+                icon: visibleTabs[index].icon,
+                label: visibleTabs[index].label,
+                isSelected: safeIndex == index,
                 onTap: () => onTap?.call(index),
               ),
             ),
@@ -149,17 +130,4 @@ class CustomBottomNavBar extends StatelessWidget {
       ),
     );
   }
-}
-
-// 👇 Clase privada actualizada con roles permitidos
-class _NavBarItem {
-  final IconData icon;
-  final String label;
-  final List<UserRole> roles; // 👈 NUEVO: roles que pueden ver este item
-  
-  const _NavBarItem({
-    required this.icon,
-    required this.label,
-    required this.roles,
-  });
 }
