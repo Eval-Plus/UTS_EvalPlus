@@ -1,76 +1,135 @@
 import 'package:flutter/material.dart';
+import 'package:eval_plus/models/evaluation_model.dart';
+import 'package:eval_plus/services/evaluations_service.dart';
 
-/// Modelo temporal para evaluaciones (datos quemados)
-class EvaluationModel {
-  final String teacherName;
-  final String subject;
-  final String period;
-  final bool isCompleted;
-  final DateTime? completedDate;
-
-  EvaluationModel({
-    required this.teacherName,
-    required this.subject,
-    required this.period,
-    required this.isCompleted,
-    this.completedDate,
-  });
-}
-
-/// Contenido de la lista de evaluaciones docentes
-class EvaluationsList extends StatelessWidget {
+/// Contenido de la lista de evaluaciones docentes (CON API REAL)
+class EvaluationsList extends StatefulWidget {
   const EvaluationsList({super.key});
 
   @override
+  State<EvaluationsList> createState() => _EvaluationsListState();
+}
+
+class _EvaluationsListState extends State<EvaluationsList> {
+  final _evaluationsService = EvaluationsService();
+  
+  List<EvaluationModel> _evaluations = [];
+  Map<String, int> _stats = {'total': 0, 'pending': 0, 'completed': 0};
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEvaluations();
+  }
+
+  /// Carga las evaluaciones desde el servicio
+  Future<void> _loadEvaluations({bool forceRefresh = false}) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await _evaluationsService.getMyEvaluations(
+        forceRefresh: forceRefresh,
+      );
+
+      if (mounted) {
+        setState(() {
+          _evaluations = response['evaluations'] as List<EvaluationModel>;
+          _stats = response['stats'] as Map<String, int>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error al cargar evaluaciones: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Datos quemados para pruebas
-    final evaluations = [
-      EvaluationModel(
-        teacherName: 'Dr. Carlos Méndez',
-        subject: 'Cálculo Diferencial',
-        period: '2024-2',
-        isCompleted: true,
-        completedDate: DateTime(2024, 10, 15),
+    return RefreshIndicator(
+      onRefresh: () => _loadEvaluations(forceRefresh: true),
+      child: _isLoading
+          ? _buildLoadingState()
+          : _errorMessage != null
+              ? _buildErrorState()
+              : _buildEvaluationsList(),
+    );
+  }
+
+  /// Estado de carga
+  Widget _buildLoadingState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: Color(0xFFCAD225),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Cargando evaluaciones...',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF6B6B6B),
+            ),
+          ),
+        ],
       ),
-      EvaluationModel(
-        teacherName: 'Ing. María González',
-        subject: 'Programación I',
-        period: '2024-2',
-        isCompleted: false,
+    );
+  }
+
+  /// Estado de error
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Color(0xFFEF4444),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B6B6B),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _loadEvaluations(forceRefresh: true),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFCAD225),
+                foregroundColor: const Color(0xFF1A1A1A),
+              ),
+            ),
+          ],
+        ),
       ),
-      EvaluationModel(
-        teacherName: 'Dra. Ana Rodríguez',
-        subject: 'Física Mecánica',
-        period: '2024-2',
-        isCompleted: true,
-        completedDate: DateTime(2024, 10, 18),
-      ),
-      EvaluationModel(
-        teacherName: 'Mg. Luis Fernández',
-        subject: 'Álgebra Lineal',
-        period: '2024-2',
-        isCompleted: false,
-      ),
-      EvaluationModel(
-        teacherName: 'Ing. Patricia Herrera',
-        subject: 'Introducción a la Ingeniería',
-        period: '2024-2',
-        isCompleted: false,
-      ),
-      EvaluationModel(
-        teacherName: 'Dr. Roberto Sánchez',
-        subject: 'Química General',
-        period: '2024-2',
-        isCompleted: true,
-        completedDate: DateTime(2024, 10, 12),
-      ),
-      EvaluationModel(
-        teacherName: 'Lic. Sandra Morales',
-        subject: 'Comunicación Escrita',
-        period: '2024-2',
-        isCompleted: false,
-      ),
-    ];
+    );
+  }
+
+  /// Lista de evaluaciones
+  Widget _buildEvaluationsList() {
+    if (_evaluations.isEmpty) {
+      return _buildEmptyState();
+    }
 
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -81,22 +140,21 @@ class EvaluationsList extends StatelessWidget {
           children: [
             const SizedBox(height: 20),
             
-            // Encabezado con información
-            _buildHeader(evaluations),
+            // Encabezado con estadísticas
+            _buildHeader(),
             
             const SizedBox(height: 24),
             
             // Lista de evaluaciones
-            ...evaluations.asMap().entries.map((entry) {
-              final index = entry.key;
-              final evaluation = entry.value;
-              return Padding(
+            ...List.generate(
+              _evaluations.length,
+              (index) => Padding(
                 padding: EdgeInsets.only(
-                  bottom: index < evaluations.length - 1 ? 16.0 : 0,
+                  bottom: index < _evaluations.length - 1 ? 16.0 : 0,
                 ),
-                child: _buildEvaluationCard(context, evaluation),
-              );
-            }).toList(),
+                child: _buildEvaluationCard(context, _evaluations[index]),
+              ),
+            ),
             
             const SizedBox(height: 20),
           ],
@@ -105,12 +163,45 @@ class EvaluationsList extends StatelessWidget {
     );
   }
 
-  /// Construye el encabezado con estadísticas
-  Widget _buildHeader(List<EvaluationModel> evaluations) {
-    final completed = evaluations.where((e) => e.isCompleted).length;
-    final total = evaluations.length;
-    final pending = total - completed;
+  /// Estado vacío
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.assignment_outlined,
+              size: 80,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No tienes evaluaciones',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Las evaluaciones aparecerán aquí cuando estén disponibles',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
+  /// Construye el encabezado con estadísticas
+  Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -127,7 +218,7 @@ class EvaluationsList extends StatelessWidget {
           _buildStatItem(
             icon: Icons.assignment_rounded,
             label: 'Total',
-            value: '$total',
+            value: '${_stats['total']}',
             color: const Color(0xFF1A1A1A),
           ),
           Container(
@@ -138,7 +229,7 @@ class EvaluationsList extends StatelessWidget {
           _buildStatItem(
             icon: Icons.check_circle_rounded,
             label: 'Completadas',
-            value: '$completed',
+            value: '${_stats['completed']}',
             color: Colors.green.shade700,
           ),
           Container(
@@ -149,7 +240,7 @@ class EvaluationsList extends StatelessWidget {
           _buildStatItem(
             icon: Icons.pending_rounded,
             label: 'Pendientes',
-            value: '$pending',
+            value: '${_stats['pending']}',
             color: Colors.orange.shade700,
           ),
         ],
@@ -193,7 +284,7 @@ class EvaluationsList extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          // Acción al presionar la tarjeta
+          // TODO: Navegar a pantalla de evaluación
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
@@ -226,7 +317,7 @@ class EvaluationsList extends StatelessWidget {
             child: Row(
               children: [
                 // Ícono del docente con estado
-                _buildTeacherIcon(evaluation.isCompleted),
+                _buildTeacherIcon(evaluation),
                 
                 const SizedBox(width: 16),
                 
@@ -256,7 +347,7 @@ class EvaluationsList extends StatelessWidget {
                         children: [
                           _buildPeriodChip(evaluation.period),
                           const SizedBox(width: 8),
-                          _buildStatusChip(evaluation.isCompleted),
+                          _buildStatusChip(evaluation),
                         ],
                       ),
                       if (evaluation.isCompleted && evaluation.completedDate != null)
@@ -267,6 +358,20 @@ class EvaluationsList extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 11,
                               color: Colors.green.shade700,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+                      if (!evaluation.isCompleted && evaluation.daysRemaining != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: Text(
+                            'Cierra en ${evaluation.daysRemaining} día(s)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: evaluation.daysRemaining! <= 3 
+                                  ? Colors.red.shade700 
+                                  : Colors.blue.shade700,
                               fontStyle: FontStyle.italic,
                             ),
                           ),
@@ -298,13 +403,13 @@ class EvaluationsList extends StatelessWidget {
   }
 
   /// Construye el ícono del docente con gradiente
-  Widget _buildTeacherIcon(bool isCompleted) {
+  Widget _buildTeacherIcon(EvaluationModel evaluation) {
     return Container(
       width: 56,
       height: 56,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: isCompleted
+          colors: evaluation.isCompleted
               ? [
                   Colors.green.shade600,
                   Colors.green.shade700,
@@ -318,14 +423,18 @@ class EvaluationsList extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isCompleted ? Colors.green.shade700 : const Color(0xFFA8B820),
+          color: evaluation.isCompleted 
+              ? Colors.green.shade700 
+              : const Color(0xFFA8B820),
           width: 2,
         ),
       ),
       child: Icon(
         Icons.person_rounded,
         size: 28,
-        color: isCompleted ? Colors.white : const Color(0xFF1A1A1A),
+        color: evaluation.isCompleted 
+            ? Colors.white 
+            : const Color(0xFF1A1A1A),
       ),
     );
   }
@@ -350,20 +459,18 @@ class EvaluationsList extends StatelessWidget {
   }
 
   /// Construye el chip de estado
-  Widget _buildStatusChip(bool isCompleted) {
+  Widget _buildStatusChip(EvaluationModel evaluation) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: isCompleted
-            ? Colors.green.withOpacity(0.1)
-            : Colors.orange.withOpacity(0.1),
+        color: evaluation.statusColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(
-        isCompleted ? 'Completada' : 'Pendiente',
+        evaluation.statusText,
         style: TextStyle(
           fontSize: 11,
-          color: isCompleted ? Colors.green.shade700 : Colors.orange.shade700,
+          color: evaluation.statusColor,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -379,7 +486,9 @@ class EvaluationsList extends StatelessWidget {
         color: isCompleted ? Colors.green.shade600 : Colors.white,
         shape: BoxShape.circle,
         border: Border.all(
-          color: isCompleted ? Colors.green.shade700 : const Color(0xFFA8B820).withOpacity(0.5),
+          color: isCompleted 
+              ? Colors.green.shade700 
+              : const Color(0xFFA8B820).withOpacity(0.5),
           width: 2,
         ),
       ),
