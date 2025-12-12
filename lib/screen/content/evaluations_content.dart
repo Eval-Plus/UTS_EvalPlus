@@ -11,7 +11,8 @@ class EvaluationsList extends StatefulWidget {
 }
 
 class _EvaluationsListState extends State<EvaluationsList> {
-  final _evaluationsService = EvaluationsService();
+  // 🔧 Usar la instancia singleton directamente
+  late final EvaluationsService _evaluationsService;
   
   List<EvaluationModel> _evaluations = [];
   Map<String, int> _stats = {'total': 0, 'pending': 0, 'completed': 0};
@@ -21,7 +22,31 @@ class _EvaluationsListState extends State<EvaluationsList> {
   @override
   void initState() {
     super.initState();
+    
+    // 🔧 Obtener la instancia singleton
+    _evaluationsService = EvaluationsService();
+    
+    debugPrint('🎯 EvaluationsList: Suscribiéndose al servicio...');
+    
+    // Suscribirse a cambios en las evaluaciones
+    _evaluationsService.addListener(_onEvaluationsChanged);
+    
+    // Cargar datos iniciales
     _loadEvaluations();
+  }
+
+  @override
+  void dispose() {
+    debugPrint('🎯 EvaluationsList: Desuscribiéndose del servicio...');
+    // Desuscribirse cuando se destruye el widget
+    _evaluationsService.removeListener(_onEvaluationsChanged);
+    super.dispose();
+  }
+
+  /// 🆕 Callback que se ejecuta cuando las evaluaciones cambian
+  void _onEvaluationsChanged() {
+    debugPrint('🔔 Notificación recibida: Recargando evaluaciones...');
+    _loadEvaluations(forceRefresh: true);
   }
 
   /// Carga las evaluaciones desde el servicio

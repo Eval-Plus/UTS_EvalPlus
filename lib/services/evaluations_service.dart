@@ -18,6 +18,34 @@ class EvaluationsService {
   DateTime? _lastFetchTime;
   static const _cacheDuration = Duration(minutes: 2);
 
+  // 🆕 Listeners para notificar cambios
+  final List<VoidCallback> _listeners = [];
+
+  // ==================== LISTENER MANAGEMENT ====================
+  
+  /// Agrega un listener que será notificado cuando las evaluaciones cambien
+  void addListener(VoidCallback listener) {
+    if (!_listeners.contains(listener)) {
+      _listeners.add(listener);
+      debugPrint('📢 Listener agregado. Total: ${_listeners.length}');
+      debugPrint('🔍 Hash del servicio: ${this.hashCode}');
+    }
+  }
+
+  /// Remueve un listener
+  void removeListener(VoidCallback listener) {
+    _listeners.remove(listener);
+    debugPrint('📢 Listener removido. Total: ${_listeners.length}');
+  }
+
+  /// Notifica a todos los listeners que hubo un cambio
+  void _notifyListeners() {
+    debugPrint('📢 Notificando a ${_listeners.length} listeners...');
+    for (final listener in _listeners) {
+      listener();
+    }
+  }
+
   // ==================== PUBLIC API ====================
   
   /// Obtiene todas las evaluaciones del estudiante (pendientes + completadas)
@@ -97,11 +125,23 @@ class EvaluationsService {
     }
   }
 
+  /// 🆕 Invalida el cache y notifica a los listeners
+  /// Se debe llamar cuando se completa una evaluación
+  void invalidateCache() {
+    debugPrint('🗑️ Invalidando cache de evaluaciones...');
+    debugPrint('🔍 Hash del servicio: ${this.hashCode}');
+    debugPrint('📢 Total listeners registrados: ${_listeners.length}');
+    _cachedEvaluations = null;
+    _lastFetchTime = null;
+    _notifyListeners();
+  }
+
   /// Limpia el cache (útil para logout o refresh manual)
   void clearCache() {
     _cachedEvaluations = null;
     _lastFetchTime = null;
-    debugPrint('🗑️ Cache de evaluaciones limpiado');
+    _listeners.clear();
+    debugPrint('🗑️ Cache y listeners limpiados');
   }
 
   // ==================== PRIVATE METHODS ====================
@@ -171,7 +211,7 @@ class EvaluationsService {
     };
   }
 
-  /// Datos de respaldo estáticos (igual al ejemplo de evaluations_content.dart)
+  /// Datos de respaldo estáticos
   Map<String, dynamic> _getFallbackResponse() {
     final fallbackData = [
       EvaluationModel(

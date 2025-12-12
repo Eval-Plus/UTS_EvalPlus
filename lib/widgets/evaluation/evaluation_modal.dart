@@ -10,6 +10,7 @@ import 'package:eval_plus/models/subject_model.dart';
 
 // Services
 import 'package:eval_plus/services/questions_service.dart';
+import 'package:eval_plus/services/evaluations_service.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 import 'package:eval_plus/services/api/student_evaluation_api_service.dart';
 
@@ -33,6 +34,9 @@ class _EvaluationModalState extends State<EvaluationModal> {
   final Map<int, String> _answers = {};
   final TextEditingController _commentController = TextEditingController();
   final _questionsService = QuestionsService();
+  
+  // 🔧 Usar la instancia singleton directamente
+  late final EvaluationsService _evaluationsService;
   
   bool _isSubmitting = false;
   bool _isInitializing = true;
@@ -58,6 +62,10 @@ class _EvaluationModalState extends State<EvaluationModal> {
   @override
   void initState() {
     super.initState();
+    
+    // 🔧 Obtener la instancia singleton
+    _evaluationsService = EvaluationsService();
+    
     _questionsFuture = _questionsService.getAllQuestions();
     _initializeEvaluation();
   }
@@ -249,6 +257,11 @@ class _EvaluationModalState extends State<EvaluationModal> {
       if (!success) {
         throw Exception('No se pudo enviar la evaluación');
       }
+
+      // 🆕 INVALIDAR CACHE después de enviar exitosamente
+      debugPrint('🔄 Invalidando cache de evaluaciones...');
+      debugPrint('🔍 Hash del servicio: ${_evaluationsService.hashCode}');
+      _evaluationsService.invalidateCache();
 
       if (mounted) {
         setState(() {
