@@ -5,9 +5,8 @@ import 'package:eval_plus/config/constants.dart';
 import 'package:eval_plus/models/subject_model.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 
-/// Servicio UNIFICADO para manejar materias
-/// Combina lógica de API + fallback + caching
-class SubjectsService {
+/// Servicio UNIFICADO para manejar materias con listeners
+class SubjectsService extends ChangeNotifier {
   // ==================== SINGLETON ====================
   
   static final SubjectsService _instance = SubjectsService._internal();
@@ -78,6 +77,25 @@ class SubjectsService {
     }
   }
 
+  /// 🆕 Invalida el cache y notifica a los listeners
+  void invalidateCache({String? careerCodigo, int? careerId}) {
+    if (careerCodigo != null && careerId != null) {
+      // Invalidar cache específico
+      final cacheKey = '${careerCodigo}_$careerId';
+      _cachedSubjects.remove(cacheKey);
+      _lastFetchTimes.remove(cacheKey);
+      debugPrint('🗑️ Cache invalidado para $careerCodigo');
+    } else {
+      // Invalidar todo el cache
+      _cachedSubjects.clear();
+      _lastFetchTimes.clear();
+      debugPrint('🗑️ Todo el cache de materias limpiado');
+    }
+    
+    // Notificar a los listeners
+    notifyListeners();
+  }
+
   /// Busca una materia por código
   Future<SubjectModel?> getSubjectByCode({
     required String codigo,
@@ -121,6 +139,7 @@ class SubjectsService {
     _cachedSubjects.clear();
     _lastFetchTimes.clear();
     debugPrint('🗑️ Cache de materias limpiado');
+    notifyListeners();
   }
 
   /// Limpia cache de una carrera específica
@@ -129,6 +148,7 @@ class SubjectsService {
     _cachedSubjects.remove(cacheKey);
     _lastFetchTimes.remove(cacheKey);
     debugPrint('🗑️ Cache de materias limpiado para $careerCodigo');
+    notifyListeners();
   }
 
   // ==================== PRIVATE METHODS ====================
@@ -212,6 +232,9 @@ class SubjectsService {
         careerCodigo: 'ING-SIS',
         professorName: 'Dr. Juan Pérez',
         semestre: 3,
+        evaluationId: 101,
+        hasActiveEvaluation: true,
+        isEvaluationCompleted: false,
       ),
       SubjectModel(
         id: 2,
@@ -220,6 +243,9 @@ class SubjectsService {
         careerCodigo: 'ING-SIS',
         professorName: 'Dra. María García',
         semestre: 4,
+        evaluationId: 102,
+        hasActiveEvaluation: true,
+        isEvaluationCompleted: true, // Ya completada
       ),
       SubjectModel(
         id: 3,
@@ -236,6 +262,9 @@ class SubjectsService {
         careerCodigo: 'ING-SIS',
         professorName: 'Ing. Ana Martínez',
         semestre: 5,
+        evaluationId: 103,
+        hasActiveEvaluation: true,
+        isEvaluationCompleted: false,
       ),
       
       // Materias de Administración de Empresas

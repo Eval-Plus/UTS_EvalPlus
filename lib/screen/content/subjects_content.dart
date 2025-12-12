@@ -26,7 +26,7 @@ class SubjectsContent extends StatefulWidget {
 }
 
 class _SubjectsContentState extends State<SubjectsContent> {
-  final _subjectsService = SubjectsService();
+  late final SubjectsService _subjectsService;
   
   List<SubjectModel>? _subjects;
   bool _isLoading = true;
@@ -35,7 +35,27 @@ class _SubjectsContentState extends State<SubjectsContent> {
   @override
   void initState() {
     super.initState();
+    
+    // 🔧 Obtener instancia singleton
+    _subjectsService = SubjectsService();
+    
+    // 🆕 Suscribirse a cambios en el servicio
+    _subjectsService.addListener(_onSubjectsChanged);
+    
     _loadSubjects();
+  }
+
+  @override
+  void dispose() {
+    // 🆕 Desuscribirse cuando se destruye el widget
+    _subjectsService.removeListener(_onSubjectsChanged);
+    super.dispose();
+  }
+
+  /// 🆕 Callback cuando cambian las materias
+  void _onSubjectsChanged() {
+    debugPrint('🔔 Notificación recibida: Recargando materias...');
+    _loadSubjects(forceRefresh: true);
   }
 
   /// Carga las materias de la carrera seleccionada
@@ -47,8 +67,6 @@ class _SubjectsContentState extends State<SubjectsContent> {
 
     try {
       debugPrint('📚 Cargando materias para: ${widget.career.nombre}');
-      debugPrint('   - Código: ${widget.career.codigo}');
-      debugPrint('   - ID: ${widget.career.id}');
 
       final subjects = await _subjectsService.getSubjectsByCareer(
         careerCodigo: widget.career.codigo,
@@ -217,6 +235,10 @@ class _SubjectsContentState extends State<SubjectsContent> {
           return _SubjectCard(
             subject: subject,
             color: widget.career.colorValue,
+            // 🆕 Callback para recargar después de evaluar
+            onEvaluationCompleted: () {
+              _loadSubjects(forceRefresh: true);
+            },
           );
         },
       ),
@@ -266,7 +288,6 @@ class _BackButton extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Icono con fondo circular
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
@@ -280,7 +301,6 @@ class _BackButton extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 14),
-                // Texto
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -320,10 +340,12 @@ class _BackButton extends StatelessWidget {
 class _SubjectCard extends StatefulWidget {
   final SubjectModel subject;
   final Color color;
+  final VoidCallback onEvaluationCompleted; // 🆕
 
   const _SubjectCard({
     required this.subject,
     required this.color,
+    required this.onEvaluationCompleted, // 🆕
   });
 
   @override
@@ -517,7 +539,7 @@ class _SubjectCardState extends State<_SubjectCard>
                   ],
                 ),
               ),
-              // Contenido expandible - Info del profesor
+              // Contenido expandible
               SizeTransition(
                 sizeFactor: _expandAnimation,
                 axisAlignment: -1.0,
@@ -542,10 +564,9 @@ class _SubjectCardState extends State<_SubjectCard>
                     ),
                     child: Column(
                       children: [
-                        // Información del profesor con avatar
+                        // Info del profesor con avatar
                         Row(
                           children: [
-                            // Avatar del profesor
                             Container(
                               width: 56,
                               height: 56,
@@ -578,7 +599,6 @@ class _SubjectCardState extends State<_SubjectCard>
                               ),
                             ),
                             const SizedBox(width: 14),
-                            // Info del profesor
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -610,102 +630,132 @@ class _SubjectCardState extends State<_SubjectCard>
                           ],
                         ),
                         const SizedBox(height: 16),
-                        // Botón de evaluar
-                        Container(
-                          width: double.infinity,
-                          decoration: BoxDecoration(
-                            gradient: widget.subject.hasTeacher
-                                ? LinearGradient(
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                    colors: [
-                                      baseColor.withOpacity(0.9),
-                                      baseColor.withOpacity(0.7),
-                                    ],
-                                  )
-                                : null,
-                            color: widget.subject.hasTeacher 
-                                ? null 
-                                : Colors.grey.withOpacity(0.3),
-                            borderRadius: BorderRadius.circular(10),
-                            boxShadow: widget.subject.hasTeacher
-                                ? [
-                                    BoxShadow(
-                                      color: baseColor.withOpacity(0.3),
-                                      offset: const Offset(0, 3),
-                                      blurRadius: 6,
-                                    ),
-                                  ]
-                                : [],
-                          ),
-                          child: Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(10),
-                              onTap: widget.subject.canBeEvaluated
-                                ? () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return EvaluationModal(subject: widget.subject);
-                                      },
-                                    );
-                                  }
-                                : () {
-                                    String message = !widget.subject.hasTeacher
-                                        ? 'No hay docente registrado en esta materia.'
-                                        : 'No hay evaluación activa disponible en este momento.';
-                                        
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        return MessageDialogWidget.info(
-                                          title: 'Evaluación no disponible',
-                                          message: message,
-                                          onContinue: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          continueButtonText: 'Entendido',
-                                        );
-                                      },
-                                    );
-                                  },
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.rate_review_rounded,
-                                      color: widget.subject.hasTeacher 
-                                          ? Colors.white 
-                                          : Colors.grey.shade400,
-                                      size: 20,
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      'Evaluar Docente',
-                                      style: TextStyle(
-                                        color: widget.subject.hasTeacher 
-                                            ? Colors.white 
-                                            : Colors.grey.shade400,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.3,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
+                        
+                        // 🆕 Botón de evaluar con estado dinámico
+                        _buildEvaluationButton(context, baseColor),
                       ],
                     ),
                   ),
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// 🆕 Botón dinámico según estado de evaluación
+  Widget _buildEvaluationButton(BuildContext context, Color baseColor) {
+    final subject = widget.subject;
+    final isCompleted = subject.isEvaluationCompleted;
+    final hasTeacher = subject.hasTeacher;
+    final canEvaluate = subject.canBeEvaluated;
+
+    // Determinar color del botón
+    Color buttonColor;
+    if (!hasTeacher) {
+      buttonColor = Colors.grey.withOpacity(0.3);
+    } else if (isCompleted) {
+      buttonColor = Colors.green.shade600;
+    } else {
+      buttonColor = baseColor.withOpacity(0.9);
+    }
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: canEvaluate
+            ? LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  baseColor.withOpacity(0.9),
+                  baseColor.withOpacity(0.7),
+                ],
+              )
+            : null,
+        color: !canEvaluate ? buttonColor : null,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: canEvaluate
+            ? [
+                BoxShadow(
+                  color: baseColor.withOpacity(0.3),
+                  offset: const Offset(0, 3),
+                  blurRadius: 6,
+                ),
+              ]
+            : [],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () {
+            if (canEvaluate) {
+              // Abrir modal de evaluación
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return EvaluationModal(
+                    subject: subject,
+                    // 🆕 Callback cuando se completa
+                    onEvaluationCompleted: widget.onEvaluationCompleted,
+                  );
+                },
+              );
+            } else {
+              // Mostrar mensaje informativo
+              String message;
+              if (!hasTeacher) {
+                message = 'No hay docente registrado en esta materia.';
+              } else if (isCompleted) {
+                message = 'Ya completaste la evaluación de este docente. ¡Gracias por tu participación!';
+              } else {
+                message = 'No hay evaluación activa disponible en este momento.';
+              }
+              
+              showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return MessageDialogWidget.info(
+                    title: isCompleted ? 'Evaluación completada' : 'Evaluación no disponible',
+                    message: message,
+                    onContinue: () {
+                      Navigator.of(context).pop();
+                    },
+                    continueButtonText: 'Entendido',
+                  );
+                },
+              );
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  subject.buttonIcon,
+                  color: canEvaluate || isCompleted
+                      ? Colors.white 
+                      : Colors.grey.shade400,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  subject.buttonText,
+                  style: TextStyle(
+                    color: canEvaluate || isCompleted
+                        ? Colors.white 
+                        : Colors.grey.shade400,
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

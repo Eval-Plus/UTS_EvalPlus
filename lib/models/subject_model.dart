@@ -12,6 +12,7 @@ class SubjectModel {
   final bool hasActiveEvaluation;
   final String? evaluationPeriod;
   final bool activo;
+  final bool isEvaluationCompleted; // 🆕 Campo para saber si está completada
 
   SubjectModel({
     required this.id,
@@ -24,6 +25,7 @@ class SubjectModel {
     this.hasActiveEvaluation = false,
     this.evaluationPeriod,
     this.activo = true,
+    this.isEvaluationCompleted = false, // 🆕 Por defecto false
   });
 
   // ==================== FACTORY CONSTRUCTORS ====================
@@ -41,6 +43,7 @@ class SubjectModel {
       hasActiveEvaluation: json['hasActiveEvaluation'] as bool? ?? false,
       evaluationPeriod: json['evaluationPeriod'] as String?,
       activo: json['activo'] as bool? ?? true,
+      isEvaluationCompleted: json['isEvaluationCompleted'] as bool? ?? false, // 🆕
     );
   }
 
@@ -52,10 +55,7 @@ class SubjectModel {
       professorName.toLowerCase() != 'sin profesor';
 
   /// Verifica si puede ser evaluada
-  bool get canBeEvaluated => hasTeacher && evaluationId != null;
-
-  /// Verifica si la evaluación ya fue completada (por ahora siempre false)
-  bool get isEvaluationCompleted => false; // TODO: Implementar lógica real
+  bool get canBeEvaluated => hasTeacher && evaluationId != null && !isEvaluationCompleted;
 
   /// Texto del estado de evaluación
   String get evaluationStatusText {
@@ -73,6 +73,27 @@ class SubjectModel {
     return Icons.assignment;
   }
 
+  /// 🆕 Color del botón según estado
+  Color get buttonColor {
+    if (!hasTeacher) return Colors.grey;
+    if (isEvaluationCompleted) return Colors.green.shade600;
+    return const Color(0xFFCAD225); // Color por defecto
+  }
+
+  /// 🆕 Texto del botón según estado
+  String get buttonText {
+    if (!hasTeacher) return 'Sin docente';
+    if (isEvaluationCompleted) return 'Evaluación Completada';
+    return 'Evaluar Docente';
+  }
+
+  /// 🆕 Icono del botón según estado
+  IconData get buttonIcon {
+    if (!hasTeacher) return Icons.person_off;
+    if (isEvaluationCompleted) return Icons.check_circle;
+    return Icons.rate_review_rounded;
+  }
+
   // ==================== SERIALIZATION ====================
 
   Map<String, dynamic> toJson() {
@@ -87,6 +108,7 @@ class SubjectModel {
       'hasActiveEvaluation': hasActiveEvaluation,
       'evaluationPeriod': evaluationPeriod,
       'activo': activo,
+      'isEvaluationCompleted': isEvaluationCompleted,
     };
   }
 
@@ -117,6 +139,7 @@ class SubjectModel {
     bool? hasActiveEvaluation,
     String? evaluationPeriod,
     bool? activo,
+    bool? isEvaluationCompleted,
   }) {
     return SubjectModel(
       id: id ?? this.id,
@@ -129,6 +152,7 @@ class SubjectModel {
       hasActiveEvaluation: hasActiveEvaluation ?? this.hasActiveEvaluation,
       evaluationPeriod: evaluationPeriod ?? this.evaluationPeriod,
       activo: activo ?? this.activo,
+      isEvaluationCompleted: isEvaluationCompleted ?? this.isEvaluationCompleted,
     );
   }
 }

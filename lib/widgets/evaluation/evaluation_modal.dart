@@ -11,6 +11,7 @@ import 'package:eval_plus/models/subject_model.dart';
 // Services
 import 'package:eval_plus/services/questions_service.dart';
 import 'package:eval_plus/services/evaluations_service.dart';
+import 'package:eval_plus/services/subjects_service.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 import 'package:eval_plus/services/api/student_evaluation_api_service.dart';
 
@@ -20,10 +21,12 @@ import 'package:eval_plus/widgets/evaluation/question_card.dart';
 
 class EvaluationModal extends StatefulWidget {
   final SubjectModel subject;
+  final VoidCallback? onEvaluationCompleted; // 🆕 Callback opcional
 
   const EvaluationModal({
     super.key,
     required this.subject,
+    this.onEvaluationCompleted, // 🆕
   });
 
   @override
@@ -35,8 +38,9 @@ class _EvaluationModalState extends State<EvaluationModal> {
   final TextEditingController _commentController = TextEditingController();
   final _questionsService = QuestionsService();
   
-  // 🔧 Usar la instancia singleton directamente
+  // 🔧 Servicios singleton
   late final EvaluationsService _evaluationsService;
+  late final SubjectsService _subjectsService;
   
   bool _isSubmitting = false;
   bool _isInitializing = true;
@@ -45,10 +49,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
   
   late Future<List<QuestionModel>> _questionsFuture;
   
-  // ID de la evaluación de estudiante (retornado por /start)
   int? _studentEvaluationId;
-  
-  // Información de la evaluación iniciada
   StartEvaluationResponse? _startedEvaluation;
 
   static const Map<String, int> _responseValueMap = {
@@ -63,8 +64,9 @@ class _EvaluationModalState extends State<EvaluationModal> {
   void initState() {
     super.initState();
     
-    // 🔧 Obtener la instancia singleton
+    // 🔧 Obtener instancias singleton
     _evaluationsService = EvaluationsService();
+    _subjectsService = SubjectsService();
     
     _questionsFuture = _questionsService.getAllQuestions();
     _initializeEvaluation();
@@ -81,18 +83,15 @@ class _EvaluationModalState extends State<EvaluationModal> {
     try {
       debugPrint('🎬 Inicializando evaluación...');
       
-      // Validar que tenemos evaluationId
       if (widget.subject.evaluationId == null) {
         throw Exception('Esta materia no tiene una evaluación activa');
       }
 
-      // Obtener token
       final token = await AuthStorageService.getToken();
       if (token == null) {
         throw Exception('No se encontró el token de autenticación');
       }
 
-      // Llamar al endpoint /start
       final response = await StudentEvaluationApiService.startEvaluation(
         token: token,
         evaluationId: widget.subject.evaluationId!,
@@ -102,7 +101,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
         throw Exception('No se pudo iniciar la evaluación');
       }
 
-      // Guardar el ID de la evaluación de estudiante
       setState(() {
         _studentEvaluationId = response.id;
         _startedEvaluation = response;
@@ -110,14 +108,11 @@ class _EvaluationModalState extends State<EvaluationModal> {
         _hasError = false;
       });
 
-      // Determinar si es nueva o existente
       final isExisting = response.evaluation == null;
       
       debugPrint('✅ Evaluación inicializada correctamente');
       debugPrint('   ${isExisting ? '🔄 Continuando' : '🆕 Nueva'} evaluación');
       debugPrint('   Student Evaluation ID: $_studentEvaluationId');
-      debugPrint('   Evaluation ID: ${response.evaluationId}');
-      debugPrint('   Completada: ${response.completada}');
       
     } catch (e) {
       debugPrint('💥 Error inicializando evaluación: $e');
@@ -128,7 +123,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
         _errorMessage = e.toString().replaceAll('Exception: ', '');
       });
 
-      // Mostrar error y cerrar modal
       if (mounted) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           _showErrorAndClose(_errorMessage!);
@@ -137,7 +131,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
     }
   }
 
-  /// Muestra un error y cierra el modal
   void _showErrorAndClose(String message) {
     showDialog(
       context: context,
@@ -147,8 +140,8 @@ class _EvaluationModalState extends State<EvaluationModal> {
           title: 'No se puede iniciar la evaluación',
           message: message,
           onAccept: () {
-            Navigator.of(dialogContext).pop(); // Cerrar diálogo
-            Navigator.of(context).pop(); // Cerrar modal
+            Navigator.of(dialogContext).pop();
+            Navigator.of(context).pop();
           },
           acceptButtonText: 'Entendido',
         );
@@ -167,7 +160,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
   }
 
   Future<void> _submitEvaluation(List<QuestionModel> questions) async {
-    // Validación: verificar si todas las preguntas están respondidas
     if (!_areAllQuestionsAnswered(questions.length)) {
       showDialog(
         context: context,
@@ -185,7 +177,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
       return;
     }
 
-    // Confirmación: preguntar al usuario si está seguro de enviar
     final shouldSubmit = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) {
@@ -208,7 +199,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
       return;
     }
 
-    // Validar que tenemos el studentEvaluationId
     if (_studentEvaluationId == null) {
       _showErrorDialog('Error interno: No se encontró el ID de la evaluación');
       return;
@@ -219,7 +209,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
     });
 
     try {
-      // Convertir respuestas al formato del backend
       final List<Map<String, dynamic>> responses = _answers.entries.map((entry) {
         final questionId = entry.key;
         final answerCode = entry.value;
@@ -231,13 +220,11 @@ class _EvaluationModalState extends State<EvaluationModal> {
         };
       }).toList();
 
-      // Obtener token
       final token = await AuthStorageService.getToken();
       if (token == null) {
         throw Exception('No se encontró el token de autenticación');
       }
 
-      // Preparar comentario
       final comentario = _commentController.text.trim().isEmpty 
           ? null 
           : _commentController.text.trim();
@@ -246,7 +233,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
       debugPrint('   Student Evaluation ID: $_studentEvaluationId');
       debugPrint('   Total respuestas: ${responses.length}');
 
-      // Llamar al endpoint /submit
       final success = await StudentEvaluationApiService.submitEvaluation(
         token: token,
         studentEvaluationId: _studentEvaluationId!,
@@ -258,10 +244,10 @@ class _EvaluationModalState extends State<EvaluationModal> {
         throw Exception('No se pudo enviar la evaluación');
       }
 
-      // 🆕 INVALIDAR CACHE después de enviar exitosamente
-      debugPrint('🔄 Invalidando cache de evaluaciones...');
-      debugPrint('🔍 Hash del servicio: ${_evaluationsService.hashCode}');
+      // 🆕 INVALIDAR CACHES después de enviar exitosamente
+      debugPrint('🔄 Invalidando caches...');
       _evaluationsService.invalidateCache();
+      _subjectsService.invalidateCache();
 
       if (mounted) {
         setState(() {
@@ -270,6 +256,9 @@ class _EvaluationModalState extends State<EvaluationModal> {
 
         // Cerrar el modal
         Navigator.of(context).pop();
+
+        // 🆕 Ejecutar callback si existe
+        widget.onEvaluationCompleted?.call();
 
         // Mostrar mensaje de éxito
         showDialog(
@@ -324,10 +313,7 @@ class _EvaluationModalState extends State<EvaluationModal> {
         color: const Color(0xFFF5F5F5),
         child: Column(
           children: [
-            // Header personalizado
             _buildHeader(context),
-            
-            // Contenido con scroll
             Expanded(
               child: _isInitializing
                   ? _buildLoadingState()
