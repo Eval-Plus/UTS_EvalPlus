@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/evaluation_model.dart';
+import 'package:eval_plus/models/subject_model.dart';
 import 'package:eval_plus/services/evaluations_service.dart';
+import 'package:eval_plus/widgets/evaluation/evaluation_modal.dart';
+import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
 /// Contenido de la lista de evaluaciones docentes (CON API REAL)
 class EvaluationsList extends StatefulWidget {
@@ -11,7 +14,6 @@ class EvaluationsList extends StatefulWidget {
 }
 
 class _EvaluationsListState extends State<EvaluationsList> {
-  // 🔧 Usar la instancia singleton directamente
   late final EvaluationsService _evaluationsService;
   
   List<EvaluationModel> _evaluations = [];
@@ -23,33 +25,27 @@ class _EvaluationsListState extends State<EvaluationsList> {
   void initState() {
     super.initState();
     
-    // 🔧 Obtener la instancia singleton
     _evaluationsService = EvaluationsService();
     
     debugPrint('🎯 EvaluationsList: Suscribiéndose al servicio...');
     
-    // Suscribirse a cambios en las evaluaciones
     _evaluationsService.addListener(_onEvaluationsChanged);
     
-    // Cargar datos iniciales
     _loadEvaluations();
   }
 
   @override
   void dispose() {
     debugPrint('🎯 EvaluationsList: Desuscribiéndose del servicio...');
-    // Desuscribirse cuando se destruye el widget
     _evaluationsService.removeListener(_onEvaluationsChanged);
     super.dispose();
   }
 
-  /// 🆕 Callback que se ejecuta cuando las evaluaciones cambian
   void _onEvaluationsChanged() {
     debugPrint('🔔 Notificación recibida: Recargando evaluaciones...');
     _loadEvaluations(forceRefresh: true);
   }
 
-  /// Carga las evaluaciones desde el servicio
   Future<void> _loadEvaluations({bool forceRefresh = false}) async {
     setState(() {
       _isLoading = true;
@@ -78,6 +74,119 @@ class _EvaluationsListState extends State<EvaluationsList> {
     }
   }
 
+  /// 🆕 NUEVA FUNCIÓN: Manejar tap en evaluación
+  Future<void> _handleEvaluationTap(EvaluationModel evaluation) async {
+    // Si ya está completada, mostrar mensaje
+    if (evaluation.isCompleted) {
+      _showCompletedMessage(evaluation);
+      return;
+    }
+
+    // Si está cerrada, mostrar mensaje
+    if (evaluation.isClosed) {
+      _showClosedMessage(evaluation);
+      return;
+    }
+
+    // Si aún no ha iniciado
+    if (evaluation.isUpcoming) {
+      _showUpcomingMessage(evaluation);
+      return;
+    }
+
+    // Si está disponible, abrir el modal
+    _openEvaluationModal(evaluation);
+  }
+
+  /// 🆕 Mostrar mensaje de evaluación completada
+  void _showCompletedMessage(EvaluationModel evaluation) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return MessageDialogWidget.info(
+          title: 'Evaluación completada',
+          message: 
+              'Ya completaste la evaluación de ${evaluation.teacherName}.\n\n'
+              '¡Gracias por tu participación!',
+          onContinue: () {
+            Navigator.of(context).pop();
+          },
+          continueButtonText: 'Entendido',
+        );
+      },
+    );
+  }
+
+  /// 🆕 Mostrar mensaje de evaluación cerrada
+  void _showClosedMessage(EvaluationModel evaluation) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return MessageDialogWidget.warning(
+          title: 'Evaluación cerrada',
+          message: 
+              'La evaluación de ${evaluation.teacherName} ya cerró.\n\n'
+              'Ya no es posible responderla.',
+          onAccept: () {
+            Navigator.of(context).pop();
+          },
+          acceptButtonText: 'Entendido',
+        );
+      },
+    );
+  }
+
+  /// 🆕 Mostrar mensaje de evaluación próxima
+  void _showUpcomingMessage(EvaluationModel evaluation) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return MessageDialogWidget.info(
+          title: 'Evaluación próxima',
+          message: 
+              'La evaluación de ${evaluation.teacherName} aún no ha iniciado.\n\n'
+              'Estará disponible próximamente.',
+          onContinue: () {
+            Navigator.of(context).pop();
+          },
+          continueButtonText: 'Entendido',
+        );
+      },
+    );
+  }
+
+  /// 🆕 Abrir modal de evaluación
+  void _openEvaluationModal(EvaluationModel evaluation) {
+    debugPrint('📝 Abriendo modal para evaluación: ${evaluation.subject}');
+
+    // Crear un SubjectModel a partir de los datos de la evaluación
+    final subjectForModal = SubjectModel(
+      id: 0, // No es crítico para el modal
+      nombre: evaluation.subject,
+      codigo: evaluation.subjectCode,
+      careerCodigo: '', // No necesario
+      professorName: evaluation.teacherName,
+      semestre: 1,
+      evaluationId: evaluation.evaluationId,
+      hasActiveEvaluation: true,
+      isEvaluationCompleted: false, // Ya verificamos que no está completada
+    );
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return EvaluationModal(
+          subject: subjectForModal,
+          onEvaluationCompleted: () {
+            debugPrint('✅ Evaluación completada desde evaluations_content');
+            // Recargar evaluaciones
+            _loadEvaluations(forceRefresh: true);
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
@@ -90,7 +199,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Estado de carga
   Widget _buildLoadingState() {
     return const Center(
       child: Column(
@@ -112,7 +220,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Estado de error
   Widget _buildErrorState() {
     return Center(
       child: Padding(
@@ -150,7 +257,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Lista de evaluaciones
   Widget _buildEvaluationsList() {
     if (_evaluations.isEmpty) {
       return _buildEmptyState();
@@ -165,12 +271,10 @@ class _EvaluationsListState extends State<EvaluationsList> {
           children: [
             const SizedBox(height: 20),
             
-            // Encabezado con estadísticas
             _buildHeader(),
             
             const SizedBox(height: 24),
             
-            // Lista de evaluaciones
             ...List.generate(
               _evaluations.length,
               (index) => Padding(
@@ -188,7 +292,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Estado vacío
   Widget _buildEmptyState() {
     return Center(
       child: Padding(
@@ -225,7 +328,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Construye el encabezado con estadísticas
   Widget _buildHeader() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -273,7 +375,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Construye un item de estadística
   Widget _buildStatItem({
     required IconData icon,
     required String label,
@@ -303,24 +404,12 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Construye una tarjeta de evaluación
+  /// 🔥 MODIFICADO: Ahora llama a _handleEvaluationTap
   Widget _buildEvaluationCard(BuildContext context, EvaluationModel evaluation) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        onTap: () {
-          // TODO: Navegar a pantalla de evaluación
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                evaluation.isCompleted
-                    ? 'Ver evaluación de ${evaluation.teacherName}'
-                    : 'Iniciar evaluación de ${evaluation.teacherName}',
-              ),
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        },
+        onTap: () => _handleEvaluationTap(evaluation), // 🆕 CAMBIO AQUÍ
         borderRadius: BorderRadius.circular(16),
         child: Container(
           decoration: BoxDecoration(
@@ -341,12 +430,10 @@ class _EvaluationsListState extends State<EvaluationsList> {
             padding: const EdgeInsets.all(16.0),
             child: Row(
               children: [
-                // Ícono del docente con estado
                 _buildTeacherIcon(evaluation),
                 
                 const SizedBox(width: 16),
                 
-                // Información del docente y materia
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -407,7 +494,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
                 
                 const SizedBox(width: 12),
                 
-                // Checkbox de estado y flecha
                 Column(
                   children: [
                     _buildCheckbox(evaluation.isCompleted),
@@ -427,7 +513,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Construye el ícono del docente con gradiente
   Widget _buildTeacherIcon(EvaluationModel evaluation) {
     return Container(
       width: 56,
@@ -464,7 +549,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Construye el chip del período
   Widget _buildPeriodChip(String period) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -483,7 +567,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Construye el chip de estado
   Widget _buildStatusChip(EvaluationModel evaluation) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -502,7 +585,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Construye el checkbox de estado
   Widget _buildCheckbox(bool isCompleted) {
     return Container(
       width: 28,
@@ -527,7 +609,6 @@ class _EvaluationsListState extends State<EvaluationsList> {
     );
   }
 
-  /// Formatea la fecha
   String _formatDate(DateTime date) {
     final months = [
       'ene', 'feb', 'mar', 'abr', 'may', 'jun',
