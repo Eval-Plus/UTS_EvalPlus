@@ -1,73 +1,73 @@
-# 🎉 Eval+ v0.2.0-alpha
+# Release Notes - Eval+
 
-## 📱 Primera versión funcional de Eval+
+## v0.3.0-alpha (2024-12-13)
 
-Esta es la primera release alpha con funcionalidad core completa del sistema de evaluación docente.
+### 🎯 Alcance de la versión
+Esta versión Alpha incluye **3 paneles principales**:
+- **Panel Estudiante** ✅ (Funcional)
+- **Panel Docente** 🚧 (Próximamente)
+- **Panel Administrador** 🚧 (Próximamente)
 
-## ✨ Características Principales
+### ✨ Funcionalidades Estudiante (Completadas)
 
-### 🔐 Autenticación
-- Inicio de sesión con Microsoft OAuth
-- Gestión segura de tokens JWT
-- Persistencia de sesión
+#### Autenticación
+- ✅ Inicio de sesión con Microsoft OAuth
+- ✅ Perfil de usuario con información personal
+- ✅ Detección automática de rol según correo institucional
 
-### 📊 Gestión de Datos
-- Sincronización completa con API backend
-- Mapeo de carreras, materias y evaluaciones
-- Cache inteligente para mejor rendimiento
-- Manejo de múltiples roles (estudiante/docente/admin)
+#### Carreras y Materias
+- ✅ Visualización de todas las carreras asignadas
+- ✅ Listado de materias por carrera
+- ✅ Inscripción automática en todas las carreras disponibles
+- ✅ Asignación aleatoria de hasta 2 materias por carrera
+- ✅ Semestre aleatorio por carrera
 
-### 📝 Sistema de Evaluación
-- Formulario de evaluación con 13 preguntas
-- Escala de valoración 1-5
-- Campos de comentarios opcionales
-- Validación de respuestas obligatorias
-- Envío seguro de respuestas al backend
+#### Evaluaciones
+- ✅ Listado de evaluaciones disponibles
+- ✅ Responder evaluaciones con formulario interactivo
+- ✅ Progreso en tiempo real durante evaluación
+- ✅ Comentarios anónimos opcionales
+- ✅ Estadísticas personales:
+  - Total de evaluaciones
+  - Evaluaciones completadas
+  - Evaluaciones pendientes
 
-### 📋 Visualización de Evaluaciones
-- Listado de evaluaciones disponibles
-- Diferenciación entre pendientes y completadas
-- Estadísticas en tiempo real
-- Pull-to-refresh para actualizar datos
+#### Perfil
+- ✅ Visualización de datos personales
+- ✅ Foto de perfil de Microsoft
+- ✅ Información de carreras y materias inscritas
 
-### 🎨 Interfaz de Usuario
-- Diseño moderno con colores por rol
-- Navegación fluida entre secciones
-- Feedback visual en todas las acciones
-- Animaciones suaves
+### 🚧 Próximas funcionalidades (v0.4.0-alpha)
 
-## 🐛 Problemas Conocidos
+#### Panel Docente
+- 📊 Visualización de comentarios anónimos de estudiantes
+- 📈 Estadísticas por materia
+- 📋 Listado de evaluaciones asignadas
+- 👥 Cantidad de estudiantes que han respondido
 
-- El cache de evaluaciones no se actualiza automáticamente después de completar una
-- Algunos errores de red no muestran mensajes claros
-- La validación de campos podría ser más robusta
+#### Panel Administrador
+- 📊 Dashboard de monitoreo general
+- 📈 Estadísticas globales de evaluaciones
+- 👥 Gestión de usuarios (estudiantes y docentes)
+- 📝 Gestión de plantillas de evaluación
+- 🏫 Administración de carreras y materias
 
-## 🔄 Próximas Mejoras (v0.2.1)
+### 🔧 Mejoras técnicas
+- Refactorización del servicio de inscripciones
+- Optimización de logs con emojis y mejor legibilidad
+- Mejora en el manejo de errores por carrera
+- Sistema de configuración centralizado para estudiantes
 
-- Sistema reactivo para actualización automática de evaluaciones
-- Mejor manejo de errores de red
-- Indicadores de progreso más claros
-- Modo offline básico
+### 🐛 Correcciones
+- Fix: Inscripción de estudiantes ahora incluye todas las carreras
+- Fix: Máximo 2 materias por carrera en lugar de 3
+- Fix: Semestre aleatorio independiente por carrera
 
-## 📦 Instalación
+### 📱 Plataformas soportadas
+- Android (APK)
+- Web (Próximamente)
 
-### Para Android
-1. Descarga el archivo `evalplus-v0.2.0-alpha.apk`
-2. Habilita "Instalar aplicaciones de fuentes desconocidas" en tu dispositivo
-3. Abre el APK y sigue las instrucciones de instalación
+---
 
-### Requisitos mínimos
-- Android 6.0 (API 23) o superior
-- 50 MB de espacio libre
-
-## 🧪 Estado: Alpha
-
-Esta es una versión **alpha**, lo que significa:
-- ✅ Funcionalidad core implementada y probada
-- ⚠️ Pueden existir bugs menores
-- 🔄 La API puede cambiar en futuras versiones
-- 📝 Documentación en progreso
-
-## 👥 Contribuciones
-
-Este proyecto está en desarrollo activo. Reporta bugs o sugiere mejoras en la sección de Issues.
+## v0.2.0-alpha (2024-12-XX)
+[Contenido anterior...]
