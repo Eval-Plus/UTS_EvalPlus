@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:provider/provider.dart';
 
 import 'package:eval_plus/screen/home_screen.dart';
 import 'package:eval_plus/screen/inside_screen.dart';
@@ -8,6 +9,7 @@ import 'package:eval_plus/services/storage/auth_storage_service.dart';
 import 'package:eval_plus/services/api/auth_api_service.dart';
 
 import 'package:eval_plus/controllers/user_controller.dart';
+import 'package:eval_plus/controllers/user_session_controller.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -24,9 +26,7 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
   @override
   void initState() {
     super.initState();
-    // Inicializa el controlador de animación
     _controller = AnimationController(vsync: this);
-    // Inicia la validación del token en paralelo
     _validateStoredToken();
   }
 
@@ -35,7 +35,6 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
       final token = await AuthStorageService.getToken();
 
       if (token == null) {
-        // Sin token → ir a login
         setState(() {
           _isAuthenticated = false;
           _validationComplete = true;
@@ -43,19 +42,24 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
         return;
       }
 
-      // ✅ VALIDACIÓN OBLIGATORIA con el backend
+      // ✅ VALIDACIÓN con el backend
       final validationResult = await AuthApiService.validateToken(token);
 
       if (validationResult['valid'] == true) {
-        // Token válido → cargar perfil y continuar
+        // Token válido → cargar perfil Y sesión
         await UserController.loadUserProfile();
+        
+        // 🔥 NUEVO: Cargar la sesión del usuario aquí
+        if (mounted) {
+          final session = context.read<UserSessionController>();
+          await session.loadUserSession();
+        }
         
         setState(() {
           _isAuthenticated = true;
           _validationComplete = true;
         });
       } else {
-        // Token inválido → limpiar y enviar a login
         await _clearAndResetSession();
         
         setState(() {
@@ -65,7 +69,6 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
       }
       
     } catch (e) {
-      // ❌ ERROR DE RED → mostrar mensaje y permitir reintentar
       debugPrint('💥 Error de conexión: $e');
       
       if (mounted) {
@@ -80,13 +83,11 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
   }
 
   void _showConnectionError() {
-    // Mostrar un diálogo o pantalla de error
-    // con opción de "Reintentar" o "Continuar sin conexión" (opcional)
+    // Mostrar diálogo de error de conexión
   }
 
   void _navigateToNextScreen() {
     if (!_validationComplete) {
-      // Si la validación aún no termina, esperar
       return;
     }
 
@@ -123,19 +124,12 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
           'assets/animations/eval_uts_animation.json',
           controller: _controller,
           onLoaded: (composition) async {
-            // Ajusta la duración
             _controller.duration = composition.duration;
             
-            // Pausa de 0.5 segundos antes de reproducir
             await Future.delayed(const Duration(milliseconds: 500));
-            
-            // Reproduce la animación
             await _controller.forward();
-            
-            // Pausa de 0.5 segundos al final
             await Future.delayed(const Duration(milliseconds: 500));
             
-            // Navegar a la pantalla correspondiente
             _navigateToNextScreen();
           },
         ),

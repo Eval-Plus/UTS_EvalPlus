@@ -1,8 +1,3 @@
-
-// Funcionamiento de Estudiantes - V
-// Funcionamiento de Docentes - X
-// Funcionamiento Administrativo - X
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -57,17 +52,26 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
 
     _loadUserData();
 
+    // CAMBIO: La sesión ya está cargada desde SplashScreen
+    // Solo necesitamos inicializar el índice correcto
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final session = context.read<UserSessionController>();
       
-      session.loadUserSession().then((_) {
-        if (mounted) {
-          setState(() {
-            // 👇 Usar índice inicial seguro
-            _currentIndex = NavigationConfig.getInitialIndex();
-          });
-        }
-      });
+      // Si por alguna razón la sesión no está cargada, cargarla ahora
+      if (!session.isLoading && session.userRoles.isEmpty) {
+        session.loadUserSession().then((_) {
+          if (mounted) {
+            setState(() {
+              _currentIndex = NavigationConfig.getInitialIndex();
+            });
+          }
+        });
+      } else {
+        // La sesión ya está lista, solo inicializar el índice
+        setState(() {
+          _currentIndex = NavigationConfig.getInitialIndex();
+        });
+      }
     });
     
     _animationController = AnimationController(
@@ -118,7 +122,6 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
   void _onNavIndexChanged(int newIndex) {
     final session = context.read<UserSessionController>();
     
-    // 👇 Validación centralizada
     if (!NavigationConfig.isValidIndex(newIndex, session.currentRole)) {
       debugPrint('⚠️ Índice inválido: $newIndex para rol ${session.currentRole.name}');
       return;
@@ -261,6 +264,17 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
   Widget build(BuildContext context) {
     return Consumer<UserSessionController>(
       builder: (context, session, child) {
+        // 🔥 CAMBIO: Mostrar loading mientras la sesión se carga
+        if (session.isLoading) {
+          return const Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFFCAD225),
+              ),
+            ),
+          );
+        }
+
         String subtitle;
         switch (session.currentRole) {
           case UserRole.student:
@@ -274,13 +288,11 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
             break;
         }
 
-        // 👇 Obtener contenidos desde configuración centralizada
         final contents = NavigationConfig.getContentsForRole(
           session.currentRole,
           _currentUser,
         );
         
-        // 👇 Validar índice actual
         final safeIndex = NavigationConfig.isValidIndex(_currentIndex, session.currentRole)
             ? _currentIndex
             : NavigationConfig.getInitialIndex();
