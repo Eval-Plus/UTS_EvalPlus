@@ -28,6 +28,7 @@ class AppColors {
     primary: const Color(0xFFCAD225),           // Amarillo-verde principal
     primaryDark: const Color(0xFFB8BE20),       // Amarillo-verde oscuro
     primaryLight: const Color(0xFFD9E02E),      // Amarillo-verde claro
+    accent: const Color(0xFFA8B820),
     primaryGradient: const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
@@ -40,6 +41,7 @@ class AppColors {
     primary: const Color(0xFF8BC34A),           // Verde medio
     primaryDark: const Color(0xFF689F38),       // Verde oscuro
     primaryLight: const Color(0xFF9CCC65),      // Verde claro
+    accent: const Color(0xFF7CB342),
     primaryGradient: const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
@@ -52,6 +54,7 @@ class AppColors {
     primary: const Color(0xFF4CAF50),           // Verde fuerte
     primaryDark: const Color(0xFF388E3C),       // Verde muy oscuro
     primaryLight: const Color(0xFF66BB6A),      // Verde medio
+    accent: const Color(0xFF43A047),
     primaryGradient: const LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
@@ -152,15 +155,30 @@ class RoleColorPalette {
   final Color primary;
   final Color primaryDark;
   final Color primaryLight;
+  final Color accent;
   final LinearGradient primaryGradient;
   
   RoleColorPalette({
     required this.primary,
     required this.primaryDark,
     required this.primaryLight,
+    required this.accent,
     required this.primaryGradient,
   });
   
   /// Genera sombra basada en el color primario
   Color get shadowLight => primary.withOpacity(0.3);
+
+  /// 🔥 NUEVO: Gradiente para avatar/elementos destacados
+  LinearGradient get avatarGradient => LinearGradient(
+    colors: [primary, accent],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  
+  /// 🔥 NUEVO: Color de borde con opacidad
+  Color borderColor([double opacity = 0.4]) => accent.withOpacity(opacity);
+  
+  /// 🔥 NUEVO: Color de fondo suave para chips/tags
+  Color get chipBackground => primary.withOpacity(0.15);
 }

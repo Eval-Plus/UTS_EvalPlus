@@ -9,6 +9,7 @@ import 'package:eval_plus/controllers/user_session_controller.dart';
 
 /// Contenedor del perfil del usuario
 /// Muestra información básica: avatar y correo institucional
+/// 🔥 ACTUALIZADO: Colores dinámicos según rol del usuario
 class ProfileContent extends StatelessWidget {
   final UserModel? user;
 
@@ -19,7 +20,7 @@ class ProfileContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Obtener el displayName del rol desde la sesión
+    // Obtener la sesión completa (rol y paleta de colores)
     final session = context.watch<UserSessionController>();
     
     return SingleChildScrollView(
@@ -30,7 +31,10 @@ class ProfileContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const SizedBox(height: 20),
-            _buildProfileCard(session.roleDisplayName), // Pasar displayName
+            _buildProfileCard(
+              session.roleDisplayName,
+              session.palette, // 🔥 Pasar la paleta completa
+            ),
             const SizedBox(height: 20),
           ],
         ),
@@ -39,18 +43,18 @@ class ProfileContent extends StatelessWidget {
   }
 
   /// Construye la tarjeta principal del perfil
-  Widget _buildProfileCard(String roleDisplay) {
+  Widget _buildProfileCard(String roleDisplay, palette) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFFA8B820).withOpacity(0.4),
+          color: palette.borderColor(0.4), // 🔥 Color dinámico
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFA8B820).withOpacity(0.2),
+            color: palette.shadowLight, // 🔥 Sombra dinámica
             offset: const Offset(0, 4),
           ),
         ],
@@ -59,15 +63,15 @@ class ProfileContent extends StatelessWidget {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            // Avatar
-            _buildAvatar(),
+            // Avatar con colores dinámicos
+            _buildAvatar(palette),
             
             const SizedBox(height: 20),
             
             // Nombre del usuario
             Text(
-              user?.nombreCompleto ?? 'Estudiante',
-              style: TextStyle(
+              user?.nombreCompleto ?? 'Usuario',
+              style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF1A1A1A),
@@ -77,23 +81,24 @@ class ProfileContent extends StatelessWidget {
             
             const SizedBox(height: 12),
             
-            // Chip con correo institucional
-            _buildEmailChip(),
+            // Chip con correo institucional (colores dinámicos)
+            _buildEmailChip(palette),
             
             const SizedBox(height: 24),
             
-            // Divider sutil
+            // Divider sutil con color dinámico
             Container(
               height: 1,
-              color: const Color(0xFFA8B820).withOpacity(0.2),
+              color: palette.borderColor(0.2), // 🔥 Color dinámico
             ),
             
             const SizedBox(height: 24),
             
-            // Información adicional
+            // Información adicional con colores dinámicos
             _buildInfoRow(
               icon: Icons.school_rounded,
               label: roleDisplay,
+              palette: palette,
             ),
           ],
         ),
@@ -101,28 +106,21 @@ class ProfileContent extends StatelessWidget {
     );
   }
 
-  /// Construye el avatar del usuario
-  Widget _buildAvatar() {
+  /// Construye el avatar del usuario con colores dinámicos
+  Widget _buildAvatar(palette) {
     return Container(
       width: 100,
       height: 100,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFFCAD225),
-            const Color(0xFFA8B820),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: palette.avatarGradient, // 🔥 Gradiente dinámico
         border: Border.all(
-          color: const Color(0xFFA8B820),
+          color: palette.accent, // 🔥 Border dinámico
           width: 3,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFA8B820).withOpacity(0.2),
+            color: palette.shadowLight, // 🔥 Sombra dinámica
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -131,7 +129,7 @@ class ProfileContent extends StatelessWidget {
       child: Center(
         child: Text(
           user?.initials ?? 'US',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.bold,
             color: Colors.white,
@@ -142,14 +140,14 @@ class ProfileContent extends StatelessWidget {
   }
 
   /// Construye el chip con el correo institucional
-  Widget _buildEmailChip() {
+  Widget _buildEmailChip(palette) {
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: 16,
         vertical: 8,
       ),
       decoration: BoxDecoration(
-        color: const Color(0xFFCAD225).withOpacity(0.15),
+        color: palette.chipBackground, // 🔥 Fondo dinámico
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -163,7 +161,7 @@ class ProfileContent extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             user?.email ?? 'correo@uts.edu.co',
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 13,
               color: Color(0xFF1A1A1A),
               fontWeight: FontWeight.w500,
@@ -178,6 +176,7 @@ class ProfileContent extends StatelessWidget {
   Widget _buildInfoRow({
     required IconData icon,
     required String label,
+    required palette,
   }) {
     return Row(
       children: [
@@ -187,15 +186,15 @@ class ProfileContent extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
-                const Color(0xFFCAD225).withOpacity(0.15),
-                const Color(0xFFCAD225).withOpacity(0.08),
+                palette.chipBackground, // 🔥 Color dinámico
+                palette.primary.withOpacity(0.08), // 🔥 Color dinámico
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: const Color(0xFFA8B820).withOpacity(0.3),
+              color: palette.borderColor(0.3), // 🔥 Border dinámico
               width: 1,
             ),
           ),
