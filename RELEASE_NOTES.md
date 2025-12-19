@@ -1,73 +1,30 @@
-# Release Notes - Eval+
-
-## v0.3.0-alpha (2024-12-13)
+## v0.3.1-alpha (2024-12-18)
 
 ### 🎯 Alcance de la versión
-Esta versión Alpha incluye **3 paneles principales**:
-- **Panel Estudiante** ✅ (Funcional)
-- **Panel Docente** 🚧 (Próximamente)
-- **Panel Administrador** 🚧 (Próximamente)
+Actualización incremental de la versión Alpha enfocada en el **Panel Docente**, con funcionalidades iniciales de visualización.
 
-### ✨ Funcionalidades Estudiante (Completadas)
-
-#### Autenticación
-- ✅ Inicio de sesión con Microsoft OAuth
-- ✅ Perfil de usuario con información personal
-- ✅ Detección automática de rol según correo institucional
-
-#### Carreras y Materias
-- ✅ Visualización de todas las carreras asignadas
-- ✅ Listado de materias por carrera
-- ✅ Inscripción automática en todas las carreras disponibles
-- ✅ Asignación aleatoria de hasta 2 materias por carrera
-- ✅ Semestre aleatorio por carrera
-
-#### Evaluaciones
-- ✅ Listado de evaluaciones disponibles
-- ✅ Responder evaluaciones con formulario interactivo
-- ✅ Progreso en tiempo real durante evaluación
-- ✅ Comentarios anónimos opcionales
-- ✅ Estadísticas personales:
-  - Total de evaluaciones
-  - Evaluaciones completadas
-  - Evaluaciones pendientes
-
-#### Perfil
-- ✅ Visualización de datos personales
-- ✅ Foto de perfil de Microsoft
-- ✅ Información de carreras y materias inscritas
-
-### 🚧 Próximas funcionalidades (v0.4.0-alpha)
+### ✨ Nuevas funcionalidades
 
 #### Panel Docente
-- 📊 Visualización de comentarios anónimos de estudiantes
-- 📈 Estadísticas por materia
-- 📋 Listado de evaluaciones asignadas
-- 👥 Cantidad de estudiantes que han respondido
+- ✅ Visualización de evaluaciones asignadas al docente
+- ✅ Estadísticas generales por evaluación:
+  - Total de respuestas
+  - Promedios generales
+  - Estado de participación
+- ✅ Vista de resultados por evaluación
+- ⚠️ Datos cargados de forma **estática** (no consume API aún)
 
-#### Panel Administrador
-- 📊 Dashboard de monitoreo general
-- 📈 Estadísticas globales de evaluaciones
-- 👥 Gestión de usuarios (estudiantes y docentes)
-- 📝 Gestión de plantillas de evaluación
-- 🏫 Administración de carreras y materias
+### 🚧 Limitaciones actuales
+- El panel docente **no está conectado a la API**
+- La información mostrada es de prueba (mock / estática)
+- No se permite aún interacción ni filtrado avanzado
 
 ### 🔧 Mejoras técnicas
-- Refactorización del servicio de inscripciones
-- Optimización de logs con emojis y mejor legibilidad
-- Mejora en el manejo de errores por carrera
-- Sistema de configuración centralizado para estudiantes
-
-### 🐛 Correcciones
-- Fix: Inscripción de estudiantes ahora incluye todas las carreras
-- Fix: Máximo 2 materias por carrera en lugar de 3
-- Fix: Semestre aleatorio independiente por carrera
+- Estructura base del módulo de evaluaciones para docentes
+- Separación de widgets para estadísticas
+- Preparación del flujo para futura integración con backend
 
 ### 📱 Plataformas soportadas
 - Android (APK)
 - Web (Próximamente)
 
----
-
-## v0.2.0-alpha (2024-12-XX)
-[Contenido anterior...]
