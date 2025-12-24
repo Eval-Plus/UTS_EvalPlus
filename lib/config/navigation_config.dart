@@ -1,41 +1,82 @@
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/models/user_model.dart';
-import 'package:eval_plus/screen/content/careers_content.dart';
-import 'package:eval_plus/screen/content/evaluations_content.dart';
+
+// Student Content
+import 'package:eval_plus/screen/content/student/careers_content.dart';
+import 'package:eval_plus/screen/content/student/evaluations_content.dart';
+
+// Teacher Content
+import 'package:eval_plus/screen/content/teacher/teacher_evaluations_content.dart';
+
+// Shared Content
 import 'package:eval_plus/screen/content/profile_content.dart';
 
 /// Configuración centralizada de navegación por rol
 class NavigationConfig {
-  // Definición de tabs disponibles
-  static const NavTab careersTab = NavTab(
+
+  // ==================== TABS PARA ESTUDIANTES ====================
+  
+  static const NavTab studentCareersTab = NavTab(
     icon: Icons.school,
     label: 'Carreras',
     roles: [UserRole.student],
   );
 
-  static const NavTab evaluationsTab = NavTab(
+  static const NavTab studentEvaluationsTab = NavTab(
     icon: Icons.assignment_turned_in,
     label: 'Evaluaciones',
-    roles: [UserRole.student, UserRole.teacher, UserRole.admin],
+    roles: [UserRole.student],
   );
 
+  // ==================== TABS PARA DOCENTES ====================
+  
+  static const NavTab teacherEvaluationsTab = NavTab(
+    icon: Icons.analytics,
+    label: 'Mis Evaluaciones',
+    roles: [UserRole.teacher],
+  );
+
+  // ==================== TABS PARA ADMINISTRADORES ====================
+  
+  static const NavTab adminEvaluationsTab = NavTab(
+    icon: Icons.dashboard,
+    label: 'Panel Admin',
+    roles: [UserRole.admin],
+  );
+
+  // ==================== TAB COMPARTIDO ====================
+  
   static const NavTab profileTab = NavTab(
     icon: Icons.person,
     label: 'Perfil',
     roles: [UserRole.student, UserRole.teacher, UserRole.admin],
   );
 
-  /// Lista maestra de todos los tabs
-  static const List<NavTab> allTabs = [
-    careersTab,
-    evaluationsTab,
-    profileTab,
-  ];
+  // ==================== MÉTODOS PRINCIPALES ====================
 
   /// Obtiene los tabs visibles para un rol específico
   static List<NavTab> getTabsForRole(UserRole role) {
-    return allTabs.where((tab) => tab.roles.contains(role)).toList();
+    switch (role) {
+      case UserRole.student:
+        return [
+          studentCareersTab,
+          studentEvaluationsTab,
+          profileTab,
+        ];
+      
+      case UserRole.teacher:
+        return [
+          teacherEvaluationsTab,
+          profileTab,
+        ];
+      
+      case UserRole.admin:
+        return [
+          adminEvaluationsTab,
+          profileTab,
+        ];
+    }
   }
 
   /// Obtiene los widgets de contenido para un rol específico
@@ -43,9 +84,29 @@ class NavigationConfig {
     final tabs = getTabsForRole(role);
     
     return tabs.map((tab) {
-      if (tab == careersTab) return const CarrerasContent();
-      if (tab == evaluationsTab) return const EvaluationsList();
-      if (tab == profileTab) return ProfileContent(user: user);
+      // Student tabs
+      if (tab == studentCareersTab) {
+        return const CarrerasContent();
+      }
+      if (tab == studentEvaluationsTab) {
+        return const EvaluationsList();
+      }
+      
+      // Teacher tabs
+      if (tab == teacherEvaluationsTab) {
+        return const TeacherEvaluationsContent();
+      }
+      
+      // Admin tabs
+      if (tab == adminEvaluationsTab) {
+        // TODO: Implementar contenido de admin
+        return _buildPlaceholder('Panel de Administrador');
+      }
+      
+      // Shared tabs
+      if (tab == profileTab) {
+        return ProfileContent(user: user);
+      }
       
       throw Exception('Tab no reconocido: ${tab.label}');
     }).toList();
@@ -59,6 +120,43 @@ class NavigationConfig {
 
   /// Obtiene el índice inicial seguro (siempre 0)
   static int getInitialIndex() => 0;
+
+  /// Widget placeholder para contenidos no implementados
+  static Widget _buildPlaceholder(String title) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.construction,
+              size: 80,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Esta funcionalidad estará disponible pronto',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// Clase inmutable que representa un tab de navegación

@@ -7,7 +7,7 @@ import 'package:eval_plus/services/careers_service.dart';
 import 'package:eval_plus/models/career_model.dart';
 
 // Content
-import 'package:eval_plus/screen/content/subjects_content.dart';
+import 'package:eval_plus/screen/content/student/subjects_content.dart';
 
 // NOTA: SubjectsContent necesita CareerModel, no Career
 // Asegúrate de actualizar subjects_content.dart para usar career.colorValue
