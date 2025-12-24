@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eval_plus/models/teacher_evaluation_model.dart';
+import 'package:eval_plus/services/teacher_evaluation_service.dart';
 import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
 /// Contenido de evaluaciones para DOCENTES
@@ -11,75 +13,82 @@ class TeacherEvaluationsContent extends StatefulWidget {
 }
 
 class _TeacherEvaluationsContentState extends State<TeacherEvaluationsContent> {
-  bool _isLoading = false;
+  late final TeacherEvaluationsService _evaluationsService;
   
-  // 🔥 DATA QUEMADA - Simulación de evaluaciones del docente
-  final List<TeacherEvaluationData> _evaluations = [
-    TeacherEvaluationData(
-      subjectName: 'Programación Orientada a Objetos',
-      subjectCode: 'POO-301',
-      careerName: 'Ingeniería de Sistemas',
-      totalStudents: 35,
-      completedEvaluations: 28,
-      pendingEvaluations: 7,
-      period: '2024-2',
-      status: EvaluationStatus.active,
-    ),
-    TeacherEvaluationData(
-      subjectName: 'Estructuras de Datos',
-      subjectCode: 'ED-202',
-      careerName: 'Ingeniería de Sistemas',
-      totalStudents: 42,
-      completedEvaluations: 42,
-      pendingEvaluations: 0,
-      period: '2024-2',
-      status: EvaluationStatus.closed,
-    ),
-    TeacherEvaluationData(
-      subjectName: 'Base de Datos I',
-      subjectCode: 'BD-301',
-      careerName: 'Ingeniería de Sistemas',
-      totalStudents: 38,
-      completedEvaluations: 15,
-      pendingEvaluations: 23,
-      period: '2024-2',
-      status: EvaluationStatus.active,
-    ),
-    TeacherEvaluationData(
-      subjectName: 'Cálculo Diferencial',
-      subjectCode: 'CAL-101',
-      careerName: 'Ingeniería Industrial',
-      totalStudents: 45,
-      completedEvaluations: 0,
-      pendingEvaluations: 45,
-      period: '2024-2',
-      status: EvaluationStatus.upcoming,
-    ),
-  ];
+  List<TeacherEvaluationModel> _evaluations = [];
+  Map<String, int> _stats = {
+    'totalSubjects': 0,
+    'totalStudents': 0,
+    'totalCompleted': 0,
+    'totalPending': 0,
+  };
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    
+    _evaluationsService = TeacherEvaluationsService();
+    
+    debugPrint('🎯 [Teacher] Suscribiéndose al servicio...');
+    
+    _evaluationsService.addListener(_onEvaluationsChanged);
+    
+    _loadEvaluations();
+  }
+
+  @override
+  void dispose() {
+    debugPrint('🎯 [Teacher] Desuscribiéndose del servicio...');
+    _evaluationsService.removeListener(_onEvaluationsChanged);
+    super.dispose();
+  }
+
+  void _onEvaluationsChanged() {
+    debugPrint('🔔 [Teacher] Notificación recibida: Recargando evaluaciones...');
+    _loadEvaluations(forceRefresh: true);
+  }
+
+  Future<void> _loadEvaluations({bool forceRefresh = false}) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await _evaluationsService.getMyEvaluations(
+        forceRefresh: forceRefresh,
+      );
+
+      if (mounted) {
+        setState(() {
+          _evaluations = response['evaluations'] as List<TeacherEvaluationModel>;
+          _stats = response['stats'] as Map<String, int>;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error al cargar evaluaciones: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
-      onRefresh: _onRefresh,
+      onRefresh: () => _loadEvaluations(forceRefresh: true),
       color: const Color(0xFF8BC34A),
       child: _isLoading
           ? _buildLoadingState()
-          : _buildEvaluationsList(),
+          : _errorMessage != null
+              ? _buildErrorState()
+              : _buildEvaluationsList(),
     );
-  }
-
-  Future<void> _onRefresh() async {
-    setState(() {
-      _isLoading = true;
-    });
-    
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
   }
 
   Widget _buildLoadingState() {
@@ -103,24 +112,47 @@ class _TeacherEvaluationsContentState extends State<TeacherEvaluationsContent> {
     );
   }
 
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Color(0xFFEF4444),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B6B6B),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _loadEvaluations(forceRefresh: true),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8BC34A),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildEvaluationsList() {
     if (_evaluations.isEmpty) {
       return _buildEmptyState();
     }
-
-    // Calcular estadísticas globales
-    final totalStudents = _evaluations.fold<int>(
-      0, 
-      (sum, eval) => sum + eval.totalStudents,
-    );
-    final totalCompleted = _evaluations.fold<int>(
-      0, 
-      (sum, eval) => sum + eval.completedEvaluations,
-    );
-    final totalPending = _evaluations.fold<int>(
-      0, 
-      (sum, eval) => sum + eval.pendingEvaluations,
-    );
 
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -132,10 +164,10 @@ class _TeacherEvaluationsContentState extends State<TeacherEvaluationsContent> {
             const SizedBox(height: 20),
             
             _buildGlobalStatsHeader(
-              totalSubjects: _evaluations.length,
-              totalStudents: totalStudents,
-              totalCompleted: totalCompleted,
-              totalPending: totalPending,
+              totalSubjects: _stats['totalSubjects']!,
+              totalStudents: _stats['totalStudents']!,
+              totalCompleted: _stats['totalCompleted']!,
+              totalPending: _stats['totalPending']!,
             ),
             
             const SizedBox(height: 24),
@@ -329,7 +361,7 @@ class _TeacherEvaluationsContentState extends State<TeacherEvaluationsContent> {
 // ==================== CARD DE EVALUACIÓN ====================
 
 class _TeacherEvaluationCard extends StatefulWidget {
-  final TeacherEvaluationData evaluation;
+  final TeacherEvaluationModel evaluation;
 
   const _TeacherEvaluationCard({
     required this.evaluation,
@@ -377,10 +409,6 @@ class _TeacherEvaluationCardState extends State<_TeacherEvaluationCard>
 
   @override
   Widget build(BuildContext context) {
-    final completionRate = widget.evaluation.totalStudents > 0
-        ? (widget.evaluation.completedEvaluations / widget.evaluation.totalStudents * 100)
-        : 0.0;
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -460,18 +488,18 @@ class _TeacherEvaluationCardState extends State<_TeacherEvaluationCard>
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              Row(
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
                                 children: [
                                   _buildChip(
                                     widget.evaluation.subjectCode,
                                     const Color(0xFF8BC34A),
                                   ),
-                                  const SizedBox(width: 8),
                                   _buildChip(
                                     widget.evaluation.period,
                                     const Color(0xFF1A1A1A),
                                   ),
-                                  const SizedBox(width: 8),
                                   _buildStatusChip(widget.evaluation.status),
                                 ],
                               ),
@@ -502,7 +530,7 @@ class _TeacherEvaluationCardState extends State<_TeacherEvaluationCard>
                     const SizedBox(height: 16),
                     
                     // Barra de progreso
-                    _buildProgressBar(completionRate),
+                    _buildProgressBar(widget.evaluation.completionPercentage),
                     
                     const SizedBox(height: 12),
                     
@@ -568,7 +596,28 @@ class _TeacherEvaluationCardState extends State<_TeacherEvaluationCard>
                       ),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Información adicional
+                        _buildInfoRow(
+                          icon: Icons.calendar_today_rounded,
+                          label: 'Periodo',
+                          value: widget.evaluation.period,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          icon: Icons.assignment_rounded,
+                          label: 'Plantilla',
+                          value: widget.evaluation.templateName,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildInfoRow(
+                          icon: Icons.event_available_rounded,
+                          label: 'Días restantes',
+                          value: '${widget.evaluation.daysRemaining} días',
+                        ),
+                        const SizedBox(height: 16),
+                        
                         // Botón Ver Comentarios
                         _buildActionButton(
                           context: context,
@@ -675,11 +724,7 @@ class _TeacherEvaluationCardState extends State<_TeacherEvaluationCard>
             minHeight: 10,
             backgroundColor: Colors.grey.shade200,
             valueColor: AlwaysStoppedAnimation<Color>(
-              percentage >= 75 
-                  ? Colors.green.shade600
-                  : percentage >= 50
-                      ? Colors.orange.shade600
-                      : Colors.red.shade600,
+              widget.evaluation.progressColor,
             ),
           ),
         ),
@@ -710,6 +755,42 @@ class _TeacherEvaluationCardState extends State<_TeacherEvaluationCard>
           style: TextStyle(
             fontSize: 10,
             color: const Color(0xFF1A1A1A).withOpacity(0.6),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 18,
+          color: const Color(0xFF8BC34A),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            fontSize: 13,
+            color: const Color(0xFF1A1A1A).withOpacity(0.6),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF1A1A1A),
+              fontWeight: FontWeight.w600,
+            ),
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ],
@@ -791,34 +872,4 @@ class _TeacherEvaluationCardState extends State<_TeacherEvaluationCard>
       },
     );
   }
-}
-
-// ==================== MODELOS DE DATOS ====================
-
-enum EvaluationStatus {
-  active,
-  closed,
-  upcoming,
-}
-
-class TeacherEvaluationData {
-  final String subjectName;
-  final String subjectCode;
-  final String careerName;
-  final int totalStudents;
-  final int completedEvaluations;
-  final int pendingEvaluations;
-  final String period;
-  final EvaluationStatus status;
-
-  TeacherEvaluationData({
-    required this.subjectName,
-    required this.subjectCode,
-    required this.careerName,
-    required this.totalStudents,
-    required this.completedEvaluations,
-    required this.pendingEvaluations,
-    required this.period,
-    required this.status,
-  });
 }
