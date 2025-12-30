@@ -34,7 +34,6 @@ class TeacherEvaluationModel {
 
   // ==================== FACTORY CONSTRUCTORS ====================
   
-  /// Crear desde respuesta del API
   factory TeacherEvaluationModel.fromJson(Map<String, dynamic> json) {
     return TeacherEvaluationModel(
       id: json['id'] as int,
@@ -53,7 +52,6 @@ class TeacherEvaluationModel {
     );
   }
 
-  /// Convierte el string de status a enum
   static EvaluationStatus _parseStatus(String status) {
     switch (status.toLowerCase()) {
       case 'active':
@@ -69,13 +67,11 @@ class TeacherEvaluationModel {
 
   // ==================== COMPUTED PROPERTIES ====================
   
-  /// Calcula el porcentaje de completitud
   double get completionPercentage {
     if (totalStudents == 0) return 0.0;
     return (completedEvaluations / totalStudents) * 100;
   }
 
-  /// Color del progreso según porcentaje
   Color get progressColor {
     final percentage = completionPercentage;
     if (percentage >= 75) return Colors.green.shade600;
@@ -83,7 +79,6 @@ class TeacherEvaluationModel {
     return Colors.red.shade600;
   }
 
-  /// Días restantes hasta el cierre
   int get daysRemaining {
     final now = DateTime.now();
     if (now.isAfter(fechaCierre)) return 0;
@@ -132,4 +127,132 @@ enum EvaluationStatus {
   active,
   closed,
   upcoming,
+}
+
+// ==================== 🆕 MODELO DE COMENTARIO ====================
+
+/// Modelo para comentarios anónimos de evaluaciones
+class CommentModel {
+  final int id;
+  final String text;
+  final DateTime date;
+  final CommentSentiment sentiment;
+
+  CommentModel({
+    required this.id,
+    required this.text,
+    required this.date,
+    required this.sentiment,
+  });
+
+  /// Factory desde JSON del backend
+  factory CommentModel.fromJson(Map<String, dynamic> json) {
+    return CommentModel(
+      id: json['id'] as int,
+      text: json['comentario'] as String, // Backend usa 'comentario'
+      date: DateTime.parse(json['fechaCompleta'] as String),
+      sentiment: _parseSentiment(json['sentiment'] as String? ?? 'neutral'),
+    );
+  }
+
+  static CommentSentiment _parseSentiment(String sentiment) {
+    switch (sentiment.toLowerCase()) {
+      case 'positive':
+        return CommentSentiment.positive;
+      case 'neutral':
+        return CommentSentiment.neutral;
+      case 'negative':
+        return CommentSentiment.negative;
+      default:
+        return CommentSentiment.neutral;
+    }
+  }
+
+  /// Formatea la fecha en español
+  String get formattedDate {
+    final months = [
+      'ene', 'feb', 'mar', 'abr', 'may', 'jun',
+      'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
+    ];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
+  }
+
+  /// Color según el sentiment
+  Color get sentimentColor {
+    switch (sentiment) {
+      case CommentSentiment.positive:
+        return Colors.green.shade700;
+      case CommentSentiment.neutral:
+        return Colors.blue.shade700;
+      case CommentSentiment.negative:
+        return Colors.red.shade700;
+    }
+  }
+
+  /// Color de fondo según el sentiment
+  Color get sentimentBackgroundColor {
+    switch (sentiment) {
+      case CommentSentiment.positive:
+        return Colors.green.shade100;
+      case CommentSentiment.neutral:
+        return Colors.blue.shade100;
+      case CommentSentiment.negative:
+        return Colors.red.shade100;
+    }
+  }
+
+  /// Color de borde según el sentiment
+  Color get sentimentBorderColor {
+    switch (sentiment) {
+      case CommentSentiment.positive:
+        return Colors.green.shade300;
+      case CommentSentiment.neutral:
+        return Colors.blue.shade300;
+      case CommentSentiment.negative:
+        return Colors.red.shade300;
+    }
+  }
+
+  /// Etiqueta en español según el sentiment
+  String get sentimentLabel {
+    switch (sentiment) {
+      case CommentSentiment.positive:
+        return '😊 Positivo';
+      case CommentSentiment.neutral:
+        return '😐 Neutral';
+      case CommentSentiment.negative:
+        return '😕 Negativo';
+    }
+  }
+}
+
+/// Enum para el sentimiento del comentario
+enum CommentSentiment {
+  positive,
+  neutral,
+  negative,
+}
+
+/// Estadísticas de comentarios
+class CommentStats {
+  final int total;
+  final int positive;
+  final int neutral;
+  final int negative;
+
+  CommentStats({
+    required this.total,
+    required this.positive,
+    required this.neutral,
+    required this.negative,
+  });
+
+  factory CommentStats.fromComments(List<CommentModel> comments) {
+    return CommentStats(
+      total: comments.length,
+      positive: comments.where((c) => c.sentiment == CommentSentiment.positive).length,
+      neutral: comments.where((c) => c.sentiment == CommentSentiment.neutral).length,
+      negative: comments.where((c) => c.sentiment == CommentSentiment.negative).length,
+    );
+  }
 }
