@@ -234,15 +234,41 @@ class TeacherEvaluationsService {
       );
 
       debugPrint('📡 [Teacher Comments] Status Code: ${response.statusCode}');
+      debugPrint('📦 [Teacher Comments] Response Body: ${response.body}'); // 🔍 DEBUG
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
         if (data['success'] == true && data['data'] != null) {
-          final commentsData = data['data']['comments'] as List;
+          // 🔍 Verificar la estructura de la respuesta
+          final responseData = data['data'];
+          
+          debugPrint('🔍 [Teacher Comments] Tipo de data: ${responseData.runtimeType}');
+          
+          // El backend puede retornar:
+          // 1. { comments: [...], total: number } ← Estructura esperada
+          // 2. Directamente el array [...]
+          
+          List<dynamic> commentsData;
+          
+          if (responseData is Map<String, dynamic> && responseData.containsKey('comments')) {
+            // Estructura con objeto { comments: [...] }
+            commentsData = responseData['comments'] as List;
+            debugPrint('📦 [Teacher Comments] Estructura: Objeto con "comments" (${commentsData.length} items)');
+          } else if (responseData is List) {
+            // Estructura directa como array
+            commentsData = responseData;
+            debugPrint('📦 [Teacher Comments] Estructura: Array directo (${commentsData.length} items)');
+          } else {
+            debugPrint('⚠️ [Teacher Comments] Estructura desconocida');
+            debugPrint('⚠️ [Teacher Comments] Data keys: ${responseData is Map ? (responseData as Map).keys.toList() : 'No es Map'}');
+            throw Exception('Estructura de respuesta no reconocida');
+          }
+          
+          debugPrint('✅ [Teacher Comments] Parseando ${commentsData.length} comentarios...');
           
           return commentsData
-              .map((json) => CommentModel.fromJson(json))
+              .map((json) => CommentModel.fromJson(json as Map<String, dynamic>))
               .toList();
         }
       } else if (response.statusCode == 404) {
@@ -250,9 +276,10 @@ class TeacherEvaluationsService {
         return [];
       }
 
-      throw Exception('Error al obtener comentarios');
+      throw Exception('Error al obtener comentarios: Status ${response.statusCode}');
     } catch (e) {
-      debugPrint('💥 [Teacher Comments] Error: $e');
+      debugPrint('💥 [Teacher Comments] Error completo: $e');
+      debugPrint('💥 [Teacher Comments] Stack trace: ${StackTrace.current}');
       rethrow;
     }
   }

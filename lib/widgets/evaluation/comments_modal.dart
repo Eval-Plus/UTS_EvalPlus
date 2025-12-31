@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/teacher_evaluation_model.dart';
+import 'package:eval_plus/services/teacher_evaluation_service.dart';
 
 /// Modal para mostrar comentarios anónimos de una evaluación
 class CommentsModal extends StatefulWidget {
@@ -15,55 +16,29 @@ class CommentsModal extends StatefulWidget {
 }
 
 class _CommentsModalState extends State<CommentsModal> {
+  late final TeacherEvaluationsService _evaluationsService;
+  
   String _selectedFilter = 'all';
   final TextEditingController _searchController = TextEditingController();
   String _searchTerm = '';
 
-  // 📊 Datos quemados para diseño
-  final List<Map<String, dynamic>> _allComments = [
-    {
-      'id': 1,
-      'text': 'Excelente profesor, explica muy bien los conceptos y siempre está dispuesto a resolver dudas. Las clases son dinámicas y se nota su preparación.',
-      'date': '2024-12-15',
-      'sentiment': 'positive',
-    },
-    {
-      'id': 2,
-      'text': 'Sería bueno que dejara más ejercicios prácticos para reforzar lo visto en clase. En general, buen profesor.',
-      'date': '2024-12-16',
-      'sentiment': 'neutral',
-    },
-    {
-      'id': 3,
-      'text': 'Me gusta su metodología, pero a veces va muy rápido con los temas. Sugiero dedicar más tiempo a los conceptos difíciles.',
-      'date': '2024-12-17',
-      'sentiment': 'neutral',
-    },
-    {
-      'id': 4,
-      'text': 'Uno de los mejores profesores que he tenido. Muy claro en sus explicaciones y siempre disponible para ayudar.',
-      'date': '2024-12-18',
-      'sentiment': 'positive',
-    },
-    {
-      'id': 5,
-      'text': 'Las evaluaciones son justas y los temas están bien organizados. Se nota que le apasiona enseñar.',
-      'date': '2024-12-19',
-      'sentiment': 'positive',
-    },
-    {
-      'id': 6,
-      'text': 'Las clases son interesantes pero a veces falta material de apoyo para estudiar en casa.',
-      'date': '2024-12-20',
-      'sentiment': 'neutral',
-    },
-    {
-      'id': 7,
-      'text': 'Excelente dominio del tema. Sus ejemplos prácticos ayudan mucho a entender la teoría.',
-      'date': '2024-12-21',
-      'sentiment': 'positive',
-    },
-  ];
+  // Estado de carga y datos
+  bool _isLoading = true;
+  String? _errorMessage;
+  List<CommentModel> _allComments = [];
+  Map<String, int> _stats = {
+    'total': 0,
+    'positive': 0,
+    'neutral': 0,
+    'negative': 0,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _evaluationsService = TeacherEvaluationsService();
+    _loadComments();
+  }
 
   @override
   void dispose() {
@@ -71,26 +46,52 @@ class _CommentsModalState extends State<CommentsModal> {
     super.dispose();
   }
 
+  /// Carga comentarios desde el servicio
+  Future<void> _loadComments({bool forceRefresh = false}) async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      debugPrint('🔍 [CommentsModal] Cargando comentarios para evaluación ${widget.evaluation.id}...');
+      
+      final response = await _evaluationsService.getEvaluationComments(
+        evaluationId: widget.evaluation.id,
+        forceRefresh: forceRefresh,
+      );
+
+      if (mounted) {
+        setState(() {
+          _allComments = response['comments'] as List<CommentModel>;
+          _stats = response['stats'] as Map<String, int>;
+          _isLoading = false;
+        });
+        
+        debugPrint('✅ [CommentsModal] ${_allComments.length} comentarios cargados');
+      }
+    } catch (e) {
+      debugPrint('💥 [CommentsModal] Error cargando comentarios: $e');
+      
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error al cargar comentarios: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   /// Filtra comentarios según búsqueda y filtro
-  List<Map<String, dynamic>> get _filteredComments {
+  List<CommentModel> get _filteredComments {
     return _allComments.where((comment) {
       final matchesFilter = _selectedFilter == 'all' || 
-                           comment['sentiment'] == _selectedFilter;
-      final matchesSearch = (comment['text'] as String)
+                           comment.sentiment.name == _selectedFilter;
+      final matchesSearch = comment.text
           .toLowerCase()
           .contains(_searchTerm.toLowerCase());
       return matchesFilter && matchesSearch;
     }).toList();
-  }
-
-  /// Calcula estadísticas
-  Map<String, int> get _stats {
-    return {
-      'total': _allComments.length,
-      'positive': _allComments.where((c) => c['sentiment'] == 'positive').length,
-      'neutral': _allComments.where((c) => c['sentiment'] == 'neutral').length,
-      'negative': _allComments.where((c) => c['sentiment'] == 'negative').length,
-    };
   }
 
   @override
@@ -102,26 +103,11 @@ class _CommentsModalState extends State<CommentsModal> {
           children: [
             _buildHeader(context),
             Expanded(
-              child: SingleChildScrollView(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildInfoCard(),
-                      const SizedBox(height: 20),
-                      _buildStatsCard(),
-                      const SizedBox(height: 20),
-                      _buildSearchAndFilters(),
-                      const SizedBox(height: 16),
-                      _buildAnonymityNotice(),
-                      const SizedBox(height: 20),
-                      _buildCommentsList(),
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
+              child: _isLoading
+                  ? _buildLoadingState()
+                  : _errorMessage != null
+                      ? _buildErrorState()
+                      : _buildContent(),
             ),
           ],
         ),
@@ -211,6 +197,229 @@ class _CommentsModalState extends State<CommentsModal> {
                   ),
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Animated loader con colores del rol docente
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 1500),
+            builder: (context, value, child) {
+              return Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      const Color(0xFF8BC34A).withOpacity(0.2),
+                      const Color(0xFF689F38).withOpacity(0.2),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF8BC34A).withOpacity(0.2),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    SizedBox(
+                      width: 60,
+                      height: 60,
+                      child: CircularProgressIndicator(
+                        value: null,
+                        strokeWidth: 4,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          Color(0xFF8BC34A),
+                        ),
+                        backgroundColor: const Color(0xFF8BC34A).withOpacity(0.2),
+                      ),
+                    ),
+                    const Icon(
+                      Icons.comment_rounded,
+                      color: Color(0xFF8BC34A),
+                      size: 32,
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 32),
+          
+          // Texto animado
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 800),
+            builder: (context, value, child) {
+              return Opacity(
+                opacity: value,
+                child: Column(
+                  children: [
+                    const Text(
+                      'Cargando comentarios',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Esto solo tomará un momento...',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          
+          const SizedBox(height: 40),
+          
+          // Progress bar horizontal
+          Container(
+            width: 200,
+            height: 4,
+            decoration: BoxDecoration(
+              color: const Color(0xFF8BC34A).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(2),
+            ),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 2000),
+              curve: Curves.easeInOut,
+              builder: (context, value, child) {
+                return FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: value,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF8BC34A),
+                          Color(0xFF7CB342),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF8BC34A).withOpacity(0.5),
+                          blurRadius: 8,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 48,
+                color: Colors.red.shade600,
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Error al cargar comentarios',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage ?? 'Ocurrió un error inesperado',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton.icon(
+              onPressed: () => _loadComments(forceRefresh: true),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Reintentar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8BC34A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                elevation: 2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    return RefreshIndicator(
+      onRefresh: () => _loadComments(forceRefresh: true),
+      color: const Color(0xFF8BC34A),
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildInfoCard(),
+              const SizedBox(height: 20),
+              _buildStatsCard(),
+              const SizedBox(height: 20),
+              _buildSearchAndFilters(),
+              const SizedBox(height: 16),
+              _buildAnonymityNotice(),
+              const SizedBox(height: 20),
+              _buildCommentsList(),
+              const SizedBox(height: 20),
             ],
           ),
         ),
@@ -599,7 +808,7 @@ class _CommentsModalState extends State<CommentsModal> {
           ),
           const SizedBox(height: 16),
           Text(
-            'No se encontraron comentarios',
+            'Sin comentarios',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -625,75 +834,12 @@ class _CommentsModalState extends State<CommentsModal> {
 
 /// Card individual de comentario
 class _CommentCard extends StatelessWidget {
-  final Map<String, dynamic> comment;
+  final CommentModel comment;
 
   const _CommentCard({required this.comment});
 
-  String _formatDate(String dateStr) {
-    final date = DateTime.parse(dateStr);
-    const months = [
-      'ene', 'feb', 'mar', 'abr', 'may', 'jun',
-      'jul', 'ago', 'sep', 'oct', 'nov', 'dic'
-    ];
-    return '${date.day} ${months[date.month - 1]} ${date.year}';
-  }
-
-  Color _getSentimentColor(String sentiment) {
-    switch (sentiment) {
-      case 'positive':
-        return Colors.green.shade700;
-      case 'neutral':
-        return Colors.blue.shade700;
-      case 'negative':
-        return Colors.red.shade700;
-      default:
-        return Colors.grey.shade700;
-    }
-  }
-
-  Color _getSentimentBgColor(String sentiment) {
-    switch (sentiment) {
-      case 'positive':
-        return Colors.green.shade100;
-      case 'neutral':
-        return Colors.blue.shade100;
-      case 'negative':
-        return Colors.red.shade100;
-      default:
-        return Colors.grey.shade100;
-    }
-  }
-
-  Color _getSentimentBorderColor(String sentiment) {
-    switch (sentiment) {
-      case 'positive':
-        return Colors.green.shade300;
-      case 'neutral':
-        return Colors.blue.shade300;
-      case 'negative':
-        return Colors.red.shade300;
-      default:
-        return Colors.grey.shade300;
-    }
-  }
-
-  String _getSentimentLabel(String sentiment) {
-    switch (sentiment) {
-      case 'positive':
-        return '😊 Positivo';
-      case 'neutral':
-        return '😐 Neutral';
-      case 'negative':
-        return '😕 Negativo';
-      default:
-        return '😐 Neutral';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final sentiment = comment['sentiment'] as String;
-    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -730,7 +876,7 @@ class _CommentCard extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    '#${comment['id']}',
+                    '#${comment.id}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -747,19 +893,19 @@ class _CommentCard extends StatelessWidget {
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: _getSentimentBgColor(sentiment),
+                    color: comment.sentimentBackgroundColor,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: _getSentimentBorderColor(sentiment),
+                      color: comment.sentimentBorderColor,
                       width: 1,
                     ),
                   ),
                   child: Text(
-                    _getSentimentLabel(sentiment),
+                    comment.sentimentLabel,
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: _getSentimentColor(sentiment),
+                      color: comment.sentimentColor,
                     ),
                   ),
                 ),
@@ -774,7 +920,7 @@ class _CommentCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    _formatDate(comment['date'] as String),
+                    comment.formattedDate,
                     style: TextStyle(
                       fontSize: 13,
                       color: Colors.grey[600],
@@ -786,7 +932,7 @@ class _CommentCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            comment['text'] as String,
+            comment.text,
             style: const TextStyle(
               fontSize: 14,
               color: Color(0xFF1A1A1A),
