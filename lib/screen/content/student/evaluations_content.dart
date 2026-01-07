@@ -299,27 +299,88 @@ class _EvaluationsListState extends State<EvaluationsList> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Icono representativo
             Icon(
               Icons.assignment_outlined,
               size: 80,
-              color: Colors.grey.shade400,
+              color: Colors.grey[400],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+            
+            // Título principal
             Text(
-              'No tienes evaluaciones',
+              'No hay evaluaciones disponibles',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
+                color: Colors.grey[700],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Las evaluaciones aparecerán aquí cuando estén disponibles',
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            
+            // Descripción más informativa
+            Text(
+              'Aún no tienes evaluaciones docente asignadas.\n'
+              'Las evaluaciones aparecerán aquí cuando el proceso de sincronización se complete y los docentes las publiquen.',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            
+            // Botón de actualizar con color del rol estudiante
+            ElevatedButton.icon(
+              onPressed: () => _loadEvaluations(forceRefresh: true),
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text('Actualizar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFCAD225), // Verde-amarillo estudiante
+                foregroundColor: const Color(0xFF1A1A1A), // Texto oscuro
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 2,
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Mensaje informativo con diseño coherente
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFCAD225).withOpacity(0.1), // Fondo suave
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFCAD225).withOpacity(0.3), // Borde
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: const Color(0xFFB8BE20), // Verde-amarillo oscuro
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Las evaluaciones se activarán según el calendario académico',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
