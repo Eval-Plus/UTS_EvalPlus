@@ -6,7 +6,7 @@ import 'package:eval_plus/models/career_model.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 
 /// Servicio UNIFICADO para manejar carreras
-/// Combina lógica de API + fallback + caching
+/// Combina lógica de API + caching (SIN fallback)
 class CareersService {
   // ==================== SINGLETON ====================
   
@@ -23,6 +23,7 @@ class CareersService {
   
   /// Obtiene las carreras del usuario
   /// Usa cache si está disponible, sino consulta API
+  /// Retorna lista vacía si no hay carreras (sin fallback ficticio)
   Future<List<CareerModel>> getMyCareers({
     bool forceRefresh = false,
   }) async {
@@ -36,36 +37,43 @@ class CareersService {
       // Obtener token
       final token = await AuthStorageService.getToken();
       if (token == null) {
-        debugPrint('❌ No hay token, usando fallback');
-        return _getFallbackCareers();
+        debugPrint('❌ No hay token disponible');
+        return [];
       }
 
       // Consultar API
       debugPrint('🌐 Consultando API de carreras...');
       final careers = await _fetchFromApi(token);
 
-      if (careers != null && careers.isNotEmpty) {
+      // Si la API retorna datos (incluso si es lista vacía)
+      if (careers != null) {
         // Actualizar cache
         _cachedCareers = careers;
         _lastFetchTime = DateTime.now();
-        debugPrint('✅ ${careers.length} carreras obtenidas');
+        debugPrint('✅ ${careers.length} carreras obtenidas desde API');
         return careers;
       }
 
-      // Fallback si API falla
-      debugPrint('⚠️ API sin datos, usando fallback');
-      return _getFallbackCareers();
+      // Si API falla pero tenemos cache, usar cache
+      if (_cachedCareers != null) {
+        debugPrint('⚠️ API falló, usando cache como fallback');
+        return _cachedCareers!;
+      }
+
+      // Sin cache y sin datos de API: retornar vacío
+      debugPrint('❌ Sin datos de API ni cache disponible');
+      return [];
       
     } catch (e) {
       debugPrint('💥 Error obteniendo carreras: $e');
       
-      // Retornar cache si existe, sino fallback
+      // Retornar cache si existe, sino lista vacía
       if (_cachedCareers != null) {
-        debugPrint('📦 Usando cache como fallback');
+        debugPrint('📦 Usando cache como fallback por error');
         return _cachedCareers!;
       }
       
-      return _getFallbackCareers();
+      return [];
     }
   }
 
@@ -140,47 +148,14 @@ class CareersService {
           return careersList;
         }
       } else if (response.statusCode == 404) {
-        debugPrint('ℹ️ No se encontraron carreras');
-        return [];
+        debugPrint('ℹ️ No se encontraron carreras (404)');
+        return []; // ← Lista vacía explícita
       }
 
-      return null;
+      return null; // API falló o respuesta inesperada
     } catch (e) {
       debugPrint('💥 Error en _fetchFromApi: $e');
-      return null;
+      return null; // Error de red/timeout
     }
-  }
-
-  /// Datos de respaldo estáticos
-  Future<List<CareerModel>> _getFallbackCareers() async {
-    // Simular latencia de red
-    await Future.delayed(const Duration(milliseconds: 300));
-    
-    return [
-      CareerModel(
-        id: 1,
-        nombre: 'Ingeniería de Sistemas',
-        codigo: 'ING-SIS',
-        icon: 'computer',
-        color: '0xFF2196F3',
-        descripcion: 'Carrera enfocada en el desarrollo de software',
-      ),
-      CareerModel(
-        id: 2,
-        nombre: 'Administración de Empresas',
-        codigo: 'ADM-EMP',
-        icon: 'business_center',
-        color: '0xFF4CAF50',
-        descripcion: 'Formación integral en gestión empresarial',
-      ),
-      CareerModel(
-        id: 3,
-        nombre: 'Derecho',
-        codigo: 'DER',
-        icon: 'gavel',
-        color: '0xFFF44336',
-        descripcion: 'Carrera enfocada en ciencias jurídicas',
-      ),
-    ];
   }
 }

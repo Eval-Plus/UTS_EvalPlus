@@ -166,35 +166,96 @@ class _CarrerasContentState extends State<CarrerasContent> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.inbox_outlined, size: 60, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            'No hay carreras disponibles',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey[600],
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Icono más representativo
+            Icon(
+              Icons.pending_actions_outlined,
+              size: 80,
+              color: Colors.grey[400],
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'No tienes carreras asignadas',
-            style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-          ),
-          const SizedBox(height: 24),
-          ElevatedButton.icon(
-            onPressed: _loadCareers,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Actualizar'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6366F1),
-              foregroundColor: Colors.white,
+            const SizedBox(height: 24),
+            
+            // Título principal
+            Text(
+              'No hay carreras disponibles',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey[700],
+              ),
+              textAlign: TextAlign.center,
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            
+            // Descripción más informativa
+            Text(
+              'Aún no tienes carreras asignadas.\nPor favor, espera a que se complete el proceso de sincronización con el sistema académico.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            
+            // Botón de actualizar con color primario del rol
+            ElevatedButton.icon(
+              onPressed: _loadCareers,
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text('Actualizar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFCAD225), // Verde-amarillo estudiante
+                foregroundColor: const Color(0xFF1A1A1A), // Texto oscuro para contraste
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 2,
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Mensaje adicional de ayuda con colores coherentes
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFCAD225).withOpacity(0.1), // Fondo suave del primary
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFFCAD225).withOpacity(0.3), // Borde del primary
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: const Color(0xFFB8BE20), // Verde-amarillo oscuro
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Si el problema persiste, contacta al administrador',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
