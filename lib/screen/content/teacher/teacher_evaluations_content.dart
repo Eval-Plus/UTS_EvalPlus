@@ -199,27 +199,88 @@ class _TeacherEvaluationsContentState extends State<TeacherEvaluationsContent> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Icono representativo
             Icon(
               Icons.school_outlined,
               size: 80,
-              color: Colors.grey.shade400,
+              color: Colors.grey[400],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
+            
+            // Título principal
             Text(
-              'No tienes materias asignadas',
+              'No hay materias disponibles',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
+                color: Colors.grey[700],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Las materias que impartas aparecerán aquí',
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            
+            // Descripción más informativa
+            Text(
+              'Aún no tienes materias asignadas para este periodo académico.\n'
+              'Las evaluaciones aparecerán aquí cuando se complete el proceso de sincronización y asignación de materias.',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey.shade600,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            
+            // Botón de actualizar con color del rol docente
+            ElevatedButton.icon(
+              onPressed: () => _loadEvaluations(forceRefresh: true),
+              icon: const Icon(Icons.refresh, size: 20),
+              label: const Text('Actualizar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF8BC34A), // Verde medio docente
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 2,
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            // Mensaje informativo con diseño coherente
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8BC34A).withOpacity(0.1), // Fondo suave verde
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF8BC34A).withOpacity(0.3), // Borde verde
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: const Color(0xFF689F38), // Verde oscuro
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Si el problema persiste, contacta al coordinador académico',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[700],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
