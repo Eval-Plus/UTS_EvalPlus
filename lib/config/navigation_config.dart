@@ -9,6 +9,9 @@ import 'package:eval_plus/screen/content/student/evaluations_content.dart';
 // Teacher Content
 import 'package:eval_plus/screen/content/teacher/teacher_evaluations_content.dart';
 
+// Admin Content
+import 'package:eval_plus/screen/content/admin/config_content.dart';
+
 // Shared Content
 import 'package:eval_plus/screen/content/profile_content.dart';
 
@@ -106,11 +109,7 @@ class NavigationConfig {
       
       // Admin tabs
       if (tab == adminSettingsTab) {
-        return _buildPlaceholder(
-          'Configuración',
-          'Aquí podrás gestionar sincronizaciones y\ngeneraciones masivas de evaluaciones',
-          Icons.settings_applications,
-        );
+        return const ConfigContent();
       }
 
       if (tab == adminPanelTab) {
