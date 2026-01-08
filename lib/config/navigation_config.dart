@@ -39,9 +39,15 @@ class NavigationConfig {
 
   // ==================== TABS PARA ADMINISTRADORES ====================
   
-  static const NavTab adminEvaluationsTab = NavTab(
+  static const NavTab adminSettingsTab = NavTab(
+    icon: Icons.settings,
+    label: 'Configuración',
+    roles: [UserRole.admin],
+  );
+
+  static const NavTab adminPanelTab = NavTab(
     icon: Icons.dashboard,
-    label: 'Panel Admin',
+    label: 'Análisis',
     roles: [UserRole.admin],
   );
 
@@ -73,7 +79,8 @@ class NavigationConfig {
       
       case UserRole.admin:
         return [
-          adminEvaluationsTab,
+          adminSettingsTab,
+          adminPanelTab,
           profileTab,
         ];
     }
@@ -98,9 +105,20 @@ class NavigationConfig {
       }
       
       // Admin tabs
-      if (tab == adminEvaluationsTab) {
-        // TODO: Implementar contenido de admin
-        return _buildPlaceholder('Panel de Administrador');
+      if (tab == adminSettingsTab) {
+        return _buildPlaceholder(
+          'Configuración',
+          'Aquí podrás gestionar sincronizaciones y\ngeneraciones masivas de evaluaciones',
+          Icons.settings_applications,
+        );
+      }
+
+      if (tab == adminPanelTab) {
+        return _buildPlaceholder(
+          'Panel de Análisis',
+          'Consulta estadísticas y análisis\nde evaluaciones por docente',
+          Icons.analytics,
+        );
       }
       
       // Shared tabs
@@ -122,7 +140,7 @@ class NavigationConfig {
   static int getInitialIndex() => 0;
 
   /// Widget placeholder para contenidos no implementados
-  static Widget _buildPlaceholder(String title) {
+  static Widget _buildPlaceholder(String title, String description, IconData icon) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -130,7 +148,7 @@ class NavigationConfig {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.construction,
+              icon,
               size: 80,
               color: Colors.grey.shade400,
             ),
@@ -145,7 +163,7 @@ class NavigationConfig {
             ),
             const SizedBox(height: 8),
             Text(
-              'Esta funcionalidad estará disponible pronto',
+              description,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,

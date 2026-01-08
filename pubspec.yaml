@@ -40,7 +40,7 @@ flutter_native_splash:
   image: assets/icon/uts_icon5.png
   android_12:
     image: assets/icon/uts_icon5.png
-    color: "#CAD225"
+    color: "#FFFFFF"
 
 flutter:
   uses-material-design: true
