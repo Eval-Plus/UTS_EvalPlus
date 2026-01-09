@@ -146,7 +146,7 @@ class _ConfigContentState extends State<ConfigContent> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Panel de Configuración',
+                      'Configuración',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -155,7 +155,7 @@ class _ConfigContentState extends State<ConfigContent> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Gestión y sincronización del sistema Eval+',
+                      'Gestión y sincronización del sistema',
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white70,
@@ -181,7 +181,7 @@ class _ConfigContentState extends State<ConfigContent> {
                           icon: Icons.people_rounded,
                           label: 'Estudiantes',
                           value: '${_stats['totalStudents']}',
-                          subtitle: '${_stats['syncedStudents']} sync',
+                          subtitle: '${_stats['syncedStudents']} sincronizados',
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -329,7 +329,7 @@ class _ConfigContentState extends State<ConfigContent> {
           
           // Barra de progreso - Estudiantes
           _buildProgressCard(
-            title: 'Estudiantes Sincronizados',
+            title: 'Estudiantes Inscritos',
             current: _stats['syncedStudents']!,
             total: _stats['totalStudents']!,
             percentage: _syncPercentage,

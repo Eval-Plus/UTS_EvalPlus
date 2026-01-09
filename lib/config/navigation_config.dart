@@ -11,6 +11,7 @@ import 'package:eval_plus/screen/content/teacher/teacher_evaluations_content.dar
 
 // Admin Content
 import 'package:eval_plus/screen/content/admin/config_content.dart';
+import 'package:eval_plus/screen/content/admin/analysis_content.dart';
 
 // Shared Content
 import 'package:eval_plus/screen/content/profile_content.dart';
@@ -113,11 +114,7 @@ class NavigationConfig {
       }
 
       if (tab == adminPanelTab) {
-        return _buildPlaceholder(
-          'Panel de Análisis',
-          'Consulta estadísticas y análisis\nde evaluaciones por docente',
-          Icons.analytics,
-        );
+        return const AnalysisContent();
       }
       
       // Shared tabs
