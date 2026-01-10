@@ -1,7 +1,10 @@
-import 'package:flutter/material.dart';
-
 /// Contenido de configuración para ADMINISTRADORES
-/// Panel de sincronización y gestión del sistema
+/// Panel de sincronización y gestión del sistema - INTEGRADO CON BACKEND
+/// Ubicación: lib/screen/content/admin/config_content.dart
+import 'package:flutter/material.dart';
+import 'package:eval_plus/models/admin_dashboard_model.dart';
+import 'package:eval_plus/services/admin_dashboard_service.dart';
+
 class ConfigContent extends StatefulWidget {
   const ConfigContent({super.key});
 
@@ -10,6 +13,8 @@ class ConfigContent extends StatefulWidget {
 }
 
 class _ConfigContentState extends State<ConfigContent> {
+  late final AdminDashboardService _dashboardService;
+  
   // Estado de carga para cada acción
   final Map<String, bool> _loadingStates = {
     'sync-students': false,
@@ -17,51 +22,222 @@ class _ConfigContentState extends State<ConfigContent> {
     'generate-evaluations': false,
   };
 
-  // Datos estáticos para demostración
-  final Map<String, int> _stats = {
-    'totalStudents': 1247,
-    'syncedStudents': 1089,
-    'totalTeachers': 87,
-    'enrolledTeachers': 72,
-    'totalEvaluations': 156,
-    'activeEvaluations': 98,
-    'completedEvaluations': 58,
-  };
+  // Datos del dashboard
+  AdminDashboardModel? _dashboard;
+  bool _isLoading = true;
+  String? _errorMessage;
 
-  double get _syncPercentage =>
-      (_stats['syncedStudents']! / _stats['totalStudents']!) * 100;
+  @override
+  void initState() {
+    super.initState();
+    
+    _dashboardService = AdminDashboardService();
+    
+    debugPrint('🎯 [Config] Inicializando...');
+    _dashboardService.addListener(_onDashboardChanged);
+    
+    _loadDashboard();
+  }
 
-  double get _enrollmentPercentage =>
-      (_stats['enrolledTeachers']! / _stats['totalTeachers']!) * 100;
+  @override
+  void dispose() {
+    debugPrint('🎯 [Config] Desuscribiéndose del servicio...');
+    _dashboardService.removeListener(_onDashboardChanged);
+    super.dispose();
+  }
+
+  void _onDashboardChanged() {
+    debugPrint('🔔 [Config] Notificación recibida: Recargando dashboard...');
+    _loadDashboard(forceRefresh: true);
+  }
+
+  Future<void> _loadDashboard({bool forceRefresh = false}) async {
+    if (!mounted) return;
+    
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      debugPrint('📊 [Config] Cargando dashboard...');
+      final dashboard = await _dashboardService.getDashboard(
+        forceRefresh: forceRefresh,
+      );
+
+      if (mounted) {
+        setState(() {
+          _dashboard = dashboard;
+          _isLoading = false;
+        });
+        debugPrint('✅ [Config] Dashboard cargado exitosamente');
+      }
+    } catch (e) {
+      debugPrint('💥 [Config] Error cargando dashboard: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Error al cargar dashboard: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   Future<void> _handleAction(String action) async {
+    if (_dashboard == null) return;
+    
     setState(() {
       _loadingStates[action] = true;
     });
 
-    // Simular acción
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      String message;
+      
+      switch (action) {
+        case 'sync-students':
+          final result = await _dashboardService.syncStudents();
+          message = 'Sincronización completada: ${result['exitosos']} estudiantes procesados';
+          break;
+          
+        case 'enroll-teachers':
+          final result = await _dashboardService.syncTeachers();
+          message = 'Sincronización completada: ${result['exitosos']} profesores procesados';
+          break;
+          
+        case 'generate-evaluations':
+          // Usar fechas del periodo actual
+          final now = DateTime.now();
+          final fechaCierre = now.add(const Duration(days: 90));
+          
+          final result = await _dashboardService.generateEvaluations(
+            periodo: _dashboard!.periodo,
+            fechaInicio: now,
+            fechaCierre: fechaCierre,
+          );
+          message = 'Evaluaciones generadas: ${result['creadas']} creadas';
+          break;
+          
+        default:
+          message = 'Acción no implementada';
+      }
 
-    if (mounted) {
-      setState(() {
-        _loadingStates[action] = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Acción "$action" ejecutada exitosamente'),
-          backgroundColor: Colors.green.shade600,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-        ),
-      );
+        );
+        
+        // Recargar dashboard después de la acción
+        await _loadDashboard(forceRefresh: true);
+      }
+    } catch (e) {
+      debugPrint('💥 [Config] Error en acción $action: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _loadingStates[action] = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: () => _loadDashboard(forceRefresh: true),
+      color: const Color(0xFF4CAF50),
+      child: _isLoading
+          ? _buildLoadingState()
+          : _errorMessage != null
+              ? _buildErrorState()
+              : _buildContent(),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(
+            color: Color(0xFF4CAF50),
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Cargando dashboard...',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF6B6B6B),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Color(0xFFEF4444),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B6B6B),
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => _loadDashboard(forceRefresh: true),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4CAF50),
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContent() {
+    if (_dashboard == null) {
+      return const SizedBox.shrink();
+    }
+
+    final stats = _dashboard!.stats;
+
     return SingleChildScrollView(
       physics: const AlwaysScrollableScrollPhysics(),
       child: Padding(
@@ -71,18 +247,18 @@ class _ConfigContentState extends State<ConfigContent> {
           children: [
             const SizedBox(height: 20),
             
-            // Header con gradiente verde admin
-            _buildHeader(),
+            // Header con estadísticas reales
+            _buildHeader(stats),
             
             const SizedBox(height: 24),
             
             // Estado del Sistema
-            _buildSystemStatus(),
+            _buildSystemStatus(stats),
             
             const SizedBox(height: 24),
             
             // Acciones Principales
-            _buildMainActions(),
+            _buildMainActions(stats),
             
             const SizedBox(height: 20),
             
@@ -96,7 +272,7 @@ class _ConfigContentState extends State<ConfigContent> {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(DashboardStats stats) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -104,8 +280,8 @@ class _ConfigContentState extends State<ConfigContent> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF4CAF50), // Verde fuerte (admin primary)
-            Color(0xFF388E3C), // Verde muy oscuro (admin primaryDark)
+            Color(0xFF4CAF50),
+            Color(0xFF388E3C),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
@@ -141,11 +317,11 @@ class _ConfigContentState extends State<ConfigContent> {
                 ),
               ),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Configuración',
                       style: TextStyle(
                         fontSize: 24,
@@ -153,10 +329,10 @@ class _ConfigContentState extends State<ConfigContent> {
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 4),
+                    const SizedBox(height: 4),
                     Text(
-                      'Gestión y sincronización del sistema',
-                      style: TextStyle(
+                      'Periodo: ${_dashboard!.periodo}',
+                      style: const TextStyle(
                         fontSize: 13,
                         color: Colors.white70,
                       ),
@@ -169,58 +345,53 @@ class _ConfigContentState extends State<ConfigContent> {
           
           const SizedBox(height: 24),
           
-          // Grid de estadísticas
-          LayoutBuilder(
-            builder: (context, constraints) {
-              return Column(
+          // Grid de estadísticas reales
+          Column(
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildHeaderStatCard(
-                          icon: Icons.people_rounded,
-                          label: 'Estudiantes',
-                          value: '${_stats['totalStudents']}',
-                          subtitle: '${_stats['syncedStudents']} sincronizados',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildHeaderStatCard(
-                          icon: Icons.school_rounded,
-                          label: 'Docentes',
-                          value: '${_stats['totalTeachers']}',
-                          subtitle: '${_stats['enrolledTeachers']} inscritos',
-                        ),
-                      ),
-                    ],
+                  Expanded(
+                    child: _buildHeaderStatCard(
+                      icon: Icons.people_rounded,
+                      label: 'Estudiantes',
+                      value: '${stats.totalStudents}',
+                      subtitle: '${stats.syncedStudents} sincronizados',
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildHeaderStatCard(
-                          icon: Icons.assignment_rounded,
-                          label: 'Evaluaciones',
-                          value: '${_stats['totalEvaluations']}',
-                          subtitle: '${_stats['activeEvaluations']} activas',
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildHeaderStatCard(
-                          icon: Icons.trending_up_rounded,
-                          label: 'Completadas',
-                          value: '${_stats['completedEvaluations']}',
-                          subtitle:
-                              '${((_stats['completedEvaluations']! / _stats['totalEvaluations']!) * 100).toStringAsFixed(0)}%',
-                        ),
-                      ),
-                    ],
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildHeaderStatCard(
+                      icon: Icons.school_rounded,
+                      label: 'Docentes',
+                      value: '${stats.totalTeachers}',
+                      subtitle: '${stats.enrolledTeachers} inscritos',
+                    ),
                   ),
                 ],
-              );
-            },
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildHeaderStatCard(
+                      icon: Icons.assignment_rounded,
+                      label: 'Evaluaciones',
+                      value: '${stats.totalEvaluations}',
+                      subtitle: '${stats.activeEvaluations} activas',
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildHeaderStatCard(
+                      icon: Icons.trending_up_rounded,
+                      label: 'Completadas',
+                      value: '${stats.completedEvaluations}',
+                      subtitle: '${stats.evaluationsCompletionRate.toStringAsFixed(0)}%',
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ],
       ),
@@ -289,7 +460,7 @@ class _ConfigContentState extends State<ConfigContent> {
     );
   }
 
-  Widget _buildSystemStatus() {
+  Widget _buildSystemStatus(DashboardStats stats) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -330,11 +501,11 @@ class _ConfigContentState extends State<ConfigContent> {
           // Barra de progreso - Estudiantes
           _buildProgressCard(
             title: 'Estudiantes Inscritos',
-            current: _stats['syncedStudents']!,
-            total: _stats['totalStudents']!,
-            percentage: _syncPercentage,
+            current: stats.syncedStudents,
+            total: stats.totalStudents,
+            percentage: stats.studentsSyncRate,
             icon: Icons.check_circle_rounded,
-            color: const Color(0xFF2196F3), // Azul
+            color: const Color(0xFF2196F3),
           ),
           
           const SizedBox(height: 16),
@@ -342,11 +513,11 @@ class _ConfigContentState extends State<ConfigContent> {
           // Barra de progreso - Docentes
           _buildProgressCard(
             title: 'Docentes Inscritos',
-            current: _stats['enrolledTeachers']!,
-            total: _stats['totalTeachers']!,
-            percentage: _enrollmentPercentage,
+            current: stats.enrolledTeachers,
+            total: stats.totalTeachers,
+            percentage: stats.teachersEnrollRate,
             icon: Icons.school_rounded,
-            color: const Color(0xFF9C27B0), // Púrpura
+            color: const Color(0xFF9C27B0),
           ),
         ],
       ),
@@ -361,7 +532,6 @@ class _ConfigContentState extends State<ConfigContent> {
     required IconData icon,
     required Color color,
   }) {
-    // Calcular colores manualmente
     final backgroundColor = Color.alphaBlend(
       color.withOpacity(0.1),
       Colors.white,
@@ -449,7 +619,7 @@ class _ConfigContentState extends State<ConfigContent> {
     );
   }
 
-  Widget _buildMainActions() {
+  Widget _buildMainActions(DashboardStats stats) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -499,12 +669,9 @@ class _ConfigContentState extends State<ConfigContent> {
               colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
             ),
             stats: [
-              {'label': 'Total', 'value': _stats['totalStudents']!},
-              {'label': 'Sincronizados', 'value': _stats['syncedStudents']!},
-              {
-                'label': 'Pendientes',
-                'value': _stats['totalStudents']! - _stats['syncedStudents']!
-              },
+              {'label': 'Total', 'value': stats.totalStudents},
+              {'label': 'Sincronizados', 'value': stats.syncedStudents},
+              {'label': 'Pendientes', 'value': stats.pendingStudents},
             ],
           ),
           
@@ -522,12 +689,9 @@ class _ConfigContentState extends State<ConfigContent> {
               colors: [Color(0xFF9C27B0), Color(0xFF7B1FA2)],
             ),
             stats: [
-              {'label': 'Total', 'value': _stats['totalTeachers']!},
-              {'label': 'Inscritos', 'value': _stats['enrolledTeachers']!},
-              {
-                'label': 'Pendientes',
-                'value': _stats['totalTeachers']! - _stats['enrolledTeachers']!
-              },
+              {'label': 'Total', 'value': stats.totalTeachers},
+              {'label': 'Inscritos', 'value': stats.enrolledTeachers},
+              {'label': 'Pendientes', 'value': stats.pendingTeachers},
             ],
           ),
           
@@ -545,13 +709,9 @@ class _ConfigContentState extends State<ConfigContent> {
               colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
             ),
             stats: [
-              {'label': 'Existentes', 'value': _stats['totalEvaluations']!},
-              {'label': 'Activas', 'value': _stats['activeEvaluations']!},
-              {
-                'label': 'Cerradas',
-                'value':
-                    _stats['totalEvaluations']! - _stats['activeEvaluations']!
-              },
+              {'label': 'Existentes', 'value': stats.totalEvaluations},
+              {'label': 'Activas', 'value': stats.activeEvaluations},
+              {'label': 'Cerradas', 'value': stats.closedEvaluations},
             ],
           ),
         ],
