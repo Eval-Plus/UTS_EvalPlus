@@ -1,76 +1,61 @@
-## v0.4.1-alpha (2026-01-09)
+## v0.4.2-alpha (2026-01-09)
 
-### 🎯 Alcance de la versión
-Actualización incremental de la versión Alpha enfocada en la **integración del diseño con código quemado del Índice de Análisis** del Panel de Administración, sentando las bases visuales y estructurales para su futura conexión dinámica con backend.
-
----
-
-### ✨ Cambios principales
-
-#### 📊 Panel de Administración – Índice de Análisis
-- ✅ Integración del diseño del índice de análisis directamente en código
-- 🧱 Contenido actualmente **quemado (hardcoded)** para:
-  - Métricas generales
-  - Indicadores visuales
-  - Secciones informativas del panel
-- 🎨 Ajustes visuales y de layout para coherencia con el resto del sistema
-- 🧭 Estructura preparada para:
-  - Mapeo dinámico desde backend
-  - Configuración por roles administrativos
-  - Análisis avanzado en versiones futuras
+### Alcance de la versión
+Esta versión Alpha consolida el flujo administrativo del sistema al integrar información real en el panel de configuración y habilitar completamente los procesos de sincronización, permitiendo por primera vez un ciclo de prueba funcional de extremo a extremo.
 
 ---
 
-### 🎨 UI / UX
-- ✅ Mejoras visuales en el Panel de Administración
-- ✅ Distribución más clara del contenido analítico
-- ✅ Componentes reutilizables preparados para datos reales
-- ✅ Consistencia de estilos con el resto de la aplicación
+### Cambios principales
+
+#### Panel de Administración – Configuración
+- Integración de información real en `config_content.dart`
+- Mapeo directo de datos provenientes del backend
+- El contenido de configuración deja de ser estático y refleja el estado actual del sistema
+- Estructura preparada para validaciones y confirmaciones administrativas
+
+#### Sincronización del sistema
+- Ejecución correcta de los endpoints de sincronización:
+  - Estudiantes con materias
+  - Docentes con materias
+  - Generación de evaluaciones
+- El flujo completo de sincronización es ahora completamente testeable
+- Mayor coherencia entre el estado del backend y la interfaz administrativa
 
 ---
 
-### 🔧 Mejoras técnicas
+### Mejoras técnicas
 
 #### Frontend
-- ✅ Separación lógica del contenido del índice de análisis
-- ✅ Código organizado para futura inyección de datos dinámicos
-- ✅ Eliminación de lógica temporal innecesaria
-- ✅ Preparación para animaciones y estados reales
+- Refactor del contenido de configuración para soportar datos reales
+- Separación clara entre estructura visual y lógica de datos
+- Preparación del código para validaciones previas a la ejecución de sincronizaciones
 
-#### Arquitectura
-- ✅ Panel administrativo desacoplado del flujo de sincronización
-- ✅ Base sólida para métricas, análisis y reportes
-- ✅ Preparación para dashboards dinámicos
-
----
-
-### 🐛 Correcciones
-- 🐞 Ajustes menores de layout en resoluciones pequeñas
-- 🐞 Corrección de alineaciones y espaciados
-- 🐞 Limpieza de estados inconsistentes en navegación del panel
+#### Backend / Integración
+- Consumo estable de endpoints administrativos
+- Manejo correcto de respuestas y estados
+- Base lista para implementar confirmaciones y controles de seguridad
 
 ---
 
-### 🚧 Limitaciones actuales
-- ⚠️ Índice de análisis con datos estáticos
-- ⚠️ Sin conexión a backend
-- ⚠️ Sin gráficos dinámicos
+### Correcciones
+- Ajustes de comportamiento en el panel administrativo
+- Corrección de estados inconsistentes al ejecutar sincronizaciones
+- Mejoras menores de presentación en el contenido de configuración
 
 ---
 
-### 🚀 Próximos pasos (v0.4.2-alpha)
-- [ ] Conectar índice de análisis con backend
-- [ ] Gráficos dinámicos y métricas reales
-- [ ] Filtros y rangos de fechas
-- [ ] Estados de carga y error
-- [ ] Exportación de reportes
+### Limitaciones actuales
+- Las sincronizaciones se ejecutan sin confirmación previa del administrador
+- No existen validaciones previas a la ejecución de procesos críticos
+- El contenido de análisis (`analysis_content.dart`) aún no consume datos reales
 
 ---
 
-### 📱 Plataformas soportadas
-- ✅ Android (APK incluido)
-- 🔄 Web (En desarrollo)
-- 🔄 iOS (Próximamente)
+### Próximos pasos (v0.4.3-alpha)
+- Validaciones previas a la ejecución de sincronizaciones
+- Confirmaciones explícitas del administrador antes de ejecutar procesos críticos
+- Mapeo de información real en `analysis_content.dart`
+- Manejo de errores y estados de ejecución más detallados
 
 ---
 
