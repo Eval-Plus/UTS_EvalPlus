@@ -201,7 +201,7 @@ class _TeacherEvaluationsContentState extends State<TeacherEvaluationsContent> {
           children: [
             // Icono representativo
             Icon(
-              Icons.school_outlined,
+              Icons.quiz_outlined,
               size: 80,
               color: Colors.grey[400],
             ),
@@ -209,7 +209,7 @@ class _TeacherEvaluationsContentState extends State<TeacherEvaluationsContent> {
             
             // Título principal
             Text(
-              'No hay materias disponibles',
+              'No hay evaluaciones disponibles',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -221,7 +221,7 @@ class _TeacherEvaluationsContentState extends State<TeacherEvaluationsContent> {
             
             // Descripción más informativa
             Text(
-              'Aún no tienes materias asignadas para este periodo académico.\n'
+              'Aún no tienes evaluaciones asignadas.\n'
               'Las evaluaciones aparecerán aquí cuando se complete el proceso de sincronización y asignación de materias.',
               style: TextStyle(
                 fontSize: 14,

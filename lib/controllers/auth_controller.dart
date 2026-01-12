@@ -103,16 +103,29 @@ class AuthController {
         // Cerrar el WebView
         Navigator.of(context).pop();
         
-        // Mostrar mensaje de éxito
-        _showSuccessSnackBar(
-          context,
-          authData['isNewUser'] == true
-              ? '¡Cuenta creada exitosamente!'
-              : '¡Inicio de sesión exitoso!',
+        // Mostrar mensaje de bienvenida con dialog
+        final isNewUser = authData['isNewUser'] == true;
+        final userName = authData['user']?['name'] ?? 'Usuario';
+        
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => MessageDialogWidget.success(
+            title: isNewUser ? '¡Bienvenido a Eval+!' : '¡Bienvenido de nuevo!',
+            message: isNewUser
+                ? 'Hola $userName, tu cuenta ha sido creada exitosamente. ¡Estamos emocionados de tenerte con nosotros!'
+                : 'Hola $userName, nos alegra verte de nuevo. ¡Continuemos donde lo dejaste!',
+            continueButtonText: 'Comenzar',
+            onContinue: () {
+              Navigator.of(dialogContext).pop();
+            },
+          ),
         );
         
-        // Navegar a la pantalla principal
-        Navigator.of(context).pushReplacementNamed(InsideScreen.routename);
+        // Navegar a la pantalla principal después de cerrar el diálogo
+        if (context.mounted) {
+          Navigator.of(context).pushReplacementNamed(InsideScreen.routename);
+        }
       }
     } catch (e) {
       debugPrint('Error saving auth data: $e');
@@ -157,25 +170,19 @@ class AuthController {
   /// Maneja errores en la autenticación
   static void _handleAuthError(BuildContext context) {
     if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Error al iniciar sesión. Por favor, intenta nuevamente.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => MessageDialogWidget.error(
+          title: 'Error de autenticación',
+          message: 'No pudimos iniciar sesión en este momento. Por favor, verifica tus credenciales e intenta nuevamente.',
+          acceptButtonText: 'Entendido',
+          onAccept: () {
+            Navigator.of(dialogContext).pop();
+          },
         ),
       );
     }
-  }
-
-  /// Muestra un mensaje de éxito
-  static void _showSuccessSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
-    );
   }
 
   /// Cierra sesión
