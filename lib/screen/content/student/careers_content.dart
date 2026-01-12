@@ -9,9 +9,6 @@ import 'package:eval_plus/models/career_model.dart';
 // Content
 import 'package:eval_plus/screen/content/student/subjects_content.dart';
 
-// NOTA: SubjectsContent necesita CareerModel, no Career
-// Asegúrate de actualizar subjects_content.dart para usar career.colorValue
-
 class CarrerasContent extends StatefulWidget {
   const CarrerasContent({super.key});
 
@@ -72,7 +69,13 @@ class _CarrerasContentState extends State<CarrerasContent> {
     });
   }
 
+  // ✅ CORRECCIÓN: RefreshIndicator usa forceRefresh
   Future<void> _onRefresh() async {
+    await _loadCareers(forceRefresh: true);
+  }
+
+  // ✅ CORRECCIÓN: Nuevo método para el botón que fuerza refresh
+  Future<void> _onManualRefresh() async {
     await _loadCareers(forceRefresh: true);
   }
 
@@ -89,8 +92,21 @@ class _CarrerasContentState extends State<CarrerasContent> {
     // Mientras carga
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(
-          color: Color(0xFFCAD225),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: Color(0xFFCAD225),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Cargando carreras...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B6B6B),
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -149,8 +165,9 @@ class _CarrerasContentState extends State<CarrerasContent> {
             ),
           ),
           const SizedBox(height: 24),
+          // ✅ CORRECCIÓN: Usa _onManualRefresh en lugar de _loadCareers
           ElevatedButton.icon(
-            onPressed: _loadCareers,
+            onPressed: _onManualRefresh,
             icon: const Icon(Icons.refresh),
             label: const Text('Reintentar'),
             style: ElevatedButton.styleFrom(
@@ -203,14 +220,14 @@ class _CarrerasContentState extends State<CarrerasContent> {
             ),
             const SizedBox(height: 24),
             
-            // Botón de actualizar con color primario del rol
+            // ✅ CORRECCIÓN: Usa _onManualRefresh en lugar de _loadCareers
             ElevatedButton.icon(
-              onPressed: _loadCareers,
+              onPressed: _onManualRefresh,
               icon: const Icon(Icons.refresh, size: 20),
               label: const Text('Actualizar'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFCAD225), // Verde-amarillo estudiante
-                foregroundColor: const Color(0xFF1A1A1A), // Texto oscuro para contraste
+                backgroundColor: const Color(0xFFCAD225),
+                foregroundColor: const Color(0xFF1A1A1A),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 24,
                   vertical: 12,
@@ -223,14 +240,14 @@ class _CarrerasContentState extends State<CarrerasContent> {
             ),
             const SizedBox(height: 16),
             
-            // Mensaje adicional de ayuda con colores coherentes
+            // Mensaje adicional de ayuda
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFCAD225).withOpacity(0.1), // Fondo suave del primary
+                color: const Color(0xFFCAD225).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFFCAD225).withOpacity(0.3), // Borde del primary
+                  color: const Color(0xFFCAD225).withOpacity(0.3),
                   width: 1.5,
                 ),
               ),
@@ -239,7 +256,7 @@ class _CarrerasContentState extends State<CarrerasContent> {
                   Icon(
                     Icons.info_outline,
                     size: 20,
-                    color: const Color(0xFFB8BE20), // Verde-amarillo oscuro
+                    color: const Color(0xFFB8BE20),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
