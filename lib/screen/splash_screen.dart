@@ -22,11 +22,14 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
   late final AnimationController _controller;
   bool _isAuthenticated = false;
   bool _validationComplete = false;
+  bool _animationComplete = false;
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this);
+    
+    // Iniciar validación inmediatamente
     _validateStoredToken();
   }
 
@@ -39,6 +42,7 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
           _isAuthenticated = false;
           _validationComplete = true;
         });
+        _checkAndNavigate();
         return;
       }
 
@@ -49,7 +53,7 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
         // Token válido → cargar perfil Y sesión
         await UserController.loadUserProfile();
         
-        // 🔥 NUEVO: Cargar la sesión del usuario aquí
+        // 🔥 Cargar la sesión del usuario
         if (mounted) {
           final session = context.read<UserSessionController>();
           await session.loadUserSession();
@@ -68,6 +72,9 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
         });
       }
       
+      // ✅ Verificar si podemos navegar después de validar
+      _checkAndNavigate();
+      
     } catch (e) {
       debugPrint('💥 Error de conexión: $e');
       
@@ -84,13 +91,27 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
 
   void _showConnectionError() {
     // Mostrar diálogo de error de conexión
+    // Por ahora, marcar como no autenticado para permitir navegación
+    setState(() {
+      _isAuthenticated = false;
+      _validationComplete = true;
+    });
+    _checkAndNavigate();
+  }
+
+  /// ✅ NUEVA FUNCIÓN: Solo navega cuando AMBOS procesos están completos
+  void _checkAndNavigate() {
+    debugPrint('🔍 Verificando navegación:');
+    debugPrint('   - Animation complete: $_animationComplete');
+    debugPrint('   - Validation complete: $_validationComplete');
+    
+    if (_animationComplete && _validationComplete) {
+      debugPrint('✅ Ambos procesos completos, navegando...');
+      _navigateToNextScreen();
+    }
   }
 
   void _navigateToNextScreen() {
-    if (!_validationComplete) {
-      return;
-    }
-
     if (mounted) {
       final targetScreen = _isAuthenticated ? const InsideScreen() : const HomeScreen();
       
@@ -130,7 +151,13 @@ class SplashScreenState extends State<SplashScreen> with SingleTickerProviderSta
             await _controller.forward();
             await Future.delayed(const Duration(milliseconds: 500));
             
-            _navigateToNextScreen();
+            // ✅ Marcar animación como completa
+            setState(() {
+              _animationComplete = true;
+            });
+            
+            // ✅ Verificar si podemos navegar después de la animación
+            _checkAndNavigate();
           },
         ),
       ),
