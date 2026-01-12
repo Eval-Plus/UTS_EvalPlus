@@ -11,14 +11,28 @@ import 'package:eval_plus/screen/inside_screen.dart';
 import 'package:eval_plus/controllers/user_session_controller.dart';
 
 void main() {
+  // Asegurar que los widgets estén inicializados
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Configurar modo inmersivo (ocultar barras del sistema)
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.immersiveSticky,
+    overlays: [], // Sin overlays = oculta barra superior e inferior
+  );
+  
+  // Configurar el estilo de la barra de navegación (por si se muestra momentáneamente)
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
     systemNavigationBarColor: Colors.black,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarIconBrightness: Brightness.light,
   ));
+  
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key : key);
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
