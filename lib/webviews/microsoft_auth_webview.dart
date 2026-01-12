@@ -3,7 +3,10 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'dart:convert';
 import 'dart:io';
 
-// Webviews
+// Config
+import 'package:eval_plus/config/app_colors.dart';
+
+// Widgets
 import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
 class MicrosoftAuthWebView extends StatefulWidget {
@@ -22,15 +25,29 @@ class MicrosoftAuthWebView extends StatefulWidget {
   State<MicrosoftAuthWebView> createState() => _MicrosoftAuthWebViewState();
 }
 
-class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView> {
+class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView> 
+    with SingleTickerProviderStateMixin {
   late final WebViewController _controller;
+  late final AnimationController _animationController;
   bool _isLoading = true;
-  bool _authProcessed = false; // Evitar procesamiento múltiple
+  bool _authProcessed = false;
 
   @override
   void initState() {
     super.initState();
+    
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+    
     _initializeWebView();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   void _initializeWebView() {
@@ -41,14 +58,17 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
-            setState(() => _isLoading = true);
+            if (mounted) {
+              setState(() => _isLoading = true);
+            }
             debugPrint('Page started: $url');
           },
           onPageFinished: (url) async {
-            setState(() => _isLoading = false);
+            if (mounted) {
+              setState(() => _isLoading = false);
+            }
             debugPrint('Page finished: $url');
             
-            // Verificar si hay respuesta de autenticación
             await _checkForAuthResponse();
           },
           onNavigationRequest: (request) {
@@ -57,14 +77,13 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView> {
           },
           onWebResourceError: (error) {
             debugPrint('WebView error: ${error.description}');
-            if (!_authProcessed) {
+            if (!_authProcessed && mounted) {
               widget.onAuthError();
             }
           },
         ),
       );
 
-    // Cargar la URL inicial
     _loadAuthUrl();
   }
 
@@ -72,7 +91,6 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView> {
     try {
       await _controller.loadRequest(Uri.parse(widget.authUrl));
     } on SocketException {
-      // Error de conexión
       if (mounted && !_authProcessed) {
         _showConnectionErrorDialog();
       }
@@ -113,12 +131,10 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView> {
 
       String contentString = content.toString().trim();
 
-      // Algunos controladores agregan comillas al string completo
       if (contentString.startsWith('"') && contentString.endsWith('"')) {
         contentString = contentString.substring(1, contentString.length - 1);
       }
 
-      // Decodificar secuencias escapadas tipo \" o \\n
       contentString = contentString
           .replaceAll(r'\n', '')
           .replaceAll(r'\t', '')
@@ -129,13 +145,14 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView> {
         'Page content preview: ${contentString.substring(0, contentString.length > 100 ? 100 : contentString.length)}'
       );
 
-      // A veces el backend retorna texto plano tipo JSON.stringify(obj)
       if (contentString.startsWith('{') && contentString.contains('token')) {
         _authProcessed = true;
-        setState(() => _isLoading = true);
+        
+        if (mounted) {
+          setState(() => _isLoading = true);
+        }
 
         try {
-          // Si falla una vez, intentar doble decode
           Map<String, dynamic> authData;
           try {
             authData = jsonDecode(contentString);
@@ -172,56 +189,190 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView> {
   }
 
   @override
-  void dispose() {
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    // Paleta de colores del rol estudiante (amarillo-verde)
+    final palette = AppColors.getPaletteForRole(UserRole.student);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Ingresar con Microsoft'),
-        backgroundColor: const Color(0xFF6366F1),
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Ingresar con Microsoft',
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
+        ),
+        backgroundColor: palette.primary,
+        foregroundColor: AppColors.textOnPrimary,
+        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.close),
+          icon: const Icon(Icons.close_rounded),
           onPressed: () {
-            /*if (!_authProcessed) {
-              widget.onAuthError();
-            }*/
             Navigator.of(context).pop();
           },
+          tooltip: 'Cerrar',
         ),
       ),
       body: Stack(
         children: [
+          // WebView
           WebViewWidget(controller: _controller),
+          
+          // Loading overlay
           if (_isLoading)
             Container(
               color: Colors.white,
               child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(
-                      color: Color(0xFF6366F1),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _authProcessed 
-                          ? 'Procesando autenticación...' 
-                          : 'Cargando...',
-                      style: const TextStyle(
-                        color: Color(0xFF6366F1),
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
+                child: _buildLoadingState(palette),
               ),
             ),
         ],
       ),
+    );
+  }
+
+  Widget _buildLoadingState(RoleColorPalette palette) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // Animated loader con los colores del rol estudiante
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 1500),
+          builder: (context, value, child) {
+            return Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    palette.primary.withOpacity(0.15),
+                    palette.primaryDark.withOpacity(0.15),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: palette.primary.withOpacity(0.2),
+                    blurRadius: 25,
+                    spreadRadius: 5,
+                  ),
+                ],
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // CircularProgressIndicator
+                  SizedBox(
+                    width: 70,
+                    height: 70,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 4,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        palette.primary,
+                      ),
+                      backgroundColor: palette.primary.withOpacity(0.2),
+                    ),
+                  ),
+                  // Icono central
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: palette.primaryGradient,
+                    ),
+                    child: Icon(
+                      _authProcessed 
+                          ? Icons.check_circle_rounded 
+                          : Icons.login_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+        
+        const SizedBox(height: 32),
+        
+        // Texto del estado
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: Text(
+            _authProcessed 
+                ? 'Procesando autenticación...' 
+                : 'Cargando Microsoft Login...',
+            key: ValueKey<bool>(_authProcessed),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textSecondary,
+              letterSpacing: 0.3,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        
+        const SizedBox(height: 12),
+        
+        // Subtítulo
+        if (!_authProcessed)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Text(
+              'Espera un momento mientras cargamos\nla página de inicio de sesión',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.textTertiary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        
+        // Indicador de puntos animados
+        if (!_authProcessed) ...[
+          const SizedBox(height: 24),
+          _buildAnimatedDots(palette),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildAnimatedDots(RoleColorPalette palette) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(3, (index) {
+        return AnimatedBuilder(
+          animation: _animationController,
+          builder: (context, child) {
+            final delay = index * 0.2;
+            final value = (_animationController.value - delay) % 1.0;
+            final opacity = (value * 2).clamp(0.3, 1.0);
+            final scale = 0.7 + (value * 0.6).clamp(0.0, 0.3);
+            
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              child: Transform.scale(
+                scale: scale,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: palette.primary.withOpacity(opacity),
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      }),
     );
   }
 }
