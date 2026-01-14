@@ -100,31 +100,37 @@ class AuthController {
       print('Auth data saved successfully');
       
       if (context.mounted) {
-        // Cerrar el WebView
-        Navigator.of(context).pop();
-        
-        // Mostrar mensaje de bienvenida con dialog
+        // Preparar datos del mensaje
         final isNewUser = authData['isNewUser'] == true;
         final userName = authData['user']?['name'] ?? 'Usuario';
         
-        await showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (dialogContext) => MessageDialogWidget.success(
-            title: isNewUser ? '¡Bienvenido a Eval+!' : '¡Bienvenido de nuevo!',
-            message: isNewUser
-                ? 'Hola $userName, tu cuenta ha sido creada exitosamente. ¡Estamos emocionados de tenerte con nosotros!'
-                : 'Hola $userName, nos alegra verte de nuevo. ¡Continuemos donde lo dejaste!',
-            continueButtonText: 'Comenzar',
-            onContinue: () {
-              Navigator.of(dialogContext).pop();
-            },
+        // SOLUCIÓN: Primero cerramos el WebView y navegamos a InsideScreen
+        // Usamos pushReplacement para reemplazar toda la pila de navegación
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (newContext) => InsideScreen(),
           ),
         );
         
-        // Navegar a la pantalla principal después de cerrar el diálogo
+        // Pequeño delay para asegurar que la pantalla se haya cargado
+        await Future.delayed(const Duration(milliseconds: 300));
+        
+        // Ahora mostramos el diálogo en el nuevo contexto (InsideScreen)
         if (context.mounted) {
-          Navigator.of(context).pushReplacementNamed(InsideScreen.routename);
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (dialogContext) => MessageDialogWidget.success(
+              title: isNewUser ? '¡Bienvenido a Eval+!' : '¡Bienvenido de nuevo!',
+              message: isNewUser
+                  ? 'Hola $userName, tu cuenta ha sido creada exitosamente. ¡Estamos emocionados de tenerte con nosotros!'
+                  : 'Hola $userName, nos alegra verte de nuevo. ¡Continuemos donde lo dejaste!',
+              continueButtonText: 'Comenzar',
+              onContinue: () {
+                Navigator.of(dialogContext).pop(); // Solo cierra el diálogo
+              },
+            ),
+          );
         }
       }
     } catch (e) {
