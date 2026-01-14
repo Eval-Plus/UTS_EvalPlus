@@ -41,6 +41,9 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
   UserModel? _currentUser;
   String _welcomeMessage = 'Bienvenido';
   
+  // 🆕 PageController para manejar el swipe
+  late PageController _pageController;
+  
   late AnimationController _animationController;
   late Animation<Offset> _slideAnimation;
   late Animation<double> _fadeAnimation;
@@ -52,25 +55,31 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
 
     _loadUserData();
 
-    // CAMBIO: La sesión ya está cargada desde SplashScreen
-    // Solo necesitamos inicializar el índice correcto
+    // 🆕 Inicializar PageController
+    _pageController = PageController(initialPage: 0);
+
+    // Configuración de sesión
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final session = context.read<UserSessionController>();
       
-      // Si por alguna razón la sesión no está cargada, cargarla ahora
       if (!session.isLoading && session.userRoles.isEmpty) {
         session.loadUserSession().then((_) {
           if (mounted) {
+            final initialIndex = NavigationConfig.getInitialIndex();
             setState(() {
-              _currentIndex = NavigationConfig.getInitialIndex();
+              _currentIndex = initialIndex;
             });
+            // 🆕 Actualizar PageController
+            _pageController.jumpToPage(initialIndex);
           }
         });
       } else {
-        // La sesión ya está lista, solo inicializar el índice
+        final initialIndex = NavigationConfig.getInitialIndex();
         setState(() {
-          _currentIndex = NavigationConfig.getInitialIndex();
+          _currentIndex = initialIndex;
         });
+        // 🆕 Actualizar PageController
+        _pageController.jumpToPage(initialIndex);
       }
     });
     
@@ -85,6 +94,7 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
 
   @override
   void dispose() {
+    _pageController.dispose(); // 🆕 Limpiar PageController
     _animationController.dispose();
     super.dispose();
   }
@@ -119,6 +129,30 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
     ));
   }
 
+  // 🆕 Método para manejar cambios de página (swipe)
+  void _onPageChanged(int newIndex) {
+    final session = context.read<UserSessionController>();
+    
+    if (!NavigationConfig.isValidIndex(newIndex, session.currentRole)) {
+      debugPrint('⚠️ Índice inválido: $newIndex para rol ${session.currentRole.name}');
+      return;
+    }
+    
+    if (newIndex == _currentIndex) return;
+    
+    final bool isMovingRight = newIndex > _currentIndex;
+    
+    _updateAnimations(isMovingRight: isMovingRight);
+    
+    setState(() {
+      _currentIndex = newIndex;
+    });
+    
+    _animationController.reset();
+    _animationController.forward();
+  }
+
+  // Método para manejar navegación desde BottomNavBar (tap)
   void _onNavIndexChanged(int newIndex) {
     final session = context.read<UserSessionController>();
     
@@ -136,6 +170,13 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
     setState(() {
       _currentIndex = newIndex;
     });
+    
+    // 🆕 Animar PageView al índice seleccionado
+    _pageController.animateToPage(
+      newIndex,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOutCubic,
+    );
     
     _animationController.reset();
     _animationController.forward();
@@ -543,8 +584,10 @@ class _InsideScreenState extends State<InsideScreen> with SingleTickerProviderSt
                   opacity: _fadeAnimation,
                   child: ScaleTransition(
                     scale: _scaleAnimation,
-                    child: IndexedStack(
-                      index: safeIndex,
+                    child: PageView(
+                      controller: _pageController,
+                      onPageChanged: _onPageChanged,
+                      physics: const BouncingScrollPhysics(), // 🆕 Física de scroll suave
                       children: contents,
                     ),
                   ),
