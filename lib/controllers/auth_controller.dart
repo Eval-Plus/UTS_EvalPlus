@@ -121,11 +121,11 @@ class AuthController {
             context: context,
             barrierDismissible: false,
             builder: (dialogContext) => MessageDialogWidget.success(
-              title: isNewUser ? '¡Bienvenido a Eval+!' : '¡Bienvenido de nuevo!',
+              title: isNewUser ? '¡Bienvenido a Evaluación UTS' : '¡Bienvenido de nuevo!',
               message: isNewUser
                   ? 'Hola $userName, tu cuenta ha sido creada exitosamente. ¡Estamos emocionados de tenerte con nosotros!'
-                  : 'Hola $userName, nos alegra verte de nuevo. ¡Continuemos donde lo dejaste!',
-              continueButtonText: 'Comenzar',
+                  : 'Hola $userName, nos alegra verte de nuevo. ¡Continua donde lo dejaste!',
+              continueButtonText: 'Continuar',
               onContinue: () {
                 Navigator.of(dialogContext).pop(); // Solo cierra el diálogo
               },
