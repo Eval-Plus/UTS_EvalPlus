@@ -1,61 +1,11 @@
+// lib/screens/admin/tabs/analysis_content.dart
+
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
-
-/// Modelo de datos para un docente
-class TeacherData {
-  final int id;
-  final String name;
-  final String email;
-  final String career;
-  final String careerName;
-  final int totalSubjects;
-  final int activeEvaluations;
-  final int closedEvaluations;
-  final int completionRate;
-  final int totalStudents;
-  final int completedResponses;
-  final int pendingResponses;
-  final String lastActivity;
-  final List<SubjectData> subjects;
-  final double avgRating;
-  final String period;
-
-  TeacherData({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.career,
-    required this.careerName,
-    required this.totalSubjects,
-    required this.activeEvaluations,
-    required this.closedEvaluations,
-    required this.completionRate,
-    required this.totalStudents,
-    required this.completedResponses,
-    required this.pendingResponses,
-    required this.lastActivity,
-    required this.subjects,
-    required this.avgRating,
-    required this.period,
-  });
-}
-
-/// Modelo de datos para una materia
-class SubjectData {
-  final String name;
-  final String code;
-  final int students;
-  final int completed;
-  final int pending;
-
-  SubjectData({
-    required this.name,
-    required this.code,
-    required this.students,
-    required this.completed,
-    required this.pending,
-  });
-}
+import 'package:eval_plus/models/teacher_analysis_model.dart';
+import 'package:eval_plus/services/admin_analysis_service.dart';
+import 'package:eval_plus/services/storage/auth_storage_service.dart';
+import 'package:provider/provider.dart';
 
 /// Contenido de análisis administrativo
 class AnalysisContent extends StatefulWidget {
@@ -66,128 +16,43 @@ class AnalysisContent extends StatefulWidget {
 }
 
 class _AnalysisContentState extends State<AnalysisContent> {
+  // Controllers y estado de búsqueda
   final TextEditingController _searchController = TextEditingController();
   String _searchTerm = '';
   int? _expandedTeacherId;
   bool _showFilters = false;
   String _sortBy = 'name';
   
+  // Filtros
   final Map<String, dynamic> _filters = {
     'careers': ['all'],
     'period': '2025-1',
     'status': 'all',
   };
 
-  // Datos quemados de docentes
-  final List<TeacherData> _teachers = [
-    TeacherData(
-      id: 1,
-      name: 'Dr. Juan Pérez Martínez',
-      email: 'juan.perez@universidad.edu.co',
-      career: 'ING-SIS',
-      careerName: 'Ingeniería de Sistemas',
-      totalSubjects: 3,
-      activeEvaluations: 2,
-      closedEvaluations: 1,
-      completionRate: 80,
-      totalStudents: 128,
-      completedResponses: 102,
-      pendingResponses: 26,
-      lastActivity: '2025-01-07',
-      subjects: [
-        SubjectData(name: 'Programación Avanzada', code: 'SIS301', students: 45, completed: 36, pending: 9),
-        SubjectData(name: 'Bases de Datos II', code: 'SIS302', students: 38, completed: 30, pending: 8),
-        SubjectData(name: 'Ingeniería de Software', code: 'SIS401', students: 45, completed: 36, pending: 9),
-      ],
-      avgRating: 4.3,
-      period: '2025-1',
-    ),
-    TeacherData(
-      id: 2,
-      name: 'Dra. María García Rodríguez',
-      email: 'maria.garcia@universidad.edu.co',
-      career: 'ADM-EMP',
-      careerName: 'Administración de Empresas',
-      totalSubjects: 2,
-      activeEvaluations: 2,
-      closedEvaluations: 0,
-      completionRate: 100,
-      totalStudents: 83,
-      completedResponses: 83,
-      pendingResponses: 0,
-      lastActivity: '2025-01-08',
-      subjects: [
-        SubjectData(name: 'Fundamentos de Administración', code: 'ADM101', students: 45, completed: 45, pending: 0),
-        SubjectData(name: 'Gestión Empresarial', code: 'ADM201', students: 38, completed: 38, pending: 0),
-      ],
-      avgRating: 4.8,
-      period: '2025-1',
-    ),
-    TeacherData(
-      id: 3,
-      name: 'Mg. Carlos López Sánchez',
-      email: 'carlos.lopez@universidad.edu.co',
-      career: 'ING-SIS',
-      careerName: 'Ingeniería de Sistemas',
-      totalSubjects: 2,
-      activeEvaluations: 1,
-      closedEvaluations: 1,
-      completionRate: 45,
-      totalStudents: 72,
-      completedResponses: 32,
-      pendingResponses: 40,
-      lastActivity: '2025-01-05',
-      subjects: [
-        SubjectData(name: 'Algoritmos y Estructuras', code: 'SIS201', students: 42, completed: 18, pending: 24),
-        SubjectData(name: 'Matemáticas Discretas', code: 'SIS202', students: 30, completed: 14, pending: 16),
-      ],
-      avgRating: 3.9,
-      period: '2025-1',
-    ),
-    TeacherData(
-      id: 4,
-      name: 'Dr. Ana Martínez Torres',
-      email: 'ana.martinez@universidad.edu.co',
-      career: 'DER',
-      careerName: 'Derecho',
-      totalSubjects: 4,
-      activeEvaluations: 3,
-      closedEvaluations: 1,
-      completionRate: 92,
-      totalStudents: 165,
-      completedResponses: 152,
-      pendingResponses: 13,
-      lastActivity: '2025-01-08',
-      subjects: [
-        SubjectData(name: 'Derecho Constitucional', code: 'DER301', students: 48, completed: 45, pending: 3),
-        SubjectData(name: 'Derecho Penal', code: 'DER302', students: 42, completed: 40, pending: 2),
-        SubjectData(name: 'Derecho Civil', code: 'DER201', students: 40, completed: 38, pending: 2),
-        SubjectData(name: 'Derecho Laboral', code: 'DER401', students: 35, completed: 29, pending: 6),
-      ],
-      avgRating: 4.6,
-      period: '2025-1',
-    ),
-    TeacherData(
-      id: 5,
-      name: 'Mg. Roberto Silva Campos',
-      email: 'roberto.silva@universidad.edu.co',
-      career: 'ADM-EMP',
-      careerName: 'Administración de Empresas',
-      totalSubjects: 1,
-      activeEvaluations: 1,
-      closedEvaluations: 0,
-      completionRate: 65,
-      totalStudents: 40,
-      completedResponses: 26,
-      pendingResponses: 14,
-      lastActivity: '2025-01-06',
-      subjects: [
-        SubjectData(name: 'Marketing Digital', code: 'ADM301', students: 40, completed: 26, pending: 14),
-      ],
-      avgRating: 4.1,
-      period: '2025-1',
-    ),
-  ];
+  // Servicio de API
+  late AdminAnalysisService _analysisService;
+
+  // Estado de datos
+  bool _isLoading = false;
+  bool _isInitialLoad = true;
+  String? _errorMessage;
+  List<TeacherData> _teachers = [];
+  AnalysisStats? _globalStats;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeService();
+    _loadData();
+  }
+
+  /// Inicializar servicio con configuración
+  void _initializeService() {
+    _analysisService = AdminAnalysisService(
+      getToken: () => AuthStorageService.getToken(),
+    );
+  }
 
   @override
   void dispose() {
@@ -195,123 +60,300 @@ class _AnalysisContentState extends State<AnalysisContent> {
     super.dispose();
   }
 
+  /// Cargar datos desde la API
+  Future<void> _loadData() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Determinar carrera seleccionada
+      final selectedCareers = _filters['careers'] as List<String>;
+      final career = selectedCareers.contains('all') || selectedCareers.isEmpty
+          ? null
+          : selectedCareers.first;
+
+      // Cargar datos en paralelo
+      final results = await Future.wait([
+        _analysisService.getTeachersAnalysis(
+          periodo: _filters['period'] as String,
+          career: career,
+          sortBy: _sortBy,
+        ),
+        _analysisService.getAnalysisStats(
+          periodo: _filters['period'] as String,
+          career: career,
+        ),
+      ]);
+
+      if (!mounted) return;
+
+      setState(() {
+        final analysisResponse = results[0] as TeachersAnalysisResponse;
+        _teachers = analysisResponse.teachers;
+        _globalStats = results[1] as AnalysisStats;
+        _isLoading = false;
+        _isInitialLoad = false;
+      });
+    } on UnauthorizedException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.message;
+        _isLoading = false;
+        _isInitialLoad = false;
+      });
+      _showErrorSnackBar(e.message);
+      // Aquí podrías navegar al login
+    } on ForbiddenException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.message;
+        _isLoading = false;
+        _isInitialLoad = false;
+      });
+      _showErrorSnackBar(e.message);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+        _isInitialLoad = false;
+      });
+      _showErrorSnackBar('Error: $e');
+    }
+  }
+
+  /// Mostrar mensaje de error
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        behavior: SnackBarBehavior.floating,
+        action: SnackBarAction(
+          label: 'Reintentar',
+          textColor: Colors.white,
+          onPressed: _loadData,
+        ),
+      ),
+    );
+  }
+
+  /// Aplicar filtros locales a los datos cargados
   List<TeacherData> get _filteredTeachers {
-    var result = _teachers.where((teacher) {
+    return _teachers.where((teacher) {
       // Filtro de búsqueda
       final matchesSearch = teacher.name.toLowerCase().contains(_searchTerm.toLowerCase()) ||
                             teacher.email.toLowerCase().contains(_searchTerm.toLowerCase());
       
-      // Filtro de carrera
-      final matchesCareer = (_filters['careers'] as List).contains('all') ||
-                           (_filters['careers'] as List).contains(teacher.career);
-      
-      // Filtro de período
-      final matchesPeriod = _filters['period'] == 'all' || teacher.period == _filters['period'];
-      
-      // Filtro de estado
+      // Filtro de estado (se aplica localmente)
       final matchesStatus = _filters['status'] == 'all' ||
                            (_filters['status'] == 'active' && teacher.activeEvaluations > 0) ||
                            (_filters['status'] == 'none' && teacher.activeEvaluations == 0);
       
-      return matchesSearch && matchesCareer && matchesPeriod && matchesStatus;
+      return matchesSearch && matchesStatus;
     }).toList();
-
-    // Ordenar
-    result.sort((a, b) {
-      switch (_sortBy) {
-        case 'name':
-          return a.name.compareTo(b.name);
-        case 'evaluations':
-          return b.activeEvaluations.compareTo(a.activeEvaluations);
-        case 'completion':
-          return a.completionRate.compareTo(b.completionRate);
-        case 'activity':
-          return b.lastActivity.compareTo(a.lastActivity);
-        default:
-          return 0;
-      }
-    });
-
-    return result;
   }
 
-  Map<String, dynamic> get _globalStats {
-    final filtered = _filteredTeachers;
-    final totalEvals = filtered.fold<int>(0, (sum, t) => sum + t.activeEvaluations);
-    final avgCompletion = filtered.isEmpty
-        ? 0.0
-        : filtered.fold<int>(0, (sum, t) => sum + t.completionRate) / filtered.length;
-    final totalStuds = filtered.fold<int>(0, (sum, t) => sum + t.totalStudents);
-
-    return {
-      'totalTeachers': filtered.length,
-      'totalEvaluations': totalEvals,
-      'avgCompletion': avgCompletion.toStringAsFixed(1),
-      'totalStudents': totalStuds,
-    };
-  }
-
+  /// Cambiar filtro y recargar si es necesario
   void _toggleFilter(String category, String value) {
+    bool shouldReload = false;
+    
     setState(() {
       if (category == 'careers') {
         final current = _filters[category] as List<String>;
         if (value == 'all') {
           _filters[category] = ['all'];
+          shouldReload = true;
         } else {
           final newCareers = current.contains(value)
               ? current.where((c) => c != value).toList()
               : [...current.where((c) => c != 'all'), value];
           _filters[category] = newCareers.isEmpty ? ['all'] : newCareers;
+          shouldReload = true;
+        }
+      } else if (category == 'period') {
+        if (_filters[category] != value) {
+          _filters[category] = value;
+          shouldReload = true;
         }
       } else {
         _filters[category] = value;
+        // 'status' es filtro local, no requiere recarga
       }
     });
+
+    if (shouldReload) {
+      _loadData();
+    }
+  }
+
+  /// Cambiar ordenamiento
+  void _changeSortBy(String? newSortBy) {
+    if (newSortBy != null && _sortBy != newSortBy) {
+      setState(() {
+        _sortBy = newSortBy;
+      });
+      _loadData();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final palette = AppColors.getPaletteForRole(UserRole.admin);
-    final stats = _globalStats;
 
     return Container(
       color: Colors.grey[50],
       child: Column(
         children: [
-          // Contenido desplazable
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-
-                // Header
-                _buildHeader(),
-                const SizedBox(height: 16),
-              
-                // Barra de búsqueda y filtros
-                _buildSearchAndFilters(palette),
-                const SizedBox(height: 16),
-
-                // Estadísticas globales
-                _buildGlobalStats(stats, palette),
-                const SizedBox(height: 16),
-
-                // Ordenamiento
-                _buildSortingBar(),
-                const SizedBox(height: 16),
-
-                // Lista de docentes
-                _filteredTeachers.isEmpty
-                    ? _buildEmptyState()
-                    : Column(
-                        children: _filteredTeachers
-                            .map((teacher) => _buildTeacherCard(teacher, palette))
-                            .toList(),
-                      ),
-              ],
+            child: RefreshIndicator(
+              onRefresh: _loadData,
+              child: _isInitialLoad
+                  ? _buildInitialLoadingState()
+                  : _buildContent(palette),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Estado de carga inicial
+  Widget _buildInitialLoadingState() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text(
+            'Cargando análisis...',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Contenido principal
+  Widget _buildContent(RoleColorPalette palette) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        _buildHeader(),
+        const SizedBox(height: 16),
+        
+        _buildSearchAndFilters(palette),
+        const SizedBox(height: 16),
+
+        // Mostrar error si existe
+        if (_errorMessage != null && !_isLoading)
+          _buildErrorBanner(),
+        
+        if (_errorMessage == null) ...[
+          _buildGlobalStats(palette),
+          const SizedBox(height: 16),
+
+          _buildSortingBar(),
+          const SizedBox(height: 16),
+
+          // Loading overlay al recargar
+          if (_isLoading)
+            _buildLoadingOverlay()
+          else
+            _filteredTeachers.isEmpty
+                ? _buildEmptyState()
+                : Column(
+                    children: _filteredTeachers
+                        .map((teacher) => _buildTeacherCard(teacher, palette))
+                        .toList(),
+                  ),
+        ] else
+          _buildErrorState(),
+      ],
+    );
+  }
+
+  /// Banner de error
+  Widget _buildErrorBanner() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.red[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red[200]!),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red[700], size: 20),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _errorMessage!,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.red[700],
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: _loadData,
+            child: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Overlay de carga
+  Widget _buildLoadingOverlay() {
+    return Container(
+      padding: const EdgeInsets.all(32),
+      child: const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+  }
+
+  /// Estado de error completo
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            const Text(
+              'Error al cargar datos',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _errorMessage ?? 'Error desconocido',
+              style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadData,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -324,8 +366,8 @@ class _AnalysisContentState extends State<AnalysisContent> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF4CAF50), // Verde fuerte (admin primary)
-            Color(0xFF388E3C), // Verde muy oscuro (admin primaryDark)
+            Color(0xFF4CAF50),
+            Color(0xFF388E3C),
           ],
         ),
         borderRadius: BorderRadius.circular(16),
@@ -340,7 +382,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Título
           Row(
             children: [
               Container(
@@ -375,7 +416,7 @@ class _AnalysisContentState extends State<AnalysisContent> {
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Analisa los resultados de evaluaciones',
+                      'Analiza los resultados de evaluaciones',
                       style: TextStyle(
                         fontSize: 13,
                         color: Colors.white70,
@@ -414,8 +455,17 @@ class _AnalysisContentState extends State<AnalysisContent> {
                   controller: _searchController,
                   onChanged: (value) => setState(() => _searchTerm = value),
                   decoration: InputDecoration(
-                    hintText: 'Buscar por nombre',
+                    hintText: 'Nombre o Email',
                     prefixIcon: const Icon(Icons.search, size: 20),
+                    suffixIcon: _searchTerm.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear, size: 20),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _searchTerm = '');
+                            },
+                          )
+                        : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
                       borderSide: BorderSide(color: Colors.grey.shade300),
@@ -460,7 +510,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Filtro por carrera
         const Text('Carrera', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 8),
         Wrap(
@@ -475,7 +524,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
         ),
         const SizedBox(height: 16),
 
-        // Filtro por período
         const Text('Período', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 8),
         Wrap(
@@ -489,7 +537,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
         ),
         const SizedBox(height: 16),
 
-        // Filtro por estado
         const Text('Estado', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
         const SizedBox(height: 8),
         Wrap(
@@ -519,7 +566,9 @@ class _AnalysisContentState extends State<AnalysisContent> {
     );
   }
 
-  Widget _buildGlobalStats(Map<String, dynamic> stats, RoleColorPalette palette) {
+  Widget _buildGlobalStats(RoleColorPalette palette) {
+    if (_globalStats == null) return const SizedBox.shrink();
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -535,21 +584,19 @@ class _AnalysisContentState extends State<AnalysisContent> {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Primera fila
           Row(
             children: [
-              _buildStatCard(Icons.people, 'Docentes', '${stats['totalTeachers']}', Colors.blue),
+              _buildStatCard(Icons.people, 'Docentes', '${_globalStats!.totalTeachers}', Colors.blue),
               const SizedBox(width: 8),
-              _buildStatCard(Icons.book, 'Evaluaciones', '${stats['totalEvaluations']}', Colors.purple),
+              _buildStatCard(Icons.book, 'Evaluaciones', '${_globalStats!.totalEvaluations}', Colors.purple),
             ],
           ),
           const SizedBox(height: 12),
-          // Segunda fila
           Row(
             children: [
-              _buildStatCard(Icons.trending_up, 'Completitud', '${stats['avgCompletion']}%', Colors.green),
+              _buildStatCard(Icons.trending_up, 'Completitud', '${_globalStats!.avgCompletion}%', Colors.green),
               const SizedBox(width: 8),
-              _buildStatCard(Icons.school, 'Estudiantes', '${stats['totalStudents']}', Colors.orange),
+              _buildStatCard(Icons.school, 'Estudiantes', '${_globalStats!.totalStudents}', Colors.orange),
             ],
           ),
         ],
@@ -616,7 +663,7 @@ class _AnalysisContentState extends State<AnalysisContent> {
             child: DropdownButton<String>(
               value: _sortBy,
               isExpanded: true,
-              onChanged: (value) => setState(() => _sortBy = value!),
+              onChanged: _changeSortBy,
               items: const [
                 DropdownMenuItem(value: 'name', child: Text('Nombre (A-Z)')),
                 DropdownMenuItem(value: 'evaluations', child: Text('Evaluaciones activas')),
@@ -653,7 +700,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
       ),
       child: Column(
         children: [
-          // Card colapsado
           InkWell(
             onTap: () => setState(() {
               _expandedTeacherId = isExpanded ? null : teacher.id;
@@ -670,7 +716,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
                 children: [
                   Row(
                     children: [
-                      // Avatar
                       Container(
                         width: 48,
                         height: 48,
@@ -680,7 +725,7 @@ class _AnalysisContentState extends State<AnalysisContent> {
                         ),
                         child: Center(
                           child: Text(
-                            teacher.name.split(' ')[0][0] + teacher.name.split(' ')[1][0],
+                            _getInitials(teacher.name),
                             style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold,
@@ -690,7 +735,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
                         ),
                       ),
                       const SizedBox(width: 12),
-                      // Info
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -705,20 +749,21 @@ class _AnalysisContentState extends State<AnalysisContent> {
                             const SizedBox(height: 4),
                             Row(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.getCareerColor(teacher.career).withOpacity(0.2),
-                                    borderRadius: BorderRadius.circular(4),
-                                    border: Border.all(
-                                      color: AppColors.getCareerColor(teacher.career).withOpacity(0.4),
+                                if (teacher.career.isNotEmpty)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.getCareerColor(teacher.career).withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(4),
+                                      border: Border.all(
+                                        color: AppColors.getCareerColor(teacher.career).withOpacity(0.4),
+                                      ),
+                                    ),
+                                    child: Text(
+                                      teacher.career,
+                                      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
                                     ),
                                   ),
-                                  child: Text(
-                                    teacher.career,
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-                                  ),
-                                ),
                                 const SizedBox(width: 8),
                                 Text(
                                   '${teacher.totalSubjects} materias • ${teacher.activeEvaluations} activas',
@@ -736,7 +781,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // Barra de progreso
                   Column(
                     children: [
                       Row(
@@ -757,11 +801,7 @@ class _AnalysisContentState extends State<AnalysisContent> {
                         value: teacher.completionRate / 100,
                         backgroundColor: Colors.grey[200],
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          teacher.completionRate < 50
-                              ? Colors.red
-                              : teacher.completionRate < 80
-                                  ? Colors.orange
-                                  : Colors.green,
+                          _getCompletionColor(teacher.completionRate),
                         ),
                         minHeight: 8,
                         borderRadius: BorderRadius.circular(4),
@@ -769,7 +809,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Badge de estado
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Container(
@@ -801,7 +840,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
             ),
           ),
 
-          // Card expandido
           if (isExpanded) ...[
             const Divider(height: 1),
             ClipRRect(
@@ -815,17 +853,20 @@ class _AnalysisContentState extends State<AnalysisContent> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Email
                     Row(
                       children: [
                         const Icon(Icons.email, size: 14, color: Colors.grey),
                         const SizedBox(width: 6),
-                        Text(teacher.email, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        Expanded(
+                          child: Text(
+                            teacher.email,
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 16),
 
-                    // Materias
                     const Row(
                       children: [
                         Icon(Icons.book, size: 14),
@@ -837,7 +878,6 @@ class _AnalysisContentState extends State<AnalysisContent> {
                     ...teacher.subjects.map((subject) => _buildSubjectItem(subject)),
                     const SizedBox(height: 16),
 
-                    // Estadísticas
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
@@ -918,11 +958,12 @@ class _AnalysisContentState extends State<AnalysisContent> {
                     ),
                     const SizedBox(height: 16),
 
-                    // Botones de acción
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: () {},
+                        onPressed: () {
+                          // TODO: Navegar a informe detallado
+                        },
                         icon: const Icon(Icons.bar_chart, size: 18),
                         label: const Text('Ver Informe Completo'),
                         style: ElevatedButton.styleFrom(
@@ -940,7 +981,9 @@ class _AnalysisContentState extends State<AnalysisContent> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              // TODO: Enviar email
+                            },
                             icon: const Icon(Icons.email, size: 16),
                             label: const Text('Email', style: TextStyle(fontSize: 12)),
                             style: OutlinedButton.styleFrom(
@@ -954,7 +997,9 @@ class _AnalysisContentState extends State<AnalysisContent> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              // TODO: Exportar a Excel
+                            },
                             icon: const Icon(Icons.download, size: 16),
                             label: const Text('Excel', style: TextStyle(fontSize: 12)),
                             style: OutlinedButton.styleFrom(
@@ -968,7 +1013,9 @@ class _AnalysisContentState extends State<AnalysisContent> {
                         const SizedBox(width: 8),
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed: () {},
+                            onPressed: () {
+                              // TODO: Compartir link
+                            },
                             icon: const Icon(Icons.share, size: 16),
                             label: const Text('Link', style: TextStyle(fontSize: 12)),
                             style: OutlinedButton.styleFrom(
@@ -1082,6 +1129,27 @@ class _AnalysisContentState extends State<AnalysisContent> {
     );
   }
 
+  // ==============================================
+  // MÉTODOS AUXILIARES
+  // ==============================================
+
+  /// Obtener iniciales del nombre
+  String _getInitials(String name) {
+    final parts = name.split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name.isNotEmpty ? name[0].toUpperCase() : '?';
+  }
+
+  /// Obtener color según tasa de completitud
+  Color _getCompletionColor(int rate) {
+    if (rate < 50) return Colors.red;
+    if (rate < 80) return Colors.orange;
+    return Colors.green;
+  }
+
+  /// Obtener información de estado del docente
   Map<String, dynamic> _getStatusInfo(TeacherData teacher) {
     if (teacher.completionRate < 50) {
       return {
@@ -1109,4 +1177,4 @@ class _AnalysisContentState extends State<AnalysisContent> {
       };
     }
   }
-}
+}                                

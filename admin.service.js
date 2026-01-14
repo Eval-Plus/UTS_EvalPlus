@@ -475,6 +475,7 @@ export class AdminService {
       include: {
         admin: {
           select: {
+            id: true,
             nombreCompleto: true,
             email: true
           }
@@ -699,6 +700,442 @@ export class AdminService {
       orderBy: { createdAt: 'desc' }
     });
   }
+
+  // ==========================================
+  // 🆕 ANÁLISIS DE DOCENTES
+  // ==========================================
+
+  /**
+  * Obtener análisis completo de todos los docentes
+  */
+  static async getTeachersAnalysis(filters = {}) {
+    try {
+      const { periodo = CURRENT_PERIOD, career, sortBy = 'name' } = filters;
+
+      // Construir filtros para profesores
+      const whereTeacher = {
+        roles: {
+          some: {
+            role: { name: 'TEACHER' }
+          }
+        }
+      };
+
+      // Obtener todos los profesores
+      const teachers = await prisma.user.findMany({
+        where: whereTeacher,
+        include: {
+          taughtSubjects: {
+            where: {
+              activo: true,
+              ...(career && {
+                career: {
+                  codigo: career
+                }
+              })
+            },
+            include: {
+              career: {
+                select: {
+                  id: true,
+                  nombre: true,
+                  codigo: true
+                }
+              },
+              students: {
+                where: {
+                  periodo
+                },
+                select: {
+                  userId: true
+                }
+              },
+              evaluations: {
+                where: {
+                  periodo,
+                  activo: true
+                },
+                include: {
+                  studentResponses: {
+                    select: {
+                      id: true,
+                      completada: true,
+                      fechaCompleta: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          roles: {
+            include: {
+              role: true
+            }
+          }
+        }
+      });
+
+      // Procesar datos de cada profesor
+      const teachersData = teachers.map(teacher => {
+        const subjects = teacher.taughtSubjects;
+
+        // Calcular totales
+        let totalStudents = 0;
+        let completedResponses = 0;
+        let pendingResponses = 0;
+        let activeEvaluations = 0;
+        let closedEvaluations = 0;
+
+        const now = new Date();
+        const subjectsData = [];
+
+        subjects.forEach(subject => {
+          const studentsCount = subject.students.length;
+          totalStudents += studentsCount;
+
+          subject.evaluations.forEach(evaluation => {
+            const isActive = evaluation.fechaCierre >= now;
+            
+            if (isActive) {
+              activeEvaluations++;
+            } else {
+              closedEvaluations++;
+            }
+
+            const completed = evaluation.studentResponses.filter(r => r.completada).length;
+            const pending = studentsCount - completed;
+
+            completedResponses += completed;
+            pendingResponses += pending;
+
+            subjectsData.push({
+              name: subject.nombre,
+              code: subject.codigo,
+              students: studentsCount,
+              completed: completed,
+              pending: pending,
+              evaluationId: evaluation.id,
+              isActive: isActive
+            });
+          });
+        });
+
+        const completionRate = totalStudents > 0
+          ? Math.round((completedResponses / totalStudents) * 100)
+          : 0;
+
+        // Determinar carrera principal (la que tiene más materias)
+        const careerCounts = {};
+        subjects.forEach(subject => {
+          const careerCode = subject.career.codigo;
+          careerCounts[careerCode] = (careerCounts[careerCode] || 0) + 1;
+        });
+
+        const mainCareerCode = Object.keys(careerCounts).sort(
+          (a, b) => careerCounts[b] - careerCounts[a]
+        )[0] || '';
+
+        const mainCareer = subjects.find(s => s.career.codigo === mainCareerCode)?.career;
+
+        // Última actividad (última evaluación completada)
+        const allResponses = subjects.flatMap(s =>
+          s.evaluations.flatMap(e =>
+            e.studentResponses.filter(r => r.completada && r.fechaCompleta)
+          )
+        );
+
+        const lastActivity = allResponses.length > 0
+          ? allResponses.sort((a, b) =>
+              new Date(b.fechaCompleta) - new Date(a.fechaCompleta)
+            )[0].fechaCompleta
+          : teacher.lastLoginAt || teacher.createdAt;
+
+        return {
+          id: teacher.id,
+          name: teacher.nombreCompleto,
+          email: teacher.email,
+          career: mainCareer?.codigo || '',
+          careerName: mainCareer?.nombre || '',
+          totalSubjects: subjects.length,
+          activeEvaluations,
+          closedEvaluations,
+          completionRate,
+          totalStudents,
+          completedResponses,
+          pendingResponses,
+          lastActivity: lastActivity?.toISOString().split('T')[0] || '',
+          subjects: subjectsData,
+          avgRating: 0, // TODO: Implementar cuando tengamos ratings
+          period: periodo
+        };
+      });
+
+      // Filtrar profesores sin materias si se especificó una carrera
+      const filteredTeachers = career
+        ? teachersData.filter(t => t.totalSubjects > 0)
+        : teachersData;
+
+      // Ordenar según el criterio
+      const sortedTeachers = this._sortTeachers(filteredTeachers, sortBy);
+
+      // Calcular estadísticas globales
+      const globalStats = {
+        totalTeachers: filteredTeachers.length,
+        totalEvaluations: filteredTeachers.reduce((sum, t) => sum + t.activeEvaluations, 0),
+        avgCompletion: filteredTeachers.length > 0
+          ? (filteredTeachers.reduce((sum, t) => sum + t.completionRate, 0) / filteredTeachers.length).toFixed(1)
+          : '0.0',
+        totalStudents: filteredTeachers.reduce((sum, t) => sum + t.totalStudents, 0)
+      };
+
+      return {
+        teachers: sortedTeachers,
+        stats: globalStats,
+        periodo,
+        generatedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      logger.error('Error obteniendo análisis de docentes', error);
+      throw error;
+    }
+  }
+
+  /**
+  * Obtener análisis detallado de un docente específico
+  */
+  static async getTeacherAnalysis(teacherId, periodo = CURRENT_PERIOD) {
+    try {
+      const teacher = await prisma.user.findUnique({
+        where: { id: teacherId },
+        include: {
+          taughtSubjects: {
+            where: { activo: true },
+            include: {
+              career: {
+                select: {
+                  id: true,
+                  nombre: true,
+                  codigo: true
+                }
+              },
+              students: {
+                where: { periodo },
+                select: { userId: true }
+              },
+              evaluations: {
+                where: {
+                  periodo,
+                  activo: true
+                },
+                include: {
+                  template: {
+                    select: {
+                      id: true,
+                      nombre: true
+                    }
+                  },
+                  studentResponses: {
+                    include: {
+                      responses: {
+                        include: {
+                          question: true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          roles: {
+            include: {
+              role: true
+            }
+          }
+        }
+      });
+
+      if (!teacher) {
+        return null;
+      }
+
+      // Verificar que sea profesor
+      const isTeacher = teacher.roles.some(ur => ur.role.name === 'TEACHER');
+      if (!isTeacher) {
+        return null;
+      }
+
+      const subjects = teacher.taughtSubjects;
+      const now = new Date();
+
+      // Procesar evaluaciones detalladas
+      const evaluationsDetail = [];
+      let totalCompletedResponses = 0;
+      let totalPossibleResponses = 0;
+
+      subjects.forEach(subject => {
+        subject.evaluations.forEach(evaluation => {
+          const studentsCount = subject.students.length;
+          const completedCount = evaluation.studentResponses.filter(r => r.completada).length;
+          
+          totalCompletedResponses += completedCount;
+          totalPossibleResponses += studentsCount;
+
+          evaluationsDetail.push({
+            id: evaluation.id,
+            subjectName: subject.nombre,
+            subjectCode: subject.codigo,
+            careerName: subject.career.nombre,
+            templateName: evaluation.template.nombre,
+            periodo: evaluation.periodo,
+            fechaInicio: evaluation.fechaInicio,
+            fechaCierre: evaluation.fechaCierre,
+            isActive: evaluation.fechaCierre >= now,
+            totalStudents: studentsCount,
+            completedResponses: completedCount,
+            pendingResponses: studentsCount - completedCount,
+            completionRate: studentsCount > 0
+              ? Math.round((completedCount / studentsCount) * 100)
+              : 0
+          });
+        });
+      });
+
+      const overallCompletionRate = totalPossibleResponses > 0
+        ? Math.round((totalCompletedResponses / totalPossibleResponses) * 100)
+        : 0;
+
+      return {
+        teacher: {
+          id: teacher.id,
+          name: teacher.nombreCompleto,
+          email: teacher.email,
+          profilePicture: teacher.profilePicture
+        },
+        summary: {
+          totalSubjects: subjects.length,
+          totalEvaluations: evaluationsDetail.length,
+          activeEvaluations: evaluationsDetail.filter(e => e.isActive).length,
+          closedEvaluations: evaluationsDetail.filter(e => !e.isActive).length,
+          totalStudents: totalPossibleResponses,
+          completedResponses: totalCompletedResponses,
+          pendingResponses: totalPossibleResponses - totalCompletedResponses,
+          overallCompletionRate
+        },
+        evaluations: evaluationsDetail,
+        subjects: subjects.map(s => ({
+          id: s.id,
+          name: s.nombre,
+          code: s.codigo,
+          career: s.career.nombre,
+          studentsCount: s.students.length
+        })),
+        periodo,
+        generatedAt: new Date().toISOString()
+      };
+    } catch (error) {
+      logger.error(`Error obteniendo análisis del docente ${teacherId}`, error);
+      throw error;
+    }
+  }
+
+  /**
+  * Obtener estadísticas globales para análisis
+  */
+  static async getAnalysisStats(filters = {}) {
+    try {
+      const { periodo = CURRENT_PERIOD, career } = filters;
+
+      const whereSubject = {
+        activo: true,
+        teacherId: { not: null }
+      };
+
+      if (career) {
+        whereSubject.career = { codigo: career };
+      }
+
+      const whereEvaluation = {
+        periodo,
+        activo: true
+      };
+
+      if (career) {
+        whereEvaluation.subject = {
+          career: { codigo: career }
+        };
+      }
+
+      const [
+        totalTeachers,
+        totalEvaluations,
+        totalStudents,
+        completedResponses
+      ] = await Promise.all([
+        // Total de profesores con materias
+        prisma.subject.groupBy({
+          by: ['teacherId'],
+          where: whereSubject,
+          _count: true
+        }).then(result => result.length),
+
+        // Total de evaluaciones
+        prisma.evaluation.count({
+          where: whereEvaluation
+        }),
+
+        // Total de estudiantes en materias con evaluaciones
+        prisma.userSubject.count({
+          where: {
+            periodo,
+            subject: whereSubject
+          }
+        }),
+
+        // Total de respuestas completadas
+        prisma.studentEvaluation.count({
+          where: {
+            completada: true,
+            evaluation: whereEvaluation
+          }
+        })
+      ]);
+
+      const avgCompletion = totalStudents > 0
+        ? ((completedResponses / totalStudents) * 100).toFixed(1)
+        : '0.0';
+
+      return {
+        totalTeachers,
+        totalEvaluations,
+        totalStudents,
+        completedResponses,
+        pendingResponses: totalStudents - completedResponses,
+        avgCompletion: parseFloat(avgCompletion),
+        periodo,
+        career: career || 'all'
+      };
+    } catch (error) {
+      logger.error('Error obteniendo estadísticas de análisis', error);
+      throw error;
+    }
+  }
+
+  /**
+  * Método auxiliar para ordenar profesores
+  */
+  static _sortTeachers(teachers, sortBy) {
+    const sortFunctions = {
+      name: (a, b) => a.name.localeCompare(b.name),
+      evaluations: (a, b) => b.activeEvaluations - a.activeEvaluations,
+      completion: (a, b) => a.completionRate - b.completionRate, // Ascendente para mostrar urgentes primero
+      activity: (a, b) => b.lastActivity.localeCompare(a.lastActivity)
+    };
+
+    const sortFn = sortFunctions[sortBy] || sortFunctions.name;
+    return [...teachers].sort(sortFn);
+  }
+  
 }
 
 export default AdminService;

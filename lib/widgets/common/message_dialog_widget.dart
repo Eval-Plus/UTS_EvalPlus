@@ -18,6 +18,7 @@ class MessageDialogWidget extends StatelessWidget {
   final String? secondaryButtonText;
   final IconData? customIcon;
   final bool barrierDismissible;
+  final Color? customColor; // 🎨 Color personalizado para el diálogo
 
   const MessageDialogWidget({
     Key? key,
@@ -30,6 +31,7 @@ class MessageDialogWidget extends StatelessWidget {
     this.secondaryButtonText,
     this.customIcon,
     this.barrierDismissible = false,
+    this.customColor, // 🎨 Nuevo parámetro
   }) : super(key: key);
 
   // Constructor para error de conexión (retrocompatibilidad)
@@ -154,13 +156,13 @@ class MessageDialogWidget extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: config.backgroundColor,
+                          color: customColor?.withOpacity(0.15) ?? config.backgroundColor,
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           customIcon ?? config.icon,
                           size: 64,
-                          color: config.iconColor,
+                          color: customColor ?? config.iconColor,
                         ),
                       ),
                     ),
@@ -214,7 +216,7 @@ class MessageDialogWidget extends StatelessWidget {
               icon: Icon(config.primaryButtonIcon),
               label: Text(primaryButtonText ?? config.defaultPrimaryText),
               style: ElevatedButton.styleFrom(
-                backgroundColor: config.primaryButtonColor,
+                backgroundColor: customColor ?? config.primaryButtonColor,
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(

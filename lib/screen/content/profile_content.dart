@@ -155,14 +155,14 @@ class ProfileContent extends StatelessWidget {
         children: [
           Icon(
             Icons.email_rounded,
-            size: 16,
+            size: 12,
             color: const Color(0xFF1A1A1A).withOpacity(0.7),
           ),
           const SizedBox(width: 8),
           Text(
             user?.email ?? 'correo@uts.edu.co',
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 12,
               color: Color(0xFF1A1A1A),
               fontWeight: FontWeight.w500,
             ),

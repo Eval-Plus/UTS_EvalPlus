@@ -1,9 +1,12 @@
 /// Contenido de configuración para ADMINISTRADORES
 /// Panel de sincronización y gestión del sistema - INTEGRADO CON BACKEND
-/// Ubicación: lib/screen/content/admin/config_content.dart
+
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/admin_dashboard_model.dart';
 import 'package:eval_plus/services/admin_dashboard_service.dart';
+import 'package:eval_plus/config/app_colors.dart';
+
+import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
 class ConfigContent extends StatefulWidget {
   const ConfigContent({super.key});
@@ -14,6 +17,17 @@ class ConfigContent extends StatefulWidget {
 
 class _ConfigContentState extends State<ConfigContent> {
   late final AdminDashboardService _dashboardService;
+  
+  // Paleta de colores del rol admin
+  final _adminPalette = AppColors.getPaletteForRole(UserRole.admin);
+  
+  // Paleta de verdes complementarios para diferenciación visual
+  static const Color _emeraldColor = Color(0xFF2ECC71);    // Verde esmeralda para estudiantes
+  static const Color _emeraldDark = Color(0xFF27AE60);
+  static const Color _limeColor = Color(0xFF8BC34A);      // Verde lima para docentes
+  static const Color _limeDark = Color(0xFF689F38);
+  static const Color _tealColor = Color(0xFF009688);      // Verde azulado para evaluaciones
+  static const Color _tealDark = Color(0xFF00796B);
   
   // Estado de carga para cada acción
   final Map<String, bool> _loadingStates = {
@@ -86,6 +100,39 @@ class _ConfigContentState extends State<ConfigContent> {
   Future<void> _handleAction(String action) async {
     if (_dashboard == null) return;
     
+    final stats = _dashboard!.stats;
+    
+    // Validaciones previas para evitar llamadas innecesarias a la API
+    if (action == 'sync-students' && stats.pendingStudents == 0) {
+      _showInfoDialog(
+        title: 'Sin estudiantes pendientes',
+        message: 'Todos los estudiantes ya están sincronizados. No hay acciones pendientes por realizar.',
+        color: _emeraldColor,
+        icon: Icons.check_circle_outline,
+      );
+      return;
+    }
+    
+    if (action == 'enroll-teachers' && stats.pendingTeachers == 0) {
+      _showInfoDialog(
+        title: 'Sin docentes pendientes',
+        message: 'Todos los docentes ya están inscritos en sus materias. No hay acciones pendientes por realizar.',
+        color: _limeColor,
+        icon: Icons.check_circle_outline,
+      );
+      return;
+    }
+    
+    if (action == 'generate-evaluations' && stats.activeEvaluations > 0) {
+      _showInfoDialog(
+        title: 'Evaluaciones ya generadas',
+        message: 'Ya existen ${stats.activeEvaluations} evaluaciones activas en el sistema. No es necesario generar nuevas en este momento.',
+        color: _tealColor,
+        icon: Icons.assignment_turned_in,
+      );
+      return;
+    }
+    
     setState(() {
       _loadingStates[action] = true;
     });
@@ -105,7 +152,6 @@ class _ConfigContentState extends State<ConfigContent> {
           break;
           
         case 'generate-evaluations':
-          // Usar fechas del periodo actual
           final now = DateTime.now();
           final fechaCierre = now.add(const Duration(days: 90));
           
@@ -125,7 +171,7 @@ class _ConfigContentState extends State<ConfigContent> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
-            backgroundColor: Colors.green.shade600,
+            backgroundColor: _adminPalette.primary,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -133,7 +179,6 @@ class _ConfigContentState extends State<ConfigContent> {
           ),
         );
         
-        // Recargar dashboard después de la acción
         await _loadDashboard(forceRefresh: true);
       }
     } catch (e) {
@@ -143,7 +188,7 @@ class _ConfigContentState extends State<ConfigContent> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
-            backgroundColor: Colors.red.shade600,
+            backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -159,12 +204,34 @@ class _ConfigContentState extends State<ConfigContent> {
       }
     }
   }
+  
+  void _showInfoDialog({
+    required String title,
+    required String message,
+    required Color color,
+    required IconData icon,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => MessageDialogWidget(
+        type: MessageType.info,
+        title: title,
+        message: message,
+        customIcon: icon,
+        customColor: color, // 🎨 Aplica el color específico de cada sincronización
+        onPrimaryAction: () => Navigator.of(context).pop(),
+        primaryButtonText: 'Entendido',
+        barrierDismissible: true,
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
       onRefresh: () => _loadDashboard(forceRefresh: true),
-      color: const Color(0xFF4CAF50),
+      color: _adminPalette.primary,
       child: _isLoading
           ? _buildLoadingState()
           : _errorMessage != null
@@ -174,19 +241,19 @@ class _ConfigContentState extends State<ConfigContent> {
   }
 
   Widget _buildLoadingState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(
-            color: Color(0xFF4CAF50),
+            color: _adminPalette.primary,
           ),
-          SizedBox(height: 16),
+          const SizedBox(height: 16),
           Text(
             'Cargando dashboard...',
             style: TextStyle(
               fontSize: 14,
-              color: Color(0xFF6B6B6B),
+              color: AppColors.textTertiary,
             ),
           ),
         ],
@@ -204,15 +271,15 @@ class _ConfigContentState extends State<ConfigContent> {
             const Icon(
               Icons.error_outline,
               size: 64,
-              color: Color(0xFFEF4444),
+              color: AppColors.error,
             ),
             const SizedBox(height: 16),
             Text(
               _errorMessage!,
               textAlign: TextAlign.center,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 14,
-                color: Color(0xFF6B6B6B),
+                color: AppColors.textTertiary,
               ),
             ),
             const SizedBox(height: 24),
@@ -221,7 +288,7 @@ class _ConfigContentState extends State<ConfigContent> {
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
+                backgroundColor: _adminPalette.primary,
                 foregroundColor: Colors.white,
               ),
             ),
@@ -459,7 +526,7 @@ class _ConfigContentState extends State<ConfigContent> {
       ),
     );
   }
-
+  
   Widget _buildSystemStatus(DashboardStats stats) {
     return Container(
       padding: const EdgeInsets.all(20),
@@ -482,42 +549,42 @@ class _ConfigContentState extends State<ConfigContent> {
             children: [
               Icon(
                 Icons.layers_rounded,
-                color: Colors.green.shade600,
+                color: _adminPalette.primary,
                 size: 24,
               ),
               const SizedBox(width: 12),
               const Text(
                 'Estado del Sistema',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
           
-          // Barra de progreso - Estudiantes
+          // Barra de progreso - Estudiantes (Verde esmeralda)
           _buildProgressCard(
             title: 'Estudiantes Inscritos',
             current: stats.syncedStudents,
             total: stats.totalStudents,
             percentage: stats.studentsSyncRate,
-            icon: Icons.check_circle_rounded,
-            color: const Color(0xFF2196F3),
+            icon: Icons.people_rounded,
+            color: _emeraldColor,
           ),
           
           const SizedBox(height: 16),
           
-          // Barra de progreso - Docentes
+          // Barra de progreso - Docentes (Verde lima)
           _buildProgressCard(
             title: 'Docentes Inscritos',
             current: stats.enrolledTeachers,
             total: stats.totalTeachers,
             percentage: stats.teachersEnrollRate,
             icon: Icons.school_rounded,
-            color: const Color(0xFF9C27B0),
+            color: _limeColor,
           ),
         ],
       ),
@@ -566,7 +633,7 @@ class _ConfigContentState extends State<ConfigContent> {
                   Text(
                     title,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13.5,
                       fontWeight: FontWeight.w600,
                       color: textColor,
                     ),
@@ -576,7 +643,7 @@ class _ConfigContentState extends State<ConfigContent> {
               Text(
                 '${percentage.toStringAsFixed(1)}%',
                 style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 16.5,
                   fontWeight: FontWeight.bold,
                   color: textColor,
                 ),
@@ -641,23 +708,23 @@ class _ConfigContentState extends State<ConfigContent> {
             children: [
               Icon(
                 Icons.play_circle_rounded,
-                color: Colors.green.shade600,
+                color: _adminPalette.primary,
                 size: 24,
               ),
               const SizedBox(width: 12),
               const Text(
                 'Acciones de Sincronización',
                 style: TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A1A),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
           
-          // Botón 1: Sincronizar Estudiantes
+          // Botón 1: Sincronizar Estudiantes (Verde esmeralda)
           _buildActionCard(
             icon: Icons.people_rounded,
             title: 'Sincronizar Estudiantes',
@@ -666,7 +733,7 @@ class _ConfigContentState extends State<ConfigContent> {
             actionLabel: 'Sincronizar Ahora',
             actionKey: 'sync-students',
             gradient: const LinearGradient(
-              colors: [Color(0xFF2196F3), Color(0xFF1976D2)],
+              colors: [_emeraldColor, _emeraldDark],
             ),
             stats: [
               {'label': 'Total', 'value': stats.totalStudents},
@@ -677,7 +744,7 @@ class _ConfigContentState extends State<ConfigContent> {
           
           const SizedBox(height: 16),
           
-          // Botón 2: Inscribir Docentes
+          // Botón 2: Inscribir Docentes (Verde lima)
           _buildActionCard(
             icon: Icons.school_rounded,
             title: 'Inscribir Docentes',
@@ -686,7 +753,7 @@ class _ConfigContentState extends State<ConfigContent> {
             actionLabel: 'Inscribir Ahora',
             actionKey: 'enroll-teachers',
             gradient: const LinearGradient(
-              colors: [Color(0xFF9C27B0), Color(0xFF7B1FA2)],
+              colors: [_limeColor, _limeDark],
             ),
             stats: [
               {'label': 'Total', 'value': stats.totalTeachers},
@@ -697,7 +764,7 @@ class _ConfigContentState extends State<ConfigContent> {
           
           const SizedBox(height: 16),
           
-          // Botón 3: Generar Evaluaciones
+          // Botón 3: Generar Evaluaciones (Verde azulado)
           _buildActionCard(
             icon: Icons.assignment_rounded,
             title: 'Generar Evaluaciones',
@@ -706,7 +773,7 @@ class _ConfigContentState extends State<ConfigContent> {
             actionLabel: 'Generar Ahora',
             actionKey: 'generate-evaluations',
             gradient: const LinearGradient(
-              colors: [Color(0xFF4CAF50), Color(0xFF388E3C)],
+              colors: [_tealColor, _tealDark],
             ),
             stats: [
               {'label': 'Existentes', 'value': stats.totalEvaluations},
@@ -769,7 +836,7 @@ class _ConfigContentState extends State<ConfigContent> {
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
+                        color: AppColors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -807,7 +874,7 @@ class _ConfigContentState extends State<ConfigContent> {
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A1A1A),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -906,8 +973,8 @@ class _ConfigContentState extends State<ConfigContent> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        border: Border.all(color: Colors.blue.shade200),
+        color: _adminPalette.chipBackground,
+        border: Border.all(color: _adminPalette.borderColor(0.3)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -915,7 +982,7 @@ class _ConfigContentState extends State<ConfigContent> {
         children: [
           Icon(
             Icons.info_rounded,
-            color: Colors.blue.shade600,
+            color: _adminPalette.primary,
             size: 20,
           ),
           const SizedBox(width: 12),
@@ -928,7 +995,7 @@ class _ConfigContentState extends State<ConfigContent> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade900,
+                    color: _adminPalette.primaryDark,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -937,7 +1004,7 @@ class _ConfigContentState extends State<ConfigContent> {
                   'Se recomienda ejecutar estas acciones en horarios de baja actividad del sistema.',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.blue.shade700,
+                    color: _adminPalette.primaryDark.withOpacity(0.8),
                     height: 1.4,
                   ),
                 ),
