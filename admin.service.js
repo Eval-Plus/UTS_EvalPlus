@@ -18,6 +18,12 @@ const logger = createLogger('AdminService');
 // Periodo actual
 const CURRENT_PERIOD = '2025-1';
 
+// 🆕 Límites de sincronización
+const SYNC_LIMITS = {
+  MAX_SUBJECTS_PER_STUDENT: 7,  // 1 materia por cada una de las 7 carreras
+  MAX_SUBJECTS_PER_TEACHER: 7   // Máximo 7 materias por docente
+};
+
 export class AdminService {
   // ==========================================
   // SINCRONIZACIÓN DE ESTUDIANTES
@@ -25,6 +31,7 @@ export class AdminService {
 
   /**
    * Sincroniza estudiantes: inscribe en carreras y materias
+   * Límite: 7 materias (1 por cada una de las 7 carreras)
    * @param {number} adminId - ID del administrador que ejecuta
    * @param {Object} options - Opciones de sincronización
    * @returns {Object} Resultado de la sincronización
@@ -46,11 +53,23 @@ export class AdminService {
     try {
       // 1. Obtener todos los estudiantes
       const estudiantes = await this.getStudentsToSync();
-      resultado.total = estudiantes.length;
+      
+      if (estudiantes.length === 0) {
+        logger.warn('⚠️ No hay estudiantes registrados para sincronizar');
+        throw new Error('No hay estudiantes registrados en el sistema');
+      }
 
+      resultado.total = estudiantes.length;
       logger.info(`📊 ${resultado.total} estudiantes encontrados`);
 
-      // 2. Procesar cada estudiante
+      // 2. Verificar que existan carreras
+      const carreras = await CareerModel.findAll();
+      if (carreras.length === 0) {
+        logger.warn('⚠️ No hay carreras disponibles');
+        throw new Error('No hay carreras disponibles en el sistema');
+      }
+
+      // 3. Procesar cada estudiante
       for (const estudiante of estudiantes) {
         try {
           resultado.procesados++;
@@ -64,8 +83,18 @@ export class AdminService {
             continue;
           }
 
-          // Inscribir estudiante
+          // Inscribir estudiante (7 carreras, 1 materia por carrera)
           const inscripcion = await EnrollmentService.setupStudentEnrollment(estudiante.id);
+
+          if (!inscripcion.success) {
+            resultado.errores++;
+            resultado.erroresDetalle.push({
+              userId: estudiante.id,
+              email: estudiante.email,
+              error: inscripcion.message
+            });
+            continue;
+          }
 
           resultado.exitosos++;
           resultado.detalles.push({
@@ -90,7 +119,7 @@ export class AdminService {
         }
       }
 
-      // 3. Guardar log de sincronización
+      // 4. Guardar log de sincronización
       const duracion = Date.now() - startTime;
       await this.saveSyncLog(adminId, 'students', CURRENT_PERIOD, {
         ...resultado,
@@ -161,7 +190,8 @@ export class AdminService {
   // ==========================================
 
   /**
-   * Sincroniza profesores: asigna materias
+   * Sincroniza profesores: asigna materias (SIN crear evaluaciones)
+   * Límite: 7 materias por docente
    * @param {number} adminId - ID del administrador
    * @param {Object} options - Opciones de sincronización
    * @returns {Object} Resultado de la sincronización
@@ -183,11 +213,25 @@ export class AdminService {
     try {
       // 1. Obtener todos los profesores
       const profesores = await this.getTeachersToSync();
-      resultado.total = profesores.length;
+      
+      if (profesores.length === 0) {
+        logger.warn('⚠️ No hay profesores registrados para sincronizar');
+        throw new Error('No hay profesores registrados en el sistema');
+      }
 
+      resultado.total = profesores.length;
       logger.info(`📊 ${resultado.total} profesores encontrados`);
 
-      // 2. Procesar cada profesor
+      // 2. Verificar que existan materias sin profesor
+      const materiasSinProfesor = await SubjectModel.findSubjectsWithoutTeacher();
+      if (materiasSinProfesor.length === 0) {
+        logger.warn('⚠️ No hay materias disponibles sin profesor asignado');
+        throw new Error('No hay materias disponibles sin profesor. Todas las materias ya tienen docente asignado.');
+      }
+
+      logger.info(`📚 ${materiasSinProfesor.length} materias disponibles sin profesor`);
+
+      // 3. Procesar cada profesor
       for (const profesor of profesores) {
         try {
           resultado.procesados++;
@@ -201,15 +245,24 @@ export class AdminService {
             continue;
           }
 
-          // Asignar materias al profesor
+          // Asignar materias al profesor (SIN crear evaluaciones)
           const asignacion = await EnrollmentService.setupTeacherAssignment(profesor.id);
+
+          if (!asignacion.success) {
+            resultado.errores++;
+            resultado.erroresDetalle.push({
+              userId: profesor.id,
+              email: profesor.email,
+              error: asignacion.message
+            });
+            continue;
+          }
 
           resultado.exitosos++;
           resultado.detalles.push({
             userId: profesor.id,
             email: profesor.email,
             materias: asignacion.assignedSubjects,
-            evaluaciones: asignacion.createdEvaluations,
             success: true
           });
 
@@ -227,7 +280,7 @@ export class AdminService {
         }
       }
 
-      // 3. Guardar log
+      // 4. Guardar log
       const duracion = Date.now() - startTime;
       await this.saveSyncLog(adminId, 'teachers', CURRENT_PERIOD, {
         ...resultado,
@@ -313,7 +366,37 @@ export class AdminService {
     };
 
     try {
-      // 1. Obtener plantilla
+      // 1. Validar que existan estudiantes
+      const totalEstudiantes = await prisma.user.count({
+        where: {
+          roles: {
+            some: {
+              role: { name: 'STUDENT' }
+            }
+          }
+        }
+      });
+
+      if (totalEstudiantes === 0) {
+        throw new Error('No hay estudiantes registrados. Primero debe sincronizar estudiantes.');
+      }
+
+      // 2. Validar que existan profesores
+      const totalProfesores = await prisma.user.count({
+        where: {
+          roles: {
+            some: {
+              role: { name: 'TEACHER' }
+            }
+          }
+        }
+      });
+
+      if (totalProfesores === 0) {
+        throw new Error('No hay profesores registrados. Primero debe sincronizar profesores.');
+      }
+
+      // 3. Obtener plantilla
       const template = templateId 
         ? await EvaluationTemplateModel.findById(templateId)
         : await EvaluationTemplateModel.findDefault();
@@ -322,34 +405,51 @@ export class AdminService {
         throw new Error('Plantilla de evaluación no encontrada');
       }
 
-      // 2. Obtener todas las materias con profesor asignado
+      // 4. Obtener todas las materias con profesor asignado Y con estudiantes
       const materias = await prisma.subject.findMany({
         where: {
           teacherId: { not: null },
-          activo: true
+          activo: true,
+          students: {
+            some: {
+              periodo: periodo || CURRENT_PERIOD
+            }
+          }
         },
         include: {
           teacher: { select: { id: true, email: true } },
-          career: { select: { nombre: true } }
+          career: { select: { nombre: true } },
+          students: {
+            where: {
+              periodo: periodo || CURRENT_PERIOD
+            }
+          }
         }
       });
 
-      resultado.total = materias.length;
-      logger.info(`📊 ${resultado.total} materias con profesor encontradas`);
+      if (materias.length === 0) {
+        throw new Error(
+          'No hay materias con profesor asignado y estudiantes inscritos. ' +
+          'Primero debe sincronizar estudiantes y profesores.'
+        );
+      }
 
-      // 3. Crear evaluación para cada materia
+      resultado.total = materias.length;
+      logger.info(`📊 ${resultado.total} materias con profesor y estudiantes encontradas`);
+
+      // 5. Crear evaluación para cada materia
       for (const materia of materias) {
         try {
           // Verificar si ya existe
           const existe = await EvaluationModel.exists(
             materia.id,
             materia.teacherId,
-            periodo
+            periodo || CURRENT_PERIOD
           );
 
           if (existe) {
             resultado.omitidas++;
-            logger.debug(`Evaluación ya existe: ${materia.nombre} - ${periodo}`);
+            logger.debug(`Evaluación ya existe: ${materia.nombre} - ${periodo || CURRENT_PERIOD}`);
             continue;
           }
 
@@ -358,7 +458,7 @@ export class AdminService {
             templateId: template.id,
             subjectId: materia.id,
             teacherId: materia.teacherId,
-            periodo,
+            periodo: periodo || CURRENT_PERIOD,
             fechaInicio: new Date(fechaInicio),
             fechaCierre: new Date(fechaCierre),
             esObligatoria: true,
@@ -371,10 +471,13 @@ export class AdminService {
             materia: materia.nombre,
             profesor: materia.teacher.email,
             carrera: materia.career.nombre,
+            estudiantesInscritos: materia.students.length,
             success: true
           });
 
-          logger.success(`✅ Evaluación creada: ${materia.nombre}`);
+          logger.success(
+            `✅ Evaluación creada: ${materia.nombre} (${materia.students.length} estudiantes)`
+          );
         } catch (error) {
           resultado.errores++;
           resultado.erroresDetalle.push({
@@ -386,9 +489,9 @@ export class AdminService {
         }
       }
 
-      // 4. Guardar log
+      // 6. Guardar log
       const duracion = Date.now() - startTime;
-      await this.saveSyncLog(adminId, 'evaluations', periodo, {
+      await this.saveSyncLog(adminId, 'evaluations', periodo || CURRENT_PERIOD, {
         ...resultado,
         templateId: template.id,
         templateNombre: template.nombre,
