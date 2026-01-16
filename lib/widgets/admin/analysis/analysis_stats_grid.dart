@@ -1,5 +1,5 @@
-/// Grid de estadísticas globales
-/// Ubicación: lib/widgets/admin/analysis_stats_grid.dart
+/// Grid de estadísticas globales (con gradientes)
+/// Ubicación: lib/widgets/admin/analysis/analysis_stats_grid.dart
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/teacher_analysis_model.dart';
@@ -37,7 +37,7 @@ class AnalysisStatsGrid extends StatelessWidget {
                   AdminAnalysisConstants.teachersIcon,
                   AdminAnalysisConstants.statsTeachersLabel,
                   '${stats.totalTeachers}',
-                  AdminAnalysisConstants.teachersColor,
+                  AdminAnalysisConstants.teachersGradient,
                 ),
               ),
               const SizedBox(width: AdminAnalysisConstants.paddingSmall),
@@ -46,7 +46,7 @@ class AnalysisStatsGrid extends StatelessWidget {
                   AdminAnalysisConstants.evaluationsIcon,
                   AdminAnalysisConstants.statsEvaluationsLabel,
                   '${stats.totalEvaluations}',
-                  AdminAnalysisConstants.evaluationsColor,
+                  AdminAnalysisConstants.evaluationsGradient,
                 ),
               ),
             ],
@@ -59,7 +59,7 @@ class AnalysisStatsGrid extends StatelessWidget {
                   AdminAnalysisConstants.completionIcon,
                   AdminAnalysisConstants.statsCompletionLabel,
                   '${stats.avgCompletion}%',
-                  AdminAnalysisConstants.completionColor,
+                  AdminAnalysisConstants.completionGradient,
                 ),
               ),
               const SizedBox(width: AdminAnalysisConstants.paddingSmall),
@@ -68,7 +68,7 @@ class AnalysisStatsGrid extends StatelessWidget {
                   AdminAnalysisConstants.studentsIcon,
                   AdminAnalysisConstants.statsStudentsLabel,
                   '${stats.totalStudents}',
-                  AdminAnalysisConstants.studentsColor,
+                  AdminAnalysisConstants.studentsGradient,
                 ),
               ),
             ],
@@ -78,28 +78,45 @@ class AnalysisStatsGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildStatCard(IconData icon, String label, String value, Color color) {
+  /// Construye una tarjeta de estadística con gradiente
+  Widget _buildStatCard(
+    IconData icon,
+    String label,
+    String value,
+    LinearGradient gradient,
+  ) {
     return Container(
       padding: const EdgeInsets.all(AdminAnalysisConstants.statsCardPadding),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        gradient: gradient,
         borderRadius: BorderRadius.circular(AdminAnalysisConstants.buttonBorderRadius),
-        border: Border.all(color: color.withOpacity(0.3)),
+        boxShadow: [
+          BoxShadow(
+            color: gradient.colors.first.withOpacity(0.3),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         children: [
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 14, color: color),
+              Icon(
+                icon,
+                size: 14,
+                color: Colors.white,
+              ),
               const SizedBox(width: 4),
               Flexible(
                 child: Text(
                   label,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 10,
-                    color: color,
+                    color: Colors.white,
                     fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -110,10 +127,17 @@ class AnalysisStatsGrid extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: color,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  color: Colors.black26,
+                  offset: Offset(0, 1),
+                  blurRadius: 2,
+                ),
+              ],
             ),
           ),
         ],

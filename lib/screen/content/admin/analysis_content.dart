@@ -204,11 +204,11 @@ class _AnalysisContentState extends State<AnalysisContent> {
   // ==================== ESTADOS ====================
 
   Widget _buildInitialLoadingState() {
-    return const Center(
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          CircularProgressIndicator(),
+          CircularProgressIndicator(color: _adminPalette.primary),
           SizedBox(height: AdminAnalysisConstants.paddingMedium),
           Text(
             AdminAnalysisConstants.loadingMessage,

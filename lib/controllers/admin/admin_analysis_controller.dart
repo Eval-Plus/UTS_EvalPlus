@@ -68,12 +68,26 @@ class AdminAnalysisController extends ChangeNotifier {
   
   void _init() {
     debugPrint('🎯 [AnalysisController] Inicializando...');
+    _analysisService.addListener(_onServiceChanged);
     loadData();
   }
 
+  @override
+  void dispose() {
+    debugPrint('🎯 [AnalysisController] Desuscribiéndose del servicio...');
+    _analysisService.removeListener(_onServiceChanged);
+    super.dispose();
+  }
+
   // ==================== CARGA DE DATOS ====================
+
+  void _onServiceChanged() {
+    debugPrint('🔔 [AnalysisController] Notificación recibida del servicio');
+    notifyListeners();
+  }
   
-  Future<void> loadData() async {
+  /// Carga datos con opción de forzar refresh
+  Future<void> loadData({bool forceRefresh = false}) async {
     if (_isLoading) return;
 
     _isLoading = true;
@@ -82,6 +96,7 @@ class AdminAnalysisController extends ChangeNotifier {
 
     try {
       debugPrint('📊 [AnalysisController] Cargando datos...');
+      debugPrint('   - forceRefresh: $forceRefresh');
       
       // Determinar carrera seleccionada
       final selectedCareers = _filters['careers'] as List<String>;
@@ -95,10 +110,12 @@ class AdminAnalysisController extends ChangeNotifier {
           periodo: _filters['period'] as String,
           career: career,
           sortBy: _sortBy,
+          forceRefresh: forceRefresh,
         ),
         _analysisService.getAnalysisStats(
           periodo: _filters['period'] as String,
           career: career,
+          forceRefresh: forceRefresh,
         ),
       ]);
 
@@ -132,6 +149,24 @@ class AdminAnalysisController extends ChangeNotifier {
       _isInitialLoad = false;
       notifyListeners();
     }
+  }
+
+  /// Refresca los datos forzando una llamada al servidor
+  Future<void> refreshData() async {
+    debugPrint('🔄 [AnalysisController] Forzando refresh...');
+    await loadData(forceRefresh: true);
+  }
+
+  /// Invalida el caché y recarga
+  void invalidateCacheAndReload() {
+    debugPrint('❌ [AnalysisController] Invalidando caché...');
+    _analysisService.invalidateCache();
+    loadData(forceRefresh: true);
+  }
+
+  /// Limpia el caché
+  void clearCache() {
+    _analysisService.clearCache();
   }
 
   // ==================== BÚSQUEDA ====================

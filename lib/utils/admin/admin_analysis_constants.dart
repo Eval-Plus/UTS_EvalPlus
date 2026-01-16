@@ -20,19 +20,48 @@ class AdminAnalysisConstants {
   static const Color successLight = Color(0xFFE8F5E9);
   static const Color successBorder = Color(0xFFC8E6C9);
   
-  // ==================== COLORES DE ESTADÍSTICAS ====================
+  // ==================== COLORES DE ESTADÍSTICAS (Actualizados) ====================
   
-  static const Color teachersColor = Colors.blue;
-  static const Color evaluationsColor = Colors.purple;
-  static const Color completionColor = Colors.green;
-  static const Color studentsColor = Colors.orange;
+  /// Verde lima para docentes (Teachers)
+  static const Color teachersColor = Color(0xFF8BC34A);
+  static const Color teachersDark = Color(0xFF689F38);
+  
+  /// Verde azulado para evaluaciones (Evaluations)
+  static const Color evaluationsColor = Color(0xFF009688);
+  static const Color evaluationsDark = Color(0xFF00796B);
+  
+  /// Verde esmeralda para completitud (Completion)
+  static const Color completionColor = Color(0xFF4CAF50);
+  static const Color completionDark = Color(0xFF388E3C);
+  
+  /// Naranja para estudiantes (Students)
+  static const Color studentsColor = Color(0xFF2ECC71);
+  static const Color studentsDark = Color(0xFF27AE60);
+
+  // ==================== GRADIENTES DE ESTADÍSTICAS ====================
+  
+  static const LinearGradient teachersGradient = LinearGradient(
+    colors: [teachersColor, teachersDark],
+  );
+  
+  static const LinearGradient evaluationsGradient = LinearGradient(
+    colors: [evaluationsColor, evaluationsDark],
+  );
+  
+  static const LinearGradient completionGradient = LinearGradient(
+    colors: [completionColor, completionDark],
+  );
+  
+  static const LinearGradient studentsGradient = LinearGradient(
+    colors: [studentsColor, studentsDark],
+  );
 
   // ==================== TEXTOS Y ETIQUETAS ====================
   
   static const String headerTitle = 'Análisis';
   static const String headerSubtitle = 'Analiza los resultados de evaluaciones';
   
-  static const String searchHint = 'Nombre o Email';
+  static const String searchHint = 'Nombre';
   static const String filtersButton = 'Filtros';
   
   static const String careerFilterLabel = 'Carrera';

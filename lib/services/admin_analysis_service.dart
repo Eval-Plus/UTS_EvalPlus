@@ -1,16 +1,80 @@
 // lib/services/admin_analysis_service.dart
 
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:eval_plus/config/constants.dart';
 import 'package:eval_plus/models/teacher_analysis_model.dart';
 
-class AdminAnalysisService {
+class AdminAnalysisService extends ChangeNotifier {
   final Future<String?> Function() getToken;
+
+  // ==================== CACHÉ ====================
+  
+  TeachersAnalysisResponse? _cachedTeachers;
+  AnalysisStats? _cachedStats;
+  DateTime? _lastFetchTime;
+  String? _cachedPeriodo;
+  String? _cachedCareer;
+  String? _cachedSortBy;
+  
+  static const Duration _cacheDuration = Duration(minutes: 5);
+
+  // ==================== CONSTRUCTOR ====================
 
   AdminAnalysisService({
     required this.getToken,
   });
+
+  // ==================== HELPERS DE CACHÉ ====================
+
+  /// Verifica si el caché es válido
+  bool _isCacheValid({
+    String? periodo,
+    String? career,
+    String? sortBy,
+  }) {
+    if (_cachedTeachers == null || _cachedStats == null || _lastFetchTime == null) {
+      return false;
+    }
+
+    // Verificar expiración
+    final now = DateTime.now();
+    if (now.difference(_lastFetchTime!) > _cacheDuration) {
+      debugPrint('⏰ Caché expirado');
+      return false;
+    }
+
+    // Verificar que los parámetros coincidan
+    if (_cachedPeriodo != periodo ||
+        _cachedCareer != career ||
+        _cachedSortBy != sortBy) {
+      debugPrint('🔄 Parámetros diferentes, caché inválido');
+      return false;
+    }
+
+    return true;
+  }
+
+  /// Limpia el caché
+  void clearCache() {
+    _cachedTeachers = null;
+    _cachedStats = null;
+    _lastFetchTime = null;
+    _cachedPeriodo = null;
+    _cachedCareer = null;
+    _cachedSortBy = null;
+    debugPrint('🗑️ Caché de análisis limpiado');
+    notifyListeners();
+  }
+
+  /// Invalida el caché (para forzar recarga)
+  void invalidateCache() {
+    _lastFetchTime = null;
+    debugPrint('❌ Caché invalidado');
+  }
+
+  // ==================== HEADERS ====================
 
   /// Headers comunes para todas las peticiones
   Future<Map<String, String>> _buildHeaders() async {
@@ -28,16 +92,26 @@ class AdminAnalysisService {
     };
   }
 
+  // ==================== ENDPOINTS ====================
+
   /// Obtener análisis de todos los docentes
   /// 
   /// [periodo] - Período académico (ej: '2025-1')
   /// [career] - Código de carrera (ej: 'ING-SIS', null o 'all' para todas)
   /// [sortBy] - Criterio de ordenamiento: 'name', 'evaluations', 'completion', 'activity'
+  /// [forceRefresh] - Fuerza recarga desde el servidor
   Future<TeachersAnalysisResponse> getTeachersAnalysis({
     String? periodo,
     String? career,
     String sortBy = 'name',
+    bool forceRefresh = false,
   }) async {
+    // Verificar caché si no se fuerza refresh
+    if (!forceRefresh && _isCacheValid(periodo: periodo, career: career, sortBy: sortBy)) {
+      debugPrint('⚡ Usando caché de teachers');
+      return _cachedTeachers!;
+    }
+
     try {
       // Construir query parameters
       final queryParams = <String, String>{};
@@ -53,7 +127,7 @@ class AdminAnalysisService {
       final uri = Uri.parse('${AppConstants.baseUrl}/admin/analysis/teachers')
           .replace(queryParameters: queryParams);
 
-      print('📡 GET $uri');
+      debugPrint('📡 GET $uri');
 
       // Hacer petición
       final response = await http.get(
@@ -62,12 +136,24 @@ class AdminAnalysisService {
       );
 
       // Manejar respuesta
-      return _handleResponse<TeachersAnalysisResponse>(
+      final result = _handleResponse<TeachersAnalysisResponse>(
         response,
         (data) => TeachersAnalysisResponse.fromJson(data),
       );
+
+      // Guardar en caché
+      _cachedTeachers = result;
+      _cachedPeriodo = periodo;
+      _cachedCareer = career;
+      _cachedSortBy = sortBy;
+      _lastFetchTime = DateTime.now();
+      
+      debugPrint('💾 Datos guardados en caché');
+      notifyListeners();
+
+      return result;
     } catch (e) {
-      print('❌ Error en getTeachersAnalysis: $e');
+      debugPrint('❌ Error en getTeachersAnalysis: $e');
       rethrow;
     }
   }
@@ -91,7 +177,7 @@ class AdminAnalysisService {
       final uri = Uri.parse('${AppConstants.baseUrl}/admin/analysis/teachers/$teacherId')
           .replace(queryParameters: queryParams);
 
-      print('📡 GET $uri');
+      debugPrint('📡 GET $uri');
 
       // Hacer petición
       final response = await http.get(
@@ -105,7 +191,7 @@ class AdminAnalysisService {
         (data) => TeacherDetailResponse.fromJson(data),
       );
     } catch (e) {
-      print('❌ Error en getTeacherDetail: $e');
+      debugPrint('❌ Error en getTeacherDetail: $e');
       rethrow;
     }
   }
@@ -114,10 +200,18 @@ class AdminAnalysisService {
   /// 
   /// [periodo] - Período académico
   /// [career] - Código de carrera
+  /// [forceRefresh] - Fuerza recarga desde el servidor
   Future<AnalysisStats> getAnalysisStats({
     String? periodo,
     String? career,
+    bool forceRefresh = false,
   }) async {
+    // Verificar caché si no se fuerza refresh
+    if (!forceRefresh && _isCacheValid(periodo: periodo, career: career)) {
+      debugPrint('⚡ Usando caché de stats');
+      return _cachedStats!;
+    }
+
     try {
       // Construir query parameters
       final queryParams = <String, String>{};
@@ -132,7 +226,7 @@ class AdminAnalysisService {
       final uri = Uri.parse('${AppConstants.baseUrl}/admin/analysis/stats')
           .replace(queryParameters: queryParams);
 
-      print('📡 GET $uri');
+      debugPrint('📡 GET $uri');
 
       // Hacer petición
       final response = await http.get(
@@ -141,22 +235,33 @@ class AdminAnalysisService {
       );
 
       // Manejar respuesta
-      return _handleResponse<AnalysisStats>(
+      final result = _handleResponse<AnalysisStats>(
         response,
         (data) => AnalysisStats.fromJson(data),
       );
+
+      // Guardar en caché
+      _cachedStats = result;
+      _lastFetchTime = DateTime.now();
+      
+      debugPrint('💾 Stats guardadas en caché');
+      notifyListeners();
+
+      return result;
     } catch (e) {
-      print('❌ Error en getAnalysisStats: $e');
+      debugPrint('❌ Error en getAnalysisStats: $e');
       rethrow;
     }
   }
+
+  // ==================== MANEJO DE RESPUESTAS ====================
 
   /// Método privado para manejar respuestas HTTP
   T _handleResponse<T>(
     http.Response response,
     T Function(dynamic) fromJson,
   ) {
-    print('📥 Status: ${response.statusCode}');
+    debugPrint('📥 Status: ${response.statusCode}');
 
     // Decodificar JSON
     final Map<String, dynamic> jsonResponse;
