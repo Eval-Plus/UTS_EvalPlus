@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
-import 'package:eval_plus/utils/admin_config_constants.dart';
+import 'package:eval_plus/utils/admin/admin_config_constants.dart';
 
 class ConfigActionCard extends StatelessWidget {
   final IconData icon;

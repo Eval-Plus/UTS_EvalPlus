@@ -2,7 +2,7 @@
 /// Ubicación: lib/widgets/admin/config_progress_card.dart
 
 import 'package:flutter/material.dart';
-import 'package:eval_plus/utils/admin_config_constants.dart';
+import 'package:eval_plus/utils/admin/admin_config_constants.dart';
 
 class ConfigProgressCard extends StatelessWidget {
   final String title;

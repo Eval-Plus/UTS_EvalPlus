@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/admin_dashboard_model.dart';
-import 'package:eval_plus/utils/admin_config_constants.dart';
+import 'package:eval_plus/utils/admin/admin_config_constants.dart';
 
 class ConfigHeader extends StatelessWidget {
   final String periodo;

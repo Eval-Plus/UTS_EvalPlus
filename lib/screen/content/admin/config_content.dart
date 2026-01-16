@@ -9,15 +9,15 @@ import 'package:provider/provider.dart';
 import 'package:eval_plus/config/app_colors.dart';
 
 // Controllers
-import 'package:eval_plus/controllers/admin_config_controller.dart';
+import 'package:eval_plus/controllers/admin/admin_config_controller.dart';
 
 // Utils
-import 'package:eval_plus/utils/admin_config_constants.dart';
+import 'package:eval_plus/utils/admin/admin_config_constants.dart';
 
 // Widgets
-import 'package:eval_plus/widgets/admin/config_header.dart';
-import 'package:eval_plus/widgets/admin/config_system_status.dart';
-import 'package:eval_plus/widgets/admin/config_action_card.dart';
+import 'package:eval_plus/widgets/admin/config/config_header.dart';
+import 'package:eval_plus/widgets/admin/config/config_system_status.dart';
+import 'package:eval_plus/widgets/admin/config/config_action_card.dart';
 import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
 class ConfigContent extends StatefulWidget {

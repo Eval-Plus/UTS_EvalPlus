@@ -4,8 +4,8 @@
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/models/admin_dashboard_model.dart';
-import 'package:eval_plus/utils/admin_config_constants.dart';
-import 'package:eval_plus/widgets/admin/config_progress_card.dart';
+import 'package:eval_plus/utils/admin/admin_config_constants.dart';
+import 'package:eval_plus/widgets/admin/config/config_progress_card.dart';
 
 class ConfigSystemStatus extends StatelessWidget {
   final DashboardStats stats;
