@@ -1,10 +1,11 @@
-/// Tarjeta de docente para análisis
-/// Ubicación: lib/widgets/admin/analysis_teacher_card.dart
+/// Tarjeta de docente para análisis (Con animaciones)
+/// Ubicación: lib/widgets/admin/analysis/analysis_teacher_card.dart
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/models/teacher_analysis_model.dart';
 import 'package:eval_plus/utils/admin/admin_analysis_constants.dart';
+import 'package:eval_plus/animations/admin/animated_teacher_expansion.dart';
 
 class AnalysisTeacherCard extends StatelessWidget {
   final TeacherData teacher;
@@ -26,7 +27,9 @@ class AnalysisTeacherCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusInfo = AdminAnalysisConstants.getTeacherStatus(teacher.completionRate);
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeInOut,
       margin: const EdgeInsets.only(bottom: AdminAnalysisConstants.paddingMedium),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -37,19 +40,30 @@ class AnalysisTeacherCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
+            color: isExpanded
+                ? palette.primary.withOpacity(0.15)
+                : Colors.black.withOpacity(0.05),
+            blurRadius: isExpanded ? 8 : 4,
+            offset: Offset(0, isExpanded ? 4 : 2),
           ),
         ],
       ),
       child: Column(
         children: [
           _buildHeader(statusInfo),
-          if (isExpanded) ...[
-            const Divider(height: 1),
-            _buildExpandedContent(),
-          ],
+          
+          // ✨ Animación para el contenido expandido
+          AnimatedTeacherExpansion(
+            isExpanded: isExpanded,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOutCubic,
+            expandedContent: Column(
+              children: [
+                const Divider(height: 1),
+                _buildExpandedContent(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -75,11 +89,16 @@ class AnalysisTeacherCard extends StatelessWidget {
                 Expanded(
                   child: _buildTeacherInfo(),
                 ),
-                Icon(
-                  isExpanded
-                      ? AdminAnalysisConstants.expandLessIcon
-                      : AdminAnalysisConstants.expandMoreIcon,
-                  color: Colors.grey[600],
+                
+                // ✨ Ícono animado de expansión
+                AnimatedRotation(
+                  turns: isExpanded ? 0.5 : 0.0,
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  child: Icon(
+                    Icons.expand_more,
+                    color: Colors.grey[600],
+                  ),
                 ),
               ],
             ),
@@ -175,16 +194,25 @@ class AnalysisTeacherCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(AdminAnalysisConstants.chipBorderRadius),
-          child: LinearProgressIndicator(
-            value: teacher.completionRate / 100,
-            backgroundColor: Colors.grey[200],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              AdminAnalysisConstants.getCompletionColor(teacher.completionRate),
-            ),
-            minHeight: AdminAnalysisConstants.progressBarHeight,
-          ),
+        
+        // ✨ Barra de progreso animada
+        TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeOutCubic,
+          tween: Tween(begin: 0.0, end: teacher.completionRate / 100),
+          builder: (context, value, child) {
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(AdminAnalysisConstants.chipBorderRadius),
+              child: LinearProgressIndicator(
+                value: value,
+                backgroundColor: Colors.grey[200],
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AdminAnalysisConstants.getCompletionColor(teacher.completionRate),
+                ),
+                minHeight: AdminAnalysisConstants.progressBarHeight,
+              ),
+            );
+          },
         ),
       ],
     );
@@ -271,7 +299,27 @@ class AnalysisTeacherCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AdminAnalysisConstants.paddingSmall),
-        ...teacher.subjects.map((subject) => _buildSubjectItem(subject)),
+        ...teacher.subjects.asMap().entries.map((entry) {
+          final index = entry.key;
+          final subject = entry.value;
+          
+          // ✨ Animación escalonada para cada materia
+          return TweenAnimationBuilder<double>(
+            duration: Duration(milliseconds: 300 + (index * 50)),
+            curve: Curves.easeOut,
+            tween: Tween(begin: 0.0, end: 1.0),
+            builder: (context, value, child) {
+              return Opacity(
+                opacity: value,
+                child: Transform.translate(
+                  offset: Offset(0, 10 * (1 - value)),
+                  child: child,
+                ),
+              );
+            },
+            child: _buildSubjectItem(subject),
+          );
+        }),
       ],
     );
   }

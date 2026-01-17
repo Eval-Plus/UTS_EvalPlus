@@ -1,9 +1,11 @@
-/// Panel de filtros para el análisis
-/// Ubicación: lib/widgets/admin/analysis_filters_panel.dart
+/// Panel de filtros para el análisis (Con animaciones)
+/// Ubicación: lib/widgets/admin/analysis/analysis_filters_panel.dart
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/utils/admin/admin_analysis_constants.dart';
+import 'package:eval_plus/animations/admin/animated_filter_panel.dart';
+import 'package:eval_plus/animations/admin/animated_filter_button.dart';
 
 class AnalysisFiltersPanel extends StatelessWidget {
   final String searchTerm;
@@ -45,12 +47,21 @@ class AnalysisFiltersPanel extends StatelessWidget {
       child: Column(
         children: [
           _buildSearchBar(palette),
-          if (showFilters) ...[
-            const SizedBox(height: AdminAnalysisConstants.paddingMedium),
-            const Divider(),
-            const SizedBox(height: AdminAnalysisConstants.paddingMedium),
-            _buildFiltersContent(),
-          ],
+          
+          // ✨ Animación para el despliegue de filtros
+          AnimatedFilterPanel(
+            showFilters: showFilters,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOutCubic,
+            filtersContent: Column(
+              children: [
+                const SizedBox(height: AdminAnalysisConstants.paddingMedium),
+                const Divider(),
+                const SizedBox(height: AdminAnalysisConstants.paddingMedium),
+                _buildFiltersContent(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -88,26 +99,14 @@ class AnalysisFiltersPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AdminAnalysisConstants.statsCardPadding),
-        ElevatedButton(
+        
+        // ✨ Botón animado para filtros
+        AnimatedFilterButton(
+          isActive: showFilters,
           onPressed: onToggleFilters,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: showFilters ? palette.primary : Colors.grey[100],
-            foregroundColor: showFilters ? Colors.white : Colors.grey[700],
-            padding: const EdgeInsets.symmetric(
-              horizontal: AdminAnalysisConstants.paddingLarge - 4,
-              vertical: AdminAnalysisConstants.paddingMedium,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AdminAnalysisConstants.buttonBorderRadius),
-            ),
-          ),
-          child: const Row(
-            children: [
-              Icon(AdminAnalysisConstants.filterIcon, size: 18),
-              SizedBox(width: AdminAnalysisConstants.paddingSmall),
-              Text(AdminAnalysisConstants.filtersButton),
-            ],
-          ),
+          palette: palette,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeInOut,
         ),
       ],
     );
@@ -169,12 +168,16 @@ class AnalysisFiltersPanel extends StatelessWidget {
     final isSelected = isFilterSelected(category, value);
     final palette = AppColors.getPaletteForRole(UserRole.admin);
 
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (_) => onFilterToggle(category, value),
-      selectedColor: palette.primary.withOpacity(0.2),
-      checkmarkColor: palette.primary,
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      child: FilterChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (_) => onFilterToggle(category, value),
+        selectedColor: palette.primary.withOpacity(0.2),
+        checkmarkColor: palette.primary,
+      ),
     );
   }
 }
