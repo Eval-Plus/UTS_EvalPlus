@@ -1,4 +1,4 @@
-/// Contenido de configuración para ADMINISTRADORES (Refactorizado v2)
+/// Contenido de configuración para ADMINISTRADORES (Refactorizado v3)
 /// Panel de sincronización y gestión del sistema
 /// Ubicación: lib/screen/content/admin/config_content.dart
 
@@ -50,9 +50,9 @@ class _ConfigContentState extends State<ConfigContent> {
 
     // Mostrar mensaje de éxito o error
     if (result.success) {
-      _showSuccessSnackbar(result.message);
+      _showSuccessDialog(result.message);
     } else {
-      _showErrorSnackbar(result.message);
+      _showErrorDialog(result.message);
     }
   }
 
@@ -73,28 +73,30 @@ class _ConfigContentState extends State<ConfigContent> {
     );
   }
 
-  void _showSuccessSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: _adminPalette.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => MessageDialogWidget(
+        type: MessageType.success,
+        title: 'Sincronización exitosa',
+        message: message,
+        customColor: _adminPalette.primary, // 🎨 Color dinámico del rol
+        onPrimaryAction: () => Navigator.of(context).pop(),
+        primaryButtonText: 'Entendido',
+        barrierDismissible: true,
       ),
     );
   }
 
-  void _showErrorSnackbar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => MessageDialogWidget.error(
+        title: 'Error en sincronización',
+        message: message,
+        onAccept: () => Navigator.of(context).pop(),
       ),
     );
   }
