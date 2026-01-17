@@ -50,7 +50,7 @@ class _ConfigContentState extends State<ConfigContent> {
 
     // Mostrar mensaje de éxito o error
     if (result.success) {
-      _showSuccessDialog(result.message);
+      _showSuccessDialog(result.message, actionKey);
     } else {
       _showErrorDialog(result.message);
     }
@@ -73,7 +73,9 @@ class _ConfigContentState extends State<ConfigContent> {
     );
   }
 
-  void _showSuccessDialog(String message) {
+  void _showSuccessDialog(String message, String actionKey) {
+    final metadata = _getActionMetadata(actionKey);
+    
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -81,7 +83,8 @@ class _ConfigContentState extends State<ConfigContent> {
         type: MessageType.success,
         title: 'Sincronización exitosa',
         message: message,
-        customColor: _adminPalette.primary, // 🎨 Color dinámico del rol
+        customIcon: metadata.icon,
+        customColor: metadata.color,
         onPrimaryAction: () => Navigator.of(context).pop(),
         primaryButtonText: 'Entendido',
         barrierDismissible: true,
@@ -99,6 +102,33 @@ class _ConfigContentState extends State<ConfigContent> {
         onAccept: () => Navigator.of(context).pop(),
       ),
     );
+  }
+
+  // ==================== HELPERS ==================== 
+
+  _SyncActionMetadata _getActionMetadata(String actionKey) {
+    switch (actionKey) {
+      case 'sync-students':
+        return _SyncActionMetadata(
+          color: AdminConfigConstants.emeraldColor,
+          icon: AdminConfigConstants.studentsIcon,
+        );
+      case 'enroll-teachers':
+        return _SyncActionMetadata(
+          color: AdminConfigConstants.limeColor,
+          icon: AdminConfigConstants.teachersIcon,
+        );
+      case 'generate-evaluations':
+        return _SyncActionMetadata(
+          color: AdminConfigConstants.tealColor,
+          icon: AdminConfigConstants.evaluationsIcon,
+        );
+      default:
+        return _SyncActionMetadata(
+          color: _adminPalette.primary,
+          icon: Icons.check_circle_outline,
+        );
+    }
   }
 
   // ==================== BUILD ====================
@@ -346,4 +376,15 @@ class _ConfigContentState extends State<ConfigContent> {
       ),
     );
   }
+}
+
+// Metadatos visuales para cada tipo de sincronización
+class _SyncActionMetadata {
+  final Color color;
+  final IconData icon;
+
+  _SyncActionMetadata({
+    required this.color,
+    required this.icon,
+  });
 }
