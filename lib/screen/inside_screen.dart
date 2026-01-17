@@ -190,41 +190,46 @@ class _InsideScreenState extends State<InsideScreen>
       _controller.currentUser,
     );
     
-    // Validar índice
-    final safeIndex = NavigationConfig.isValidIndex(
-      _controller.currentIndex, 
-      session.currentRole,
-    ) ? _controller.currentIndex : NavigationConfig.getInitialIndex();
-    
     // Obtener subtítulo según el rol
     final subtitle = _controller.getSubtitleForRole(session.currentRole);
     
-    return ListenableBuilder(
-      listenable: _controller,
-      builder: (context, child) {
+    // 🔥 USAR Consumer PARA ESCUCHAR CAMBIOS DEL CONTROLLER
+    return Consumer<InsideScreenController>(
+      builder: (context, controller, child) {
+        // 🔥 DEBUG: Imprimir el índice actual
+        debugPrint('🎯 [InsideScreen] Renderizando con índice: ${controller.currentIndex}');
+        
+        // Validar índice
+        final safeIndex = NavigationConfig.isValidIndex(
+          controller.currentIndex, 
+          session.currentRole,
+        ) ? controller.currentIndex : NavigationConfig.getInitialIndex();
+        
         return BaseScreenLayout(
-          topBarTitle: _controller.welcomeMessage,
+          topBarTitle: controller.welcomeMessage,
           topBarSubtitle: subtitle,
-          currentNavIndex: safeIndex,
+          currentNavIndex: safeIndex, // 🔥 Este valor debería cambiar
           centerContent: false,
           paddingTop: 80.0,
           paddingBottom: 20.0,
           onLogoutPressed: _handleLogout,
           onNavIndexChanged: (index) {
-            _controller.onNavIndexChanged(index, session.currentRole);
+            debugPrint('🎯 [InsideScreen] onNavIndexChanged llamado con índice: $index');
+            controller.onNavIndexChanged(index, session.currentRole);
           },
           child: AnimatedBuilder(
             animation: _animationController,
             builder: (context, child) {
               return ContentPageView(
-                pageController: _controller.pageController,
+                pageController: controller.pageController,
                 contents: contents,
                 onPageChanged: (index) {
-                  _controller.onPageChanged(index, session.currentRole);
+                  debugPrint('🎯 [InsideScreen] onPageChanged llamado con índice: $index');
+                  controller.onPageChanged(index, session.currentRole);
                 },
-                slideAnimation: _controller.slideAnimation,
-                fadeAnimation: _controller.fadeAnimation,
-                scaleAnimation: _controller.scaleAnimation,
+                slideAnimation: controller.slideAnimation,
+                fadeAnimation: controller.fadeAnimation,
+                scaleAnimation: controller.scaleAnimation,
               );
             },
           ),

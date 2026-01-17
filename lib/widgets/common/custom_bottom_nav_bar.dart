@@ -23,10 +23,12 @@ class CustomBottomNavBar extends StatelessWidget {
     // 👇 Usar configuración centralizada
     final visibleTabs = NavigationConfig.getTabsForRole(session.currentRole);
     
-    // Validación de seguridad
-    final safeIndex = NavigationConfig.isValidIndex(currentIndex, session.currentRole)
-        ? currentIndex
-        : 0;
+    // ✅ USAR EL currentIndex QUE VIENE COMO PARÁMETRO (ya validado en el padre)
+    // Este ya fue validado en BaseScreenLayout/InsideScreen
+    final safeIndex = currentIndex.clamp(0, visibleTabs.length - 1);
+    
+    // 🔥 DEBUG
+    debugPrint('🎯 [BottomNavBar] Renderizando con currentIndex: $currentIndex, safeIndex: $safeIndex');
     
     return Container(
       decoration: BoxDecoration(
@@ -48,7 +50,7 @@ class CustomBottomNavBar extends StatelessWidget {
               (index) => _buildNavItem(
                 icon: visibleTabs[index].icon,
                 label: visibleTabs[index].label,
-                isSelected: safeIndex == index,
+                isSelected: safeIndex == index, // ✅ Comparar con el índice del parámetro
                 onTap: () => onTap?.call(index),
               ),
             ),
