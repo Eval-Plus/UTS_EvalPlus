@@ -1,10 +1,11 @@
-/// Controlador para la configuración de administrador
-/// Ubicación: lib/controllers/admin_config_controller.dart
+/// Controlador para la configuración de administrador (Refactorizado)
+/// Ubicación: lib/controllers/admin/admin_config_controller.dart
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/admin_dashboard_model.dart';
 import 'package:eval_plus/services/admin_dashboard_service.dart';
 import 'package:eval_plus/utils/admin/admin_config_constants.dart';
+import 'package:eval_plus/utils/admin/admin_sync_validator.dart';
 
 class AdminConfigController extends ChangeNotifier {
   final AdminDashboardService _dashboardService;
@@ -89,86 +90,42 @@ class AdminConfigController extends ChangeNotifier {
 
   // ==================== VALIDACIONES ====================
   
-  /// Valida si se pueden sincronizar estudiantes
-  ValidationResult canSyncStudents() {
-    if (_dashboard == null) {
-      return ValidationResult(
-        canProceed: false,
+  /// Valida si se puede ejecutar una acción de sincronización
+  SyncValidationResult validateAction(String actionKey) {
+    if (_dashboard == null || stats == null) {
+      return SyncValidationResult.fail(
         message: 'No hay datos del dashboard disponibles',
       );
     }
 
-    final pendingCount = _dashboard!.stats.pendingStudents;
-    
-    if (pendingCount == 0) {
-      return ValidationResult(
-        canProceed: false,
-        showDialog: true,
-        title: AdminConfigConstants.studentsNoPending,
-        message: AdminConfigConstants.studentsNoPendingMessage,
-        icon: AdminConfigConstants.checkIcon,
-        color: AdminConfigConstants.emeraldColor,
-      );
-    }
-
-    return ValidationResult(canProceed: true);
+    // Usar el validador centralizado
+    return AdminSyncValidator.validateAction(actionKey, stats!);
   }
 
-  /// Valida si se pueden inscribir docentes
-  ValidationResult canEnrollTeachers() {
-    if (_dashboard == null) {
-      return ValidationResult(
-        canProceed: false,
-        message: 'No hay datos del dashboard disponibles',
-      );
+  /// Obtiene el estado de disponibilidad de todas las acciones
+  Map<String, bool> getActionsAvailability() {
+    if (stats == null) {
+      return {
+        'sync-students': false,
+        'enroll-teachers': false,
+        'generate-evaluations': false,
+      };
     }
 
-    final pendingCount = _dashboard!.stats.pendingTeachers;
-    
-    if (pendingCount == 0) {
-      return ValidationResult(
-        canProceed: false,
-        showDialog: true,
-        title: AdminConfigConstants.teachersNoPending,
-        message: AdminConfigConstants.teachersNoPendingMessage,
-        icon: AdminConfigConstants.checkIcon,
-        color: AdminConfigConstants.limeColor,
-      );
-    }
-
-    return ValidationResult(canProceed: true);
+    return AdminSyncValidator.getActionsAvailability(stats!);
   }
 
-  /// Valida si se pueden generar evaluaciones
-  ValidationResult canGenerateEvaluations() {
-    if (_dashboard == null) {
-      return ValidationResult(
-        canProceed: false,
-        message: 'No hay datos del dashboard disponibles',
-      );
-    }
-
-    final activeCount = _dashboard!.stats.activeEvaluations;
-    
-    if (activeCount > 0) {
-      return ValidationResult(
-        canProceed: false,
-        showDialog: true,
-        title: AdminConfigConstants.evaluationsAlreadyGenerated,
-        message: AdminConfigConstants.evaluationsAlreadyGeneratedMessage(activeCount),
-        icon: AdminConfigConstants.completedIcon,
-        color: AdminConfigConstants.tealColor,
-      );
-    }
-
-    return ValidationResult(canProceed: true);
+  /// Verifica si una acción específica está disponible
+  bool isActionAvailable(String actionKey) {
+    if (stats == null) return false;
+    return AdminSyncValidator.isActionAvailable(actionKey, stats!);
   }
 
   // ==================== ACCIONES ====================
   
   /// Ejecuta una acción de sincronización
   Future<ActionResult> executeAction(String actionKey) async {
-    if (_dashboard == null) {
+    if (_dashboard == null || stats == null) {
       return ActionResult(
         success: false,
         message: 'No hay datos disponibles',
@@ -176,29 +133,14 @@ class AdminConfigController extends ChangeNotifier {
     }
 
     // Validar antes de ejecutar
-    ValidationResult validation;
-    
-    switch (actionKey) {
-      case 'sync-students':
-        validation = canSyncStudents();
-        break;
-      case 'enroll-teachers':
-        validation = canEnrollTeachers();
-        break;
-      case 'generate-evaluations':
-        validation = canGenerateEvaluations();
-        break;
-      default:
-        return ActionResult(
-          success: false,
-          message: 'Acción no reconocida: $actionKey',
-        );
-    }
+    final validation = validateAction(actionKey);
 
     if (!validation.canProceed) {
+      debugPrint('⚠️ [ConfigController] Acción bloqueada: ${validation.internalMessage}');
+      
       return ActionResult(
         success: false,
-        message: validation.message ?? 'No se puede proceder con la acción',
+        message: validation.internalMessage ?? 'No se puede proceder con la acción',
         validationResult: validation,
       );
     }
@@ -273,30 +215,11 @@ class AdminConfigController extends ChangeNotifier {
 
 // ==================== CLASES AUXILIARES ====================
 
-/// Resultado de validación
-class ValidationResult {
-  final bool canProceed;
-  final String? message;
-  final bool showDialog;
-  final String? title;
-  final IconData? icon;
-  final Color? color;
-
-  ValidationResult({
-    required this.canProceed,
-    this.message,
-    this.showDialog = false,
-    this.title,
-    this.icon,
-    this.color,
-  });
-}
-
 /// Resultado de acción
 class ActionResult {
   final bool success;
   final String message;
-  final ValidationResult? validationResult;
+  final SyncValidationResult? validationResult;
 
   ActionResult({
     required this.success,

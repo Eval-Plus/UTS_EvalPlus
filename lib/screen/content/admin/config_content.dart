@@ -1,4 +1,4 @@
-/// Contenido de configuración para ADMINISTRADORES (Refactorizado con Provider)
+/// Contenido de configuración para ADMINISTRADORES (Refactorizado v2)
 /// Panel de sincronización y gestión del sistema
 /// Ubicación: lib/screen/content/admin/config_content.dart
 
@@ -14,6 +14,7 @@ import 'package:eval_plus/controllers/inside_screen_controller.dart';
 
 // Utils
 import 'package:eval_plus/utils/admin/admin_config_constants.dart';
+import 'package:eval_plus/utils/admin/admin_sync_validator.dart';
 
 // Widgets
 import 'package:eval_plus/widgets/admin/config/config_header.dart';
@@ -55,16 +56,16 @@ class _ConfigContentState extends State<ConfigContent> {
     }
   }
 
-  void _showValidationDialog(ValidationResult validation) {
+  void _showValidationDialog(SyncValidationResult validation) {
     showDialog(
       context: context,
       barrierDismissible: true,
       builder: (context) => MessageDialogWidget(
         type: MessageType.info,
-        title: validation.title!,
-        message: validation.message!,
-        customIcon: validation.icon,
-        customColor: validation.color,
+        title: validation.dialogTitle!,
+        message: validation.dialogMessage!,
+        customIcon: validation.dialogIcon,
+        customColor: validation.dialogColor,
         onPrimaryAction: () => Navigator.of(context).pop(),
         primaryButtonText: 'Entendido',
         barrierDismissible: true,
@@ -102,7 +103,7 @@ class _ConfigContentState extends State<ConfigContent> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 Obtener el controlador del InsideScreenController (ya existente)
+    // Obtener el controlador del InsideScreenController
     final screenController = context.watch<InsideScreenController>();
     final controller = screenController.adminConfigController;
 
@@ -159,6 +160,9 @@ class _ConfigContentState extends State<ConfigContent> {
   }
 
   Widget _buildMainActions(AdminConfigController controller, stats) {
+    // Obtener disponibilidad de acciones
+    final availability = controller.getActionsAvailability();
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -207,6 +211,7 @@ class _ConfigContentState extends State<ConfigContent> {
               ActionStat(label: 'Pendientes', value: stats.pendingStudents),
             ],
             isLoading: controller.isActionLoading('sync-students'),
+            isDisabled: !(availability['sync-students'] ?? false),
             onPressed: () => _handleAction('sync-students'),
           ),
           const SizedBox(height: 16),
@@ -222,6 +227,7 @@ class _ConfigContentState extends State<ConfigContent> {
               ActionStat(label: 'Pendientes', value: stats.pendingTeachers),
             ],
             isLoading: controller.isActionLoading('enroll-teachers'),
+            isDisabled: !(availability['enroll-teachers'] ?? false),
             onPressed: () => _handleAction('enroll-teachers'),
           ),
           const SizedBox(height: 16),
@@ -237,6 +243,7 @@ class _ConfigContentState extends State<ConfigContent> {
               ActionStat(label: 'Cerradas', value: stats.closedEvaluations),
             ],
             isLoading: controller.isActionLoading('generate-evaluations'),
+            isDisabled: !(availability['generate-evaluations'] ?? false),
             onPressed: () => _handleAction('generate-evaluations'),
           ),
         ],

@@ -1,5 +1,5 @@
-/// Widget de tarjeta de acción para sincronizaciones
-/// Ubicación: lib/widgets/admin/config_action_card.dart
+/// Widget de tarjeta de acción para sincronizaciones (con estado deshabilitado)
+/// Ubicación: lib/widgets/admin/config/config_action_card.dart
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
@@ -13,6 +13,7 @@ class ConfigActionCard extends StatelessWidget {
   final LinearGradient gradient;
   final List<ActionStat> stats;
   final bool isLoading;
+  final bool isDisabled; // 🆕 Nuevo parámetro
   final VoidCallback onPressed;
 
   const ConfigActionCard({
@@ -24,27 +25,34 @@ class ConfigActionCard extends StatelessWidget {
     required this.gradient,
     required this.stats,
     required this.isLoading,
+    this.isDisabled = false, // 🆕 Default false
     required this.onPressed,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AdminConfigConstants.paddingMedium),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300, width: 2),
-        borderRadius: BorderRadius.circular(AdminConfigConstants.borderRadiusMedium),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 12),
-          _buildStats(),
-          const SizedBox(height: 12),
-          _buildActionButton(),
-        ],
+    return Opacity(
+      opacity: isDisabled ? 0.5 : 1.0, // 🆕 Opacidad reducida cuando está deshabilitado
+      child: Container(
+        padding: const EdgeInsets.all(AdminConfigConstants.paddingMedium),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(
+            color: isDisabled ? Colors.grey.shade300 : Colors.grey.shade300,
+            width: 2,
+          ),
+          borderRadius: BorderRadius.circular(AdminConfigConstants.borderRadiusMedium),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: 12),
+            _buildStats(),
+            const SizedBox(height: 12),
+            _buildActionButton(),
+          ],
+        ),
       ),
     );
   }
@@ -59,13 +67,15 @@ class ConfigActionCard extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: gradient,
             borderRadius: BorderRadius.circular(AdminConfigConstants.borderRadiusMedium),
-            boxShadow: [
-              BoxShadow(
-                color: gradient.colors.first.withOpacity(0.3),
-                offset: const Offset(0, 4),
-                blurRadius: 8,
-              ),
-            ],
+            boxShadow: isDisabled
+                ? [] // 🆕 Sin sombra cuando está deshabilitado
+                : [
+                    BoxShadow(
+                      color: gradient.colors.first.withOpacity(0.3),
+                      offset: const Offset(0, 4),
+                      blurRadius: 8,
+                    ),
+                  ],
           ),
           child: Icon(
             icon,
@@ -149,19 +159,21 @@ class ConfigActionCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: gradient,
           borderRadius: BorderRadius.circular(10),
-          boxShadow: [
-            BoxShadow(
-              color: gradient.colors.first.withOpacity(0.3),
-              offset: const Offset(0, 3),
-              blurRadius: 6,
-            ),
-          ],
+          boxShadow: (isDisabled || isLoading)
+              ? [] // 🆕 Sin sombra cuando está deshabilitado o cargando
+              : [
+                  BoxShadow(
+                    color: gradient.colors.first.withOpacity(0.3),
+                    offset: const Offset(0, 3),
+                    blurRadius: 6,
+                  ),
+                ],
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(10),
-            onTap: isLoading ? null : onPressed,
+            onTap: (isLoading || isDisabled) ? null : onPressed, // 🆕 Incluye isDisabled
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: 12),
               child: Row(
@@ -179,6 +191,22 @@ class ConfigActionCard extends StatelessWidget {
                     const SizedBox(width: 10),
                     const Text(
                       'Procesando...',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ] else if (isDisabled) ...[
+                    // 🆕 Estado deshabilitado
+                    const Icon(
+                      Icons.block,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'No disponible',
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 14,
