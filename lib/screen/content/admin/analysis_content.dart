@@ -1,4 +1,4 @@
-/// Contenido de análisis administrativo (Refactorizado)
+/// Contenido de análisis administrativo (Refactorizado con Provider)
 /// Ubicación: lib/screen/content/admin/analysis_content.dart
 
 import 'package:flutter/material.dart';
@@ -9,6 +9,7 @@ import 'package:eval_plus/config/app_colors.dart';
 
 // Controllers
 import 'package:eval_plus/controllers/admin/admin_analysis_controller.dart';
+import 'package:eval_plus/controllers/inside_screen_controller.dart';
 
 // Utils
 import 'package:eval_plus/utils/admin/admin_analysis_constants.dart';
@@ -27,33 +28,27 @@ class AnalysisContent extends StatefulWidget {
 }
 
 class _AnalysisContentState extends State<AnalysisContent> {
-  late final AdminAnalysisController _controller;
   final _adminPalette = AppColors.getPaletteForRole(UserRole.admin);
   final TextEditingController _searchController = TextEditingController();
   bool _showFilters = false;
 
   @override
-  void initState() {
-    super.initState();
-    _controller = AdminAnalysisController();
-  }
-
-  @override
   void dispose() {
     _searchController.dispose();
-    _controller.dispose();
     super.dispose();
   }
 
   // ==================== MANEJO DE EVENTOS ====================
 
   void _onSearchChanged(String value) {
-    _controller.setSearchTerm(value);
+    final controller = context.read<InsideScreenController>().adminAnalysisController;
+    controller.setSearchTerm(value);
   }
 
   void _onSearchClear() {
     _searchController.clear();
-    _controller.clearSearch();
+    final controller = context.read<InsideScreenController>().adminAnalysisController;
+    controller.clearSearch();
   }
 
   void _onToggleFilters() {
@@ -71,7 +66,10 @@ class _AnalysisContentState extends State<AnalysisContent> {
         action: SnackBarAction(
           label: AdminAnalysisConstants.retryButton,
           textColor: Colors.white,
-          onPressed: () => _controller.loadData(),
+          onPressed: () {
+            final controller = context.read<InsideScreenController>().adminAnalysisController;
+            controller.loadData();
+          },
         ),
       ),
     );
@@ -81,14 +79,18 @@ class _AnalysisContentState extends State<AnalysisContent> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 Obtener el controlador del InsideScreenController (ya existente)
+    final screenController = context.watch<InsideScreenController>();
+    final controller = screenController.adminAnalysisController;
+
     return ChangeNotifierProvider.value(
-      value: _controller,
+      value: controller,
       child: Consumer<AdminAnalysisController>(
-        builder: (context, controller, child) {
+        builder: (context, ctrl, child) {
           // Mostrar error si existe
-          if (controller.errorMessage != null && !controller.isLoading) {
+          if (ctrl.errorMessage != null && !ctrl.isLoading) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              _showErrorSnackBar(controller.errorMessage!);
+              _showErrorSnackBar(ctrl.errorMessage!);
             });
           }
 
@@ -98,10 +100,10 @@ class _AnalysisContentState extends State<AnalysisContent> {
               children: [
                 Expanded(
                   child: RefreshIndicator(
-                    onRefresh: () => controller.loadData(),
-                    child: controller.isInitialLoad
+                    onRefresh: () => ctrl.loadData(),
+                    child: ctrl.isInitialLoad
                         ? _buildInitialLoadingState()
-                        : _buildContent(controller),
+                        : _buildContent(ctrl),
                   ),
                 ),
               ],
@@ -259,7 +261,10 @@ class _AnalysisContentState extends State<AnalysisContent> {
             ),
             const SizedBox(height: AdminAnalysisConstants.paddingMedium),
             ElevatedButton.icon(
-              onPressed: () => _controller.loadData(),
+              onPressed: () {
+                final controller = context.read<InsideScreenController>().adminAnalysisController;
+                controller.loadData();
+              },
               icon: const Icon(Icons.refresh),
               label: const Text(AdminAnalysisConstants.retryButton),
             ),

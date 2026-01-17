@@ -1,4 +1,4 @@
-/// Contenido de configuración para ADMINISTRADORES (Refactorizado)
+/// Contenido de configuración para ADMINISTRADORES (Refactorizado con Provider)
 /// Panel de sincronización y gestión del sistema
 /// Ubicación: lib/screen/content/admin/config_content.dart
 
@@ -10,6 +10,7 @@ import 'package:eval_plus/config/app_colors.dart';
 
 // Controllers
 import 'package:eval_plus/controllers/admin/admin_config_controller.dart';
+import 'package:eval_plus/controllers/inside_screen_controller.dart';
 
 // Utils
 import 'package:eval_plus/utils/admin/admin_config_constants.dart';
@@ -28,25 +29,13 @@ class ConfigContent extends StatefulWidget {
 }
 
 class _ConfigContentState extends State<ConfigContent> {
-  late final AdminConfigController _controller;
   final _adminPalette = AppColors.getPaletteForRole(UserRole.admin);
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AdminConfigController();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   // ==================== MANEJO DE ACCIONES ====================
 
   Future<void> _handleAction(String actionKey) async {
-    final result = await _controller.executeAction(actionKey);
+    final controller = context.read<InsideScreenController>().adminConfigController;
+    final result = await controller.executeAction(actionKey);
 
     if (!mounted) return;
 
@@ -113,14 +102,18 @@ class _ConfigContentState extends State<ConfigContent> {
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 Obtener el controlador del InsideScreenController (ya existente)
+    final screenController = context.watch<InsideScreenController>();
+    final controller = screenController.adminConfigController;
+
     return ChangeNotifierProvider.value(
-      value: _controller,
+      value: controller,
       child: Consumer<AdminConfigController>(
-        builder: (context, controller, child) {
+        builder: (context, ctrl, child) {
           return RefreshIndicator(
-            onRefresh: () => controller.loadDashboard(forceRefresh: true),
+            onRefresh: () => ctrl.loadDashboard(forceRefresh: true),
             color: _adminPalette.primary,
-            child: _buildContent(controller),
+            child: _buildContent(ctrl),
           );
         },
       ),
@@ -133,7 +126,7 @@ class _ConfigContentState extends State<ConfigContent> {
     }
 
     if (controller.errorMessage != null) {
-      return _buildErrorState(controller.errorMessage!);
+      return _buildErrorState(controller, controller.errorMessage!);
     }
 
     if (controller.dashboard == null) {
@@ -315,7 +308,7 @@ class _ConfigContentState extends State<ConfigContent> {
     );
   }
 
-  Widget _buildErrorState(String errorMessage) {
+  Widget _buildErrorState(AdminConfigController controller, String errorMessage) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -331,7 +324,7 @@ class _ConfigContentState extends State<ConfigContent> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => _controller.loadDashboard(forceRefresh: true),
+              onPressed: () => controller.loadDashboard(forceRefresh: true),
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
               style: ElevatedButton.styleFrom(
