@@ -1,4 +1,4 @@
-/// Tarjeta de docente para análisis (Con animaciones)
+/// Tarjeta de docente para análisis (Con animaciones y diálogos)
 /// Ubicación: lib/widgets/admin/analysis/analysis_teacher_card.dart
 
 import 'package:flutter/material.dart';
@@ -6,8 +6,9 @@ import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/models/teacher_analysis_model.dart';
 import 'package:eval_plus/utils/admin/admin_analysis_constants.dart';
 import 'package:eval_plus/animations/admin/animated_teacher_expansion.dart';
+import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 
-class AnalysisTeacherCard extends StatelessWidget {
+class AnalysisTeacherCard extends StatefulWidget {
   final TeacherData teacher;
   final bool isExpanded;
   final RoleColorPalette palette;
@@ -24,8 +25,32 @@ class AnalysisTeacherCard extends StatelessWidget {
   });
 
   @override
+  State<AnalysisTeacherCard> createState() => _AnalysisTeacherCardState();
+}
+
+class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
+  
+  // ==================== DIÁLOGOS ====================
+  
+  /// Muestra un diálogo indicando que la funcionalidad está en desarrollo
+  void _showFeatureInDevelopmentDialog(String feature, String description) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) => MessageDialogWidget.info(
+        title: '🚧 En Desarrollo',
+        message: description,
+        onContinue: () => Navigator.of(context).pop(),
+        continueButtonText: 'Entendido',
+      ),
+    );
+  }
+
+  // ==================== BUILD ====================
+
+  @override
   Widget build(BuildContext context) {
-    final statusInfo = AdminAnalysisConstants.getTeacherStatus(teacher.completionRate);
+    final statusInfo = AdminAnalysisConstants.getTeacherStatus(widget.teacher.completionRate);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -35,16 +60,16 @@ class AnalysisTeacherCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(AdminAnalysisConstants.cardBorderRadius),
         border: Border.all(
-          color: isExpanded ? palette.primary : Colors.grey.shade300,
+          color: widget.isExpanded ? widget.palette.primary : Colors.grey.shade300,
           width: 2,
         ),
         boxShadow: [
           BoxShadow(
-            color: isExpanded
-                ? palette.primary.withOpacity(0.15)
+            color: widget.isExpanded
+                ? widget.palette.primary.withOpacity(0.15)
                 : Colors.black.withOpacity(0.05),
-            blurRadius: isExpanded ? 8 : 4,
-            offset: Offset(0, isExpanded ? 4 : 2),
+            blurRadius: widget.isExpanded ? 8 : 4,
+            offset: Offset(0, widget.isExpanded ? 4 : 2),
           ),
         ],
       ),
@@ -54,7 +79,7 @@ class AnalysisTeacherCard extends StatelessWidget {
           
           // ✨ Animación para el contenido expandido
           AnimatedTeacherExpansion(
-            isExpanded: isExpanded,
+            isExpanded: widget.isExpanded,
             duration: const Duration(milliseconds: 350),
             curve: Curves.easeInOutCubic,
             expandedContent: Column(
@@ -71,8 +96,8 @@ class AnalysisTeacherCard extends StatelessWidget {
 
   Widget _buildHeader(Map<String, dynamic> statusInfo) {
     return InkWell(
-      onTap: onTap,
-      borderRadius: isExpanded
+      onTap: widget.onTap,
+      borderRadius: widget.isExpanded
           ? const BorderRadius.only(
               topLeft: Radius.circular(AdminAnalysisConstants.cardBorderRadius),
               topRight: Radius.circular(AdminAnalysisConstants.cardBorderRadius),
@@ -92,7 +117,7 @@ class AnalysisTeacherCard extends StatelessWidget {
                 
                 // ✨ Ícono animado de expansión
                 AnimatedRotation(
-                  turns: isExpanded ? 0.5 : 0.0,
+                  turns: widget.isExpanded ? 0.5 : 0.0,
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeInOut,
                   child: Icon(
@@ -117,12 +142,12 @@ class AnalysisTeacherCard extends StatelessWidget {
       width: AdminAnalysisConstants.avatarSize,
       height: AdminAnalysisConstants.avatarSize,
       decoration: BoxDecoration(
-        gradient: palette.avatarGradient,
+        gradient: widget.palette.avatarGradient,
         borderRadius: BorderRadius.circular(AdminAnalysisConstants.avatarBorderRadius),
       ),
       child: Center(
         child: Text(
-          initials,
+          widget.initials,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -138,7 +163,7 @@ class AnalysisTeacherCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          teacher.name,
+          widget.teacher.name,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 15,
@@ -147,24 +172,24 @@ class AnalysisTeacherCard extends StatelessWidget {
         const SizedBox(height: 4),
         Row(
           children: [
-            if (teacher.career.isNotEmpty)
+            if (widget.teacher.career.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: AppColors.getCareerColor(teacher.career).withOpacity(0.2),
+                  color: AppColors.getCareerColor(widget.teacher.career).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(AdminAnalysisConstants.chipBorderRadius),
                   border: Border.all(
-                    color: AppColors.getCareerColor(teacher.career).withOpacity(0.4),
+                    color: AppColors.getCareerColor(widget.teacher.career).withOpacity(0.4),
                   ),
                 ),
                 child: Text(
-                  teacher.career,
+                  widget.teacher.career,
                   style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
                 ),
               ),
             const SizedBox(width: AdminAnalysisConstants.paddingSmall),
             Text(
-              '${teacher.totalSubjects} materias • ${teacher.activeEvaluations} activas',
+              '${widget.teacher.totalSubjects} materias • ${widget.teacher.activeEvaluations} activas',
               style: TextStyle(fontSize: 11, color: Colors.grey[600]),
             ),
           ],
@@ -188,7 +213,7 @@ class AnalysisTeacherCard extends StatelessWidget {
               ),
             ),
             Text(
-              '${teacher.completionRate}%',
+              '${widget.teacher.completionRate}%',
               style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
             ),
           ],
@@ -199,7 +224,7 @@ class AnalysisTeacherCard extends StatelessWidget {
         TweenAnimationBuilder<double>(
           duration: const Duration(milliseconds: 800),
           curve: Curves.easeOutCubic,
-          tween: Tween(begin: 0.0, end: teacher.completionRate / 100),
+          tween: Tween(begin: 0.0, end: widget.teacher.completionRate / 100),
           builder: (context, value, child) {
             return ClipRRect(
               borderRadius: BorderRadius.circular(AdminAnalysisConstants.chipBorderRadius),
@@ -207,7 +232,7 @@ class AnalysisTeacherCard extends StatelessWidget {
                 value: value,
                 backgroundColor: Colors.grey[200],
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  AdminAnalysisConstants.getCompletionColor(teacher.completionRate),
+                  AdminAnalysisConstants.getCompletionColor(widget.teacher.completionRate),
                 ),
                 minHeight: AdminAnalysisConstants.progressBarHeight,
               ),
@@ -279,7 +304,7 @@ class AnalysisTeacherCard extends StatelessWidget {
         const SizedBox(width: 6),
         Expanded(
           child: Text(
-            teacher.email,
+            widget.teacher.email,
             style: const TextStyle(fontSize: 12, color: Colors.grey),
           ),
         ),
@@ -299,7 +324,7 @@ class AnalysisTeacherCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AdminAnalysisConstants.paddingSmall),
-        ...teacher.subjects.asMap().entries.map((entry) {
+        ...widget.teacher.subjects.asMap().entries.map((entry) {
           final index = entry.key;
           final subject = entry.value;
           
@@ -411,8 +436,8 @@ class AnalysisTeacherCard extends StatelessWidget {
                 child: _buildStatItem(
                   'Evaluaciones:',
                   AdminAnalysisConstants.evaluationsMessage(
-                    teacher.activeEvaluations,
-                    teacher.closedEvaluations,
+                    widget.teacher.activeEvaluations,
+                    widget.teacher.closedEvaluations,
                   ),
                 ),
               ),
@@ -420,9 +445,9 @@ class AnalysisTeacherCard extends StatelessWidget {
                 child: _buildStatItem(
                   'Respuestas:',
                   AdminAnalysisConstants.responsesMessage(
-                    teacher.completedResponses,
-                    teacher.totalStudents,
-                    teacher.completionRate,
+                    widget.teacher.completedResponses,
+                    widget.teacher.totalStudents,
+                    widget.teacher.completionRate,
                   ),
                 ),
               ),
@@ -432,10 +457,10 @@ class AnalysisTeacherCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _buildStatItem('Período actual:', teacher.period),
+                child: _buildStatItem('Período actual:', widget.teacher.period),
               ),
               Expanded(
-                child: _buildStatItem('Última actividad:', teacher.lastActivity),
+                child: _buildStatItem('Última actividad:', widget.teacher.lastActivity),
               ),
             ],
           ),
@@ -463,13 +488,15 @@ class AnalysisTeacherCard extends StatelessWidget {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () {
-              // TODO: Navegar a informe detallado
-            },
+            onPressed: () => _showFeatureInDevelopmentDialog(
+              'Ver Informe Completo',
+              'La funcionalidad de informes detallados estará disponible próximamente. '
+              'Podrás ver análisis completos con gráficos y estadísticas avanzadas de cada docente.',
+            ),
             icon: const Icon(AdminAnalysisConstants.chartIcon, size: 18),
             label: const Text('Ver Informe Completo'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: palette.primary,
+              backgroundColor: widget.palette.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
@@ -483,7 +510,11 @@ class AnalysisTeacherCard extends StatelessWidget {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: () => _showFeatureInDevelopmentDialog(
+                  'Enviar Email',
+                  'La funcionalidad para enviar emails directamente al docente estará disponible próximamente. '
+                  'Podrás contactar a los docentes sin salir de la aplicación.',
+                ),
                 icon: const Icon(AdminAnalysisConstants.emailIcon, size: AdminAnalysisConstants.iconSizeMedium),
                 label: const Text('Email', style: TextStyle(fontSize: 12)),
                 style: OutlinedButton.styleFrom(
@@ -497,7 +528,11 @@ class AnalysisTeacherCard extends StatelessWidget {
             const SizedBox(width: AdminAnalysisConstants.paddingSmall),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: () => _showFeatureInDevelopmentDialog(
+                  'Exportar a Excel',
+                  'La funcionalidad para exportar datos a Excel estará disponible próximamente. '
+                  'Podrás descargar informes detallados en formato XLSX con todas las estadísticas del docente.',
+                ),
                 icon: const Icon(AdminAnalysisConstants.downloadIcon, size: AdminAnalysisConstants.iconSizeMedium),
                 label: const Text('Excel', style: TextStyle(fontSize: 12)),
                 style: OutlinedButton.styleFrom(
@@ -511,7 +546,11 @@ class AnalysisTeacherCard extends StatelessWidget {
             const SizedBox(width: AdminAnalysisConstants.paddingSmall),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () {},
+                onPressed: () => _showFeatureInDevelopmentDialog(
+                  'Compartir Link',
+                  'La funcionalidad para compartir enlaces estará disponible próximamente. '
+                  'Podrás generar links para compartir informes con otros administradores de forma segura.',
+                ),
                 icon: const Icon(AdminAnalysisConstants.shareIcon, size: AdminAnalysisConstants.iconSizeMedium),
                 label: const Text('Link', style: TextStyle(fontSize: 12)),
                 style: OutlinedButton.styleFrom(

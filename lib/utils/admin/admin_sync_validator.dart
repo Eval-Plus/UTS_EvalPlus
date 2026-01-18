@@ -141,6 +141,18 @@ class AdminSyncValidator {
       );
     }
 
+    // 🆕 Regla 4: Docentes completamente asignados (igual cantidad de estudiantes y docentes)
+    if (stats.syncedStudents == stats.enrolledTeachers) {
+      return SyncValidationResult.blocked(
+        title: 'Docentes completamente asignados',
+        message: 'Todas las materias con estudiantes ya tienen docente asignado. '
+            'No es necesario realizar más sincronizaciones en este momento.',
+        icon: AdminConfigConstants.checkIcon,
+        color: AdminConfigConstants.limeColor,
+        internalMessage: 'Synced students (${stats.syncedStudents}) == Enrolled teachers (${stats.enrolledTeachers})',
+      );
+    }
+
     // ✅ Validación exitosa
     return const SyncValidationResult.success();
   }
