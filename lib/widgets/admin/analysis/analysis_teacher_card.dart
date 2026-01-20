@@ -172,6 +172,7 @@ class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
         const SizedBox(height: 4),
         Row(
           children: [
+          /*
             if (widget.teacher.career.isNotEmpty)
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -188,6 +189,7 @@ class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
                 ),
               ),
             const SizedBox(width: AdminAnalysisConstants.paddingSmall),
+            */
             Text(
               '${widget.teacher.totalSubjects} materias • ${widget.teacher.activeEvaluations} activas',
               style: TextStyle(fontSize: 11, color: Colors.grey[600]),
@@ -437,7 +439,6 @@ class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
                   'Evaluaciones:',
                   AdminAnalysisConstants.evaluationsMessage(
                     widget.teacher.activeEvaluations,
-                    widget.teacher.closedEvaluations,
                   ),
                 ),
               ),

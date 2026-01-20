@@ -165,8 +165,8 @@ class AdminAnalysisConstants {
   static String teachersFoundMessage(int count) => 
       count == 1 ? '1 docente encontrado' : '$count docentes encontrados';
   
-  static String evaluationsMessage(int active, int closed) => 
-      '$active activas, $closed cerradas';
+  static String evaluationsMessage(int active) => 
+      '$active activas';
   
   static String responsesMessage(int completed, int total, int rate) => 
       '$completed/$total ($rate%)';
