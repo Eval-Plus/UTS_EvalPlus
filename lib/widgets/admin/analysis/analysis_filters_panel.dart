@@ -1,4 +1,4 @@
-/// Panel de filtros para el análisis (Con animaciones)
+/// Panel de filtros para el análisis (Con carreras dinámicas)
 /// Ubicación: lib/widgets/admin/analysis/analysis_filters_panel.dart
 
 import 'package:flutter/material.dart';
@@ -10,6 +10,7 @@ import 'package:eval_plus/animations/admin/animated_filter_button.dart';
 class AnalysisFiltersPanel extends StatelessWidget {
   final String searchTerm;
   final bool showFilters;
+  final Map<String, String> careerOptions;
   final Function(String) onSearchChanged;
   final VoidCallback onSearchClear;
   final VoidCallback onToggleFilters;
@@ -20,6 +21,7 @@ class AnalysisFiltersPanel extends StatelessWidget {
     super.key,
     required this.searchTerm,
     required this.showFilters,
+    required this.careerOptions,
     required this.onSearchChanged,
     required this.onSearchClear,
     required this.onToggleFilters,
@@ -48,7 +50,7 @@ class AnalysisFiltersPanel extends StatelessWidget {
         children: [
           _buildSearchBar(palette),
           
-          // ✨ Animación para el despliegue de filtros
+          // Animación para el despliegue de filtros
           AnimatedFilterPanel(
             showFilters: showFilters,
             duration: const Duration(milliseconds: 300),
@@ -100,7 +102,7 @@ class AnalysisFiltersPanel extends StatelessWidget {
         ),
         const SizedBox(width: AdminAnalysisConstants.statsCardPadding),
         
-        // ✨ Botón animado para filtros
+        // Botón animado para filtros
         AnimatedFilterButton(
           isActive: showFilters,
           onPressed: onToggleFilters,
@@ -116,9 +118,10 @@ class AnalysisFiltersPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 🔥 FIX: Usar opciones dinámicas de carreras
         _buildFilterSection(
           AdminAnalysisConstants.careerFilterLabel,
-          AdminAnalysisConstants.careerOptions,
+          careerOptions,
           'careers',
         ),
         const SizedBox(height: AdminAnalysisConstants.paddingMedium),
@@ -153,13 +156,39 @@ class AnalysisFiltersPanel extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AdminAnalysisConstants.paddingSmall),
-        Wrap(
-          spacing: AdminAnalysisConstants.paddingSmall,
-          runSpacing: AdminAnalysisConstants.paddingSmall,
-          children: options.entries.map((entry) {
-            return _buildFilterChip(entry.key, entry.value, category);
-          }).toList(),
-        ),
+        
+        // 🔥 Mostrar mensaje de carga si no hay opciones
+        options.isEmpty
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.getPaletteForRole(UserRole.admin).primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Cargando opciones...',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            : Wrap(
+                spacing: AdminAnalysisConstants.paddingSmall,
+                runSpacing: AdminAnalysisConstants.paddingSmall,
+                children: options.entries.map((entry) {
+                  return _buildFilterChip(entry.key, entry.value, category);
+                }).toList(),
+              ),
       ],
     );
   }

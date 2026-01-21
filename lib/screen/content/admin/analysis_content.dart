@@ -1,4 +1,4 @@
-/// Contenido de análisis administrativo (Refactorizado con Provider)
+/// Contenido de análisis administrativo (Refactorizado - v2)
 /// Ubicación: lib/screen/content/admin/analysis_content.dart
 
 import 'package:flutter/material.dart';
@@ -68,7 +68,7 @@ class _AnalysisContentState extends State<AnalysisContent> {
           textColor: Colors.white,
           onPressed: () {
             final controller = context.read<InsideScreenController>().adminAnalysisController;
-            controller.loadData();
+            controller.loadData(forceRefresh: true);
           },
         ),
       ),
@@ -79,7 +79,7 @@ class _AnalysisContentState extends State<AnalysisContent> {
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 Obtener el controlador del InsideScreenController (ya existente)
+    // Obtener el controlador del InsideScreenController
     final screenController = context.watch<InsideScreenController>();
     final controller = screenController.adminAnalysisController;
 
@@ -100,7 +100,14 @@ class _AnalysisContentState extends State<AnalysisContent> {
               children: [
                 Expanded(
                   child: RefreshIndicator(
-                    onRefresh: () => ctrl.loadData(),
+                    // 🔥 FIX 1: Color verde del admin (igual que config_content)
+                    color: _adminPalette.primary,
+                    backgroundColor: Colors.white,
+                    // 🔥 FIX 2: Forzar refresh real (no usar caché)
+                    onRefresh: () async {
+                      debugPrint('🔄 [AnalysisContent] Pull to refresh - Forzando recarga desde API');
+                      await ctrl.refreshData();
+                    },
                     child: ctrl.isInitialLoad
                         ? _buildInitialLoadingState()
                         : _buildContent(ctrl),
@@ -121,9 +128,11 @@ class _AnalysisContentState extends State<AnalysisContent> {
         const AnalysisHeader(),
         const SizedBox(height: AdminAnalysisConstants.paddingMedium),
         
+        // 🔥 FIX 3: Pasar opciones dinámicas de carreras
         AnalysisFiltersPanel(
           searchTerm: controller.searchTerm,
           showFilters: _showFilters,
+          careerOptions: controller.careerOptions,
           onSearchChanged: _onSearchChanged,
           onSearchClear: _onSearchClear,
           onToggleFilters: _onToggleFilters,
@@ -211,8 +220,8 @@ class _AnalysisContentState extends State<AnalysisContent> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           CircularProgressIndicator(color: _adminPalette.primary),
-          SizedBox(height: AdminAnalysisConstants.paddingMedium),
-          Text(
+          const SizedBox(height: AdminAnalysisConstants.paddingMedium),
+          const Text(
             AdminAnalysisConstants.loadingMessage,
             style: TextStyle(
               fontSize: 14,
@@ -227,8 +236,8 @@ class _AnalysisContentState extends State<AnalysisContent> {
   Widget _buildLoadingOverlay() {
     return Container(
       padding: const EdgeInsets.all(32),
-      child: const Center(
-        child: CircularProgressIndicator(),
+      child: Center(
+        child: CircularProgressIndicator(color: _adminPalette.primary),
       ),
     );
   }
@@ -263,10 +272,14 @@ class _AnalysisContentState extends State<AnalysisContent> {
             ElevatedButton.icon(
               onPressed: () {
                 final controller = context.read<InsideScreenController>().adminAnalysisController;
-                controller.loadData();
+                controller.loadData(forceRefresh: true);
               },
               icon: const Icon(Icons.refresh),
               label: const Text(AdminAnalysisConstants.retryButton),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _adminPalette.primary,
+                foregroundColor: Colors.white,
+              ),
             ),
           ],
         ),

@@ -1,4 +1,4 @@
-/// Tarjeta de docente para análisis (Con animaciones y diálogos)
+/// Tarjeta de docente para análisis (Con animaciones y modal de informe)
 /// Ubicación: lib/widgets/admin/analysis/analysis_teacher_card.dart
 
 import 'package:flutter/material.dart';
@@ -7,6 +7,7 @@ import 'package:eval_plus/models/teacher_analysis_model.dart';
 import 'package:eval_plus/utils/admin/admin_analysis_constants.dart';
 import 'package:eval_plus/animations/admin/animated_teacher_expansion.dart';
 import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
+import 'package:eval_plus/widgets/admin/analysis/reports/teacher_report_modal.dart';
 
 class AnalysisTeacherCard extends StatefulWidget {
   final TeacherData teacher;
@@ -30,8 +31,18 @@ class AnalysisTeacherCard extends StatefulWidget {
 
 class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
   
-  // ==================== DIÁLOGOS ====================
+  // ==================== NAVEGACIÓN ====================
   
+  /// Abre el modal de informe completo
+  void _openFullReport() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => TeacherReportModal(teacher: widget.teacher),
+        fullscreenDialog: true,
+      ),
+    );
+  }
+
   /// Muestra un diálogo indicando que la funcionalidad está en desarrollo
   void _showFeatureInDevelopmentDialog(String feature, String description) {
     showDialog(
@@ -172,24 +183,6 @@ class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
         const SizedBox(height: 4),
         Row(
           children: [
-          /*
-            if (widget.teacher.career.isNotEmpty)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: AppColors.getCareerColor(widget.teacher.career).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(AdminAnalysisConstants.chipBorderRadius),
-                  border: Border.all(
-                    color: AppColors.getCareerColor(widget.teacher.career).withOpacity(0.4),
-                  ),
-                ),
-                child: Text(
-                  widget.teacher.career,
-                  style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
-                ),
-              ),
-            const SizedBox(width: AdminAnalysisConstants.paddingSmall),
-            */
             Text(
               '${widget.teacher.totalSubjects} materias • ${widget.teacher.activeEvaluations} activas',
               style: TextStyle(fontSize: 11, color: Colors.grey[600]),
@@ -489,11 +482,7 @@ class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
-            onPressed: () => _showFeatureInDevelopmentDialog(
-              'Ver Informe Completo',
-              'La funcionalidad de informes detallados estará disponible próximamente. '
-              'Podrás ver análisis completos con gráficos y estadísticas avanzadas de cada docente.',
-            ),
+            onPressed: _openFullReport, // 🔥 Ahora abre el modal
             icon: const Icon(AdminAnalysisConstants.chartIcon, size: 18),
             label: const Text('Ver Informe Completo'),
             style: ElevatedButton.styleFrom(

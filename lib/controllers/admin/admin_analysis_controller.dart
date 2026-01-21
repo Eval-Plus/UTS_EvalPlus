@@ -1,17 +1,21 @@
-/// Controlador para el análisis administrativo
-/// Ubicación: lib/controllers/admin_analysis_controller.dart
+/// Controlador para el análisis administrativo (Actualizado)
+/// Ubicación: lib/controllers/admin/admin_analysis_controller.dart
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/teacher_analysis_model.dart';
+import 'package:eval_plus/models/career_model.dart';
 import 'package:eval_plus/services/admin_analysis_service.dart';
+import 'package:eval_plus/services/careers_service.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 
 class AdminAnalysisController extends ChangeNotifier {
   final AdminAnalysisService _analysisService;
+  final CareersService _careersService;
 
   // Estado de datos
   List<TeacherData> _teachers = [];
   AnalysisStats? _globalStats;
+  List<CareerModel> _careers = [];
   bool _isLoading = false;
   bool _isInitialLoad = true;
   String? _errorMessage;
@@ -31,6 +35,7 @@ class AdminAnalysisController extends ChangeNotifier {
   
   List<TeacherData> get teachers => _teachers;
   AnalysisStats? get globalStats => _globalStats;
+  List<CareerModel> get careers => _careers;
   bool get isLoading => _isLoading;
   bool get isInitialLoad => _isInitialLoad;
   String? get errorMessage => _errorMessage;
@@ -38,6 +43,15 @@ class AdminAnalysisController extends ChangeNotifier {
   String get sortBy => _sortBy;
   int? get expandedTeacherId => _expandedTeacherId;
   Map<String, dynamic> get filters => Map.unmodifiable(_filters);
+
+  /// Mapa de opciones de carrera para los filtros
+  Map<String, String> get careerOptions {
+    final options = <String, String>{'all': 'Todas las carreras'};
+    for (final career in _careers) {
+      options[career.codigo] = career.nombre;
+    }
+    return options;
+  }
 
   /// Docentes filtrados según búsqueda y filtros locales
   List<TeacherData> get filteredTeachers {
@@ -57,10 +71,13 @@ class AdminAnalysisController extends ChangeNotifier {
 
   // ==================== CONSTRUCTOR ====================
   
-  AdminAnalysisController({AdminAnalysisService? analysisService})
-      : _analysisService = analysisService ?? AdminAnalysisService(
+  AdminAnalysisController({
+    AdminAnalysisService? analysisService,
+    CareersService? careersService,
+  })  : _analysisService = analysisService ?? AdminAnalysisService(
           getToken: () => AuthStorageService.getToken(),
-        ) {
+        ),
+        _careersService = careersService ?? CareersService() {
     _init();
   }
 
@@ -104,7 +121,7 @@ class AdminAnalysisController extends ChangeNotifier {
           ? null
           : selectedCareers.first;
 
-      // Cargar datos en paralelo
+      // Cargar datos en paralelo (incluyendo carreras)
       final results = await Future.wait([
         _analysisService.getTeachersAnalysis(
           periodo: _filters['period'] as String,
@@ -117,15 +134,19 @@ class AdminAnalysisController extends ChangeNotifier {
           career: career,
           forceRefresh: forceRefresh,
         ),
+        _careersService.getAllCareers(forceRefresh: forceRefresh),
       ]);
 
       _teachers = (results[0] as TeachersAnalysisResponse).teachers;
       _globalStats = results[1] as AnalysisStats;
+      _careers = results[2] as List<CareerModel>;
       _isLoading = false;
       _isInitialLoad = false;
       _errorMessage = null;
       
-      debugPrint('✅ [AnalysisController] Datos cargados: ${_teachers.length} docentes');
+      debugPrint('✅ [AnalysisController] Datos cargados:');
+      debugPrint('   - ${_teachers.length} docentes');
+      debugPrint('   - ${_careers.length} carreras');
       notifyListeners();
       
     } on UnauthorizedException catch (e) {
@@ -161,12 +182,14 @@ class AdminAnalysisController extends ChangeNotifier {
   void invalidateCacheAndReload() {
     debugPrint('❌ [AnalysisController] Invalidando caché...');
     _analysisService.invalidateCache();
+    _careersService.invalidateCache();
     loadData(forceRefresh: true);
   }
 
   /// Limpia el caché
   void clearCache() {
     _analysisService.clearCache();
+    _careersService.clearCache();
   }
 
   // ==================== BÚSQUEDA ====================

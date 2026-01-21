@@ -80,13 +80,6 @@ class AdminAnalysisConstants {
 
   // ==================== OPCIONES DE FILTROS ====================
   
-  static const Map<String, String> careerOptions = {
-    'all': 'Todas',
-    'ING-SIS': 'Ingeniería de Sistemas',
-    'ADM-EMP': 'Administración',
-    'DER': 'Derecho',
-  };
-  
   static const Map<String, String> periodOptions = {
     '2025-1': '2025-1 (actual)',
     '2024-2': '2024-2',
