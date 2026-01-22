@@ -1,4 +1,4 @@
-/// Tab de materias del reporte (Diseño Mejorado)
+/// Tab de materias del reporte (Diseño Elegante y Refinado)
 /// Ubicación: lib/widgets/admin/analysis/reports/tabs/subjects_tab.dart
 
 import 'package:flutter/material.dart';
@@ -29,102 +29,200 @@ class SubjectsTab extends StatelessWidget {
     final completionRate = subject.students > 0
         ? (subject.completed / subject.students) * 100
         : 0.0;
+    final progressColor = ReportConstants.getProgressColor(completionRate);
+    final progressStatus = ReportConstants.getProgressStatus(completionRate);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: ReportConstants.paddingLarge),
-      elevation: ReportConstants.cardElevation,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
-        side: BorderSide(
-          color: _getProgressBorderColor(completionRate),
-          width: 2,
-        ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: ReportConstants.paddingXLarge),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ReportConstants.largeBorderRadius),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSubjectHeader(subject, palette),
-            const SizedBox(height: ReportConstants.paddingLarge),
-            _buildStatsGrid(subject, completionRate),
-            const SizedBox(height: ReportConstants.paddingLarge),
-            _buildProgressSection(completionRate),
-          ],
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSubjectHeader(subject, palette, progressColor, progressStatus),
+          const Divider(height: 1, color: Color(0xFFE5E7EB)),
+          Padding(
+            padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildCareerBadge(),
+                const SizedBox(height: ReportConstants.paddingLarge),
+                _buildStatsGrid(subject, completionRate),
+                const SizedBox(height: ReportConstants.paddingLarge),
+                _buildProgressSection(completionRate, progressColor, progressStatus),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildSubjectHeader(SubjectData subject, RoleColorPalette palette) {
+  Widget _buildSubjectHeader(
+    SubjectData subject,
+    RoleColorPalette palette,
+    Color progressColor,
+    Map<String, dynamic> progressStatus,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            palette.primary.withOpacity(0.08),
+            palette.primaryLight.withOpacity(0.05),
+          ],
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(12),
+          topRight: Radius.circular(12),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icono de materia
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: palette.avatarGradient,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: palette.primary.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.book,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: ReportConstants.paddingLarge),
+          // Información de la materia
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  subject.name,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F2937),
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: palette.primary,
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: palette.primary.withOpacity(0.3),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    subject.code,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: ReportConstants.paddingMedium),
+          // Badge de estado
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+            decoration: BoxDecoration(
+              color: progressColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: progressColor.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  progressStatus['icon'] as IconData,
+                  size: 20,
+                  color: progressColor,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  progressStatus['label'] as String,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: progressColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCareerBadge() {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Icono de materia
         Container(
-          width: 48,
-          height: 48,
+          padding: const EdgeInsets.all(6),
           decoration: BoxDecoration(
-            gradient: palette.avatarGradient,
-            borderRadius: BorderRadius.circular(10),
+            color: const Color(0xFFEFF6FF),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: const Icon(
-            Icons.book,
-            color: Colors.white,
-            size: 24,
+            Icons.school,
+            size: 16,
+            color: Color(0xFF3B82F6),
           ),
         ),
-        const SizedBox(width: ReportConstants.paddingLarge),
-        // Información de la materia
+        const SizedBox(width: 8),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                subject.name,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
-              ),
-              const SizedBox(height: ReportConstants.paddingSmall),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: palette.primary,
-                      borderRadius: BorderRadius.circular(
-                        ReportConstants.chipBorderRadius,
-                      ),
-                    ),
-                    child: Text(
-                      subject.code,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(
-                      careerName,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF6B7280),
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+          child: Text(
+            careerName,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF374151),
+            ),
           ),
         ),
       ],
@@ -136,7 +234,7 @@ class SubjectsTab extends StatelessWidget {
       padding: const EdgeInsets.all(ReportConstants.paddingLarge),
       decoration: BoxDecoration(
         color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(ReportConstants.containerBorderRadius),
+        borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: Row(
@@ -152,7 +250,7 @@ class SubjectsTab extends StatelessWidget {
           ),
           Container(
             width: 1,
-            height: 40,
+            height: 50,
             color: const Color(0xFFE5E7EB),
             margin: const EdgeInsets.symmetric(horizontal: 8),
           ),
@@ -167,7 +265,7 @@ class SubjectsTab extends StatelessWidget {
           ),
           Container(
             width: 1,
-            height: 40,
+            height: 50,
             color: const Color(0xFFE5E7EB),
             margin: const EdgeInsets.symmetric(horizontal: 8),
           ),
@@ -195,27 +293,28 @@ class SubjectsTab extends StatelessWidget {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: backgroundColor,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 16, color: color),
+          child: Icon(icon, size: 18, color: color),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
         Text(
           value,
           style: TextStyle(
-            fontSize: 18,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: color,
+            height: 1,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 4),
         Text(
           label,
           style: const TextStyle(
-            fontSize: 10,
+            fontSize: 11,
             color: Color(0xFF6B7280),
             fontWeight: FontWeight.w500,
           ),
@@ -224,9 +323,15 @@ class SubjectsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressSection(double completionRate) {
-    final progressColor = _getProgressColor(completionRate);
-    final progressStatus = _getProgressStatus(completionRate);
+  Widget _buildProgressSection(
+    double completionRate,
+    Color progressColor,
+    Map<String, dynamic> progressStatus,
+  ) {
+    // Calcular el valor visual de la barra de progreso
+    final displayProgress = completionRate > 0 
+        ? completionRate / 100 
+        : ReportConstants.progressMinimumDisplay / 100;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -236,16 +341,23 @@ class SubjectsTab extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(
-                  progressStatus['icon'] as IconData,
-                  size: 16,
-                  color: progressColor,
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: progressColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.trending_up,
+                    size: 16,
+                    color: progressColor,
+                  ),
                 ),
-                const SizedBox(width: 6),
-                Text(
+                const SizedBox(width: 8),
+                const Text(
                   ReportConstants.progressLabel,
-                  style: const TextStyle(
-                    fontSize: 13,
+                  style: TextStyle(
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF374151),
                   ),
@@ -253,62 +365,48 @@ class SubjectsTab extends StatelessWidget {
               ],
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: progressColor.withOpacity(0.15),
+                color: progressColor.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: progressColor.withOpacity(0.3),
-                  width: 1,
+                  width: 1.5,
                 ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${completionRate.toStringAsFixed(0)}%',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      color: progressColor,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    progressStatus['label'] as String,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: progressColor,
-                    ),
-                  ),
-                ],
+              child: Text(
+                '${completionRate.toStringAsFixed(0)}%',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: progressColor,
+                ),
               ),
             ),
           ],
         ),
-        const SizedBox(height: ReportConstants.paddingMedium),
+        const SizedBox(height: ReportConstants.paddingLarge),
         Container(
-          height: 12,
+          height: 14,
           decoration: BoxDecoration(
             color: const Color(0xFFE5E7EB),
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(7),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(7),
             child: Stack(
               children: [
                 // Barra de progreso base
                 FractionallySizedBox(
-                  widthFactor: completionRate / 100,
+                  widthFactor: displayProgress,
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: _getProgressGradient(completionRate),
+                        colors: ReportConstants.getProgressGradient(completionRate),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: progressColor.withOpacity(0.3),
+                          color: progressColor.withOpacity(0.4),
                           blurRadius: 4,
                           offset: const Offset(0, 1),
                         ),
@@ -318,14 +416,14 @@ class SubjectsTab extends StatelessWidget {
                 ),
                 // Efecto de brillo
                 FractionallySizedBox(
-                  widthFactor: completionRate / 100,
+                  widthFactor: displayProgress,
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.white.withOpacity(0.3),
+                          Colors.white.withOpacity(0.4),
                           Colors.transparent,
                         ],
                       ),
@@ -338,48 +436,5 @@ class SubjectsTab extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  // ==================== HELPERS DE COLOR Y ESTADO ====================
-
-  Color _getProgressColor(double completionRate) {
-    if (completionRate >= 80) return const Color(0xFF10B981); // Verde
-    if (completionRate >= 40) return const Color(0xFFF59E0B); // Naranja
-    return const Color(0xFFEF4444); // Rojo
-  }
-
-  Color _getProgressBorderColor(double completionRate) {
-    if (completionRate >= 80) return const Color(0xFF10B981).withOpacity(0.3);
-    if (completionRate >= 40) return const Color(0xFFF59E0B).withOpacity(0.3);
-    return const Color(0xFFEF4444).withOpacity(0.3);
-  }
-
-  List<Color> _getProgressGradient(double completionRate) {
-    if (completionRate >= 80) {
-      return [const Color(0xFF10B981), const Color(0xFF059669)]; // Verde
-    }
-    if (completionRate >= 40) {
-      return [const Color(0xFFF59E0B), const Color(0xFFD97706)]; // Naranja
-    }
-    return [const Color(0xFFEF4444), const Color(0xFFDC2626)]; // Rojo
-  }
-
-  Map<String, dynamic> _getProgressStatus(double completionRate) {
-    if (completionRate >= 80) {
-      return {
-        'label': 'Excelente',
-        'icon': Icons.trending_up,
-      };
-    }
-    if (completionRate >= 40) {
-      return {
-        'label': 'En progreso',
-        'icon': Icons.trending_flat,
-      };
-    }
-    return {
-      'label': 'Crítico',
-      'icon': Icons.trending_down,
-    };
   }
 }

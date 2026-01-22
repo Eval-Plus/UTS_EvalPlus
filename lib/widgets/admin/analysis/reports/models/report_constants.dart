@@ -28,6 +28,13 @@ class ReportConstants {
   static const double averageThreshold = 3.5;
   static const double belowAverageThreshold = 3.0;
 
+  // ==================== UMBRALES DE PROGRESO DE MATERIAS ====================
+  
+  static const double progressExcellentThreshold = 80.0;
+  static const double progressGoodThreshold = 60.0;
+  static const double progressAverageThreshold = 40.0;
+  static const double progressMinimumDisplay = 2.0; // Mínimo visual cuando completionRate = 0
+
   // ==================== ICONOS ====================
   
   static const IconData reportIcon = Icons.bar_chart;
@@ -83,6 +90,13 @@ class ReportConstants {
   static const String evaluatedLabel = 'Evaluados';
   static const String pendingLabel = 'Pendientes';
   static const String progressLabel = 'Progreso';
+  
+  // Status labels para progreso
+  static const String excellentProgressLabel = 'Excelente';
+  static const String goodProgressLabel = 'Bueno';
+  static const String averageProgressLabel = 'Regular';
+  static const String lowProgressLabel = 'Bajo';
+  static const String criticalProgressLabel = 'Crítico';
 
   // ==================== DIMENSIONES ====================
   
@@ -128,5 +142,71 @@ class ReportConstants {
   /// Genera el mensaje de distribución con formato
   static String getDistributionMessage(int total) {
     return '$distributionLabel ($total respuestas)';
+  }
+  
+  /// Obtiene el color de progreso según el porcentaje
+  static Color getProgressColor(double completionRate) {
+    if (completionRate >= progressExcellentThreshold) {
+      return const Color(0xFF10B981); // Verde excelente
+    }
+    if (completionRate >= progressGoodThreshold) {
+      return const Color(0xFF8BC34A); // Verde bueno
+    }
+    if (completionRate >= progressAverageThreshold) {
+      return const Color(0xFFFCD34D); // Amarillo regular
+    }
+    if (completionRate >= 20) {
+      return const Color(0xFFF59E0B); // Naranja bajo
+    }
+    return const Color(0xFFEF4444); // Rojo crítico
+  }
+  
+  /// Obtiene el gradiente de progreso según el porcentaje
+  static List<Color> getProgressGradient(double completionRate) {
+    if (completionRate >= progressExcellentThreshold) {
+      return [const Color(0xFF10B981), const Color(0xFF059669)];
+    }
+    if (completionRate >= progressGoodThreshold) {
+      return [const Color(0xFF8BC34A), const Color(0xFF689F38)];
+    }
+    if (completionRate >= progressAverageThreshold) {
+      return [const Color(0xFFFCD34D), const Color(0xFFF59E0B)];
+    }
+    if (completionRate >= 20) {
+      return [const Color(0xFFF59E0B), const Color(0xFFD97706)];
+    }
+    return [const Color(0xFFEF4444), const Color(0xFFDC2626)];
+  }
+  
+  /// Obtiene el estado del progreso con icono y etiqueta
+  static Map<String, dynamic> getProgressStatus(double completionRate) {
+    if (completionRate >= progressExcellentThreshold) {
+      return {
+        'label': excellentProgressLabel,
+        'icon': Icons.emoji_events,
+      };
+    }
+    if (completionRate >= progressGoodThreshold) {
+      return {
+        'label': goodProgressLabel,
+        'icon': Icons.trending_up,
+      };
+    }
+    if (completionRate >= progressAverageThreshold) {
+      return {
+        'label': averageProgressLabel,
+        'icon': Icons.trending_flat,
+      };
+    }
+    if (completionRate >= 20) {
+      return {
+        'label': lowProgressLabel,
+        'icon': Icons.trending_down,
+      };
+    }
+    return {
+      'label': criticalProgressLabel,
+      'icon': Icons.warning,
+    };
   }
 }
