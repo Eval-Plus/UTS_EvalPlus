@@ -81,10 +81,9 @@ class SubjectsTab extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            palette.primary.withOpacity(0.08),
-            palette.primaryLight.withOpacity(0.05),
-          ],
+          colors: ReportConstants.getProgressGradient(
+            subject.students > 0 ? (subject.completed / subject.students) * 100 : 0.0,
+          ).map((color) => color.withOpacity(0.12)).toList(),
         ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(12),
@@ -99,11 +98,17 @@ class SubjectsTab extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              gradient: palette.avatarGradient,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: ReportConstants.getProgressGradient(
+                  subject.students > 0 ? (subject.completed / subject.students) * 100 : 0.0,
+                ),
+              ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
                 BoxShadow(
-                  color: palette.primary.withOpacity(0.3),
+                  color: progressColor.withOpacity(0.3),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -137,11 +142,11 @@ class SubjectsTab extends StatelessWidget {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: palette.primary,
+                    color: progressColor,
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: [
                       BoxShadow(
-                        color: palette.primary.withOpacity(0.3),
+                        color: progressColor.withOpacity(0.3),
                         blurRadius: 4,
                         offset: const Offset(0, 1),
                       ),
@@ -155,40 +160,6 @@ class SubjectsTab extends StatelessWidget {
                       color: Colors.white,
                       letterSpacing: 0.5,
                     ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: ReportConstants.paddingMedium),
-          // Badge de estado
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 8,
-            ),
-            decoration: BoxDecoration(
-              color: progressColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: progressColor.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  progressStatus['icon'] as IconData,
-                  size: 20,
-                  color: progressColor,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  progressStatus['label'] as String,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.bold,
-                    color: progressColor,
                   ),
                 ),
               ],
@@ -386,6 +357,7 @@ class SubjectsTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: ReportConstants.paddingLarge),
+        // Barra de progreso completa
         Container(
           height: 14,
           decoration: BoxDecoration(
@@ -396,7 +368,9 @@ class SubjectsTab extends StatelessWidget {
             borderRadius: BorderRadius.circular(7),
             child: Stack(
               children: [
-                // Barra de progreso base
+                // Barra de progreso completa (fondo gris ya está en el Container padre)
+                
+                // Barra de progreso llenada
                 FractionallySizedBox(
                   widthFactor: displayProgress,
                   child: Container(
