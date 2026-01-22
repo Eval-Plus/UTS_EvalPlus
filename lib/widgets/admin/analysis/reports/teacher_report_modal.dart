@@ -1,4 +1,4 @@
-/// Modal de Informe Completo del Docente (Actualizado)
+/// Modal de Informe Completo del Docente (Actualizado con expectedResponses)
 /// Ubicación: lib/widgets/admin/analysis/reports/teacher_report_modal.dart
 
 import 'package:flutter/material.dart';
@@ -90,7 +90,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       ),
     ];
 
-    // Comentarios simplificados (sin subject ni career)
     _comments = [
       CommentReport(
         id: 1,
@@ -187,6 +186,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                       questions: _questions,
                       averageScore: 4.1,
                       totalResponses: 119,
+                      expectedResponses: 150, // Hardcodeado: 150 respuestas esperadas
                     ),
                     SubjectsTab(
                       subjects: widget.teacher.subjects,
