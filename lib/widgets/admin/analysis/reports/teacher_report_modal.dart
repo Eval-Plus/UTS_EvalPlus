@@ -217,42 +217,82 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
     return Container(
       color: Colors.white,
-      child: TabBar(
-        controller: _tabController,
-        isScrollable: true,
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.grey[600],
-        indicatorSize: TabBarIndicatorSize.tab,
-        indicator: BoxDecoration(
-          color: palette.primary,
-          borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
-        ),
-        labelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.normal,
-        ),
-        tabs: const [
-          Tab(
-            icon: Icon(ReportConstants.responsesIcon, size: ReportConstants.tabIconSize),
-            text: ReportConstants.responsesTabLabel,
-          ),
-          Tab(
-            icon: Icon(ReportConstants.subjectsIcon, size: ReportConstants.tabIconSize),
-            text: ReportConstants.subjectsTabLabel,
-          ),
-          Tab(
-            icon: Icon(ReportConstants.aiIcon, size: ReportConstants.tabIconSize),
-            text: ReportConstants.aiTabLabel,
-          ),
-          Tab(
-            icon: Icon(ReportConstants.commentsIcon, size: ReportConstants.tabIconSize),
-            text: ReportConstants.commentsTabLabel,
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(
+        horizontal: ReportConstants.paddingXLarge,
+        vertical: ReportConstants.paddingLarge,
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Determinar si hay suficiente espacio para mostrar texto
+          final showText = constraints.maxWidth > 500;
+          
+          return Center(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
+              ),
+              padding: const EdgeInsets.all(4),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: false,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.grey[600],
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: Colors.transparent,
+                indicator: BoxDecoration(
+                  color: palette.primary,
+                  borderRadius: BorderRadius.circular(ReportConstants.containerBorderRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: palette.primary.withOpacity(0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                labelStyle: TextStyle(
+                  fontSize: showText ? 11 : 10,
+                  fontWeight: FontWeight.w600,
+                ),
+                unselectedLabelStyle: TextStyle(
+                  fontSize: showText ? 11 : 10,
+                  fontWeight: FontWeight.w500,
+                ),
+                tabs: [
+                  Tab(
+                    height: 44,
+                    icon: const Icon(ReportConstants.responsesIcon, size: ReportConstants.tabIconSize),
+                    iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
+                    text: showText ? ReportConstants.responsesTabLabel : null,
+                    child: !showText ? const Text('Resp.', maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                  ),
+                  Tab(
+                    height: 44,
+                    icon: const Icon(ReportConstants.subjectsIcon, size: ReportConstants.tabIconSize),
+                    iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
+                    text: showText ? ReportConstants.subjectsTabLabel : null,
+                    child: !showText ? const Text('Mat.', maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                  ),
+                  Tab(
+                    height: 44,
+                    icon: const Icon(ReportConstants.aiIcon, size: ReportConstants.tabIconSize),
+                    iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
+                    text: showText ? ReportConstants.aiTabLabel : null,
+                    child: !showText ? const Text('IA', maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                  ),
+                  Tab(
+                    height: 44,
+                    icon: const Icon(ReportConstants.commentsIcon, size: ReportConstants.tabIconSize),
+                    iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
+                    text: showText ? ReportConstants.commentsTabLabel : null,
+                    child: !showText ? const Text('Com.', maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

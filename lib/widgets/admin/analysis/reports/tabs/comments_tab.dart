@@ -1,4 +1,4 @@
-/// Tab de comentarios del reporte
+/// Tab de comentarios del reporte (Diseño Mejorado)
 /// Ubicación: lib/widgets/admin/analysis/reports/tabs/comments_tab.dart
 
 import 'package:flutter/material.dart';
@@ -42,158 +42,244 @@ class _CommentsTabState extends State<CommentsTab> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _buildFilters(),
-        _buildSentimentDistribution(),
-        Expanded(
-          child: _filteredComments.isEmpty
-              ? _buildEmptyState()
-              : _buildCommentsList(),
-        ),
-      ],
-    );
+    return _filteredComments.isEmpty
+        ? _buildEmptyState()
+        : ListView(
+            padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
+            children: [
+              _buildFilters(),
+              const SizedBox(height: ReportConstants.paddingLarge),
+              _buildSentimentDistribution(),
+              const SizedBox(height: ReportConstants.paddingLarge),
+              ..._filteredComments.map((comment) => _buildCommentCard(comment)),
+            ],
+          );
   }
 
   Widget _buildFilters() {
     return Container(
       padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ReportConstants.largeBorderRadius),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(ReportConstants.filterIcon, size: 16, color: Colors.grey),
-              SizedBox(width: ReportConstants.paddingMedium),
-              Text(
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  ReportConstants.filterIcon,
+                  size: 18,
+                  color: Color(0xFF6B7280),
+                ),
+              ),
+              const SizedBox(width: ReportConstants.paddingMedium),
+              const Text(
                 ReportConstants.filtersTitle,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold,
+                  color: Color(0xFF1F2937),
                 ),
               ),
             ],
           ),
           const SizedBox(height: ReportConstants.paddingLarge),
-          _buildSentimentFilter(),
-          const SizedBox(height: ReportConstants.paddingMedium),
-          _buildSubjectFilter(),
+          Row(
+            children: [
+              Expanded(child: _buildSentimentFilter()),
+              const SizedBox(width: ReportConstants.paddingMedium),
+              Expanded(child: _buildSubjectFilter()),
+            ],
+          ),
         ],
       ),
     );
   }
 
   Widget _buildSentimentFilter() {
-    return DropdownButtonFormField<String>(
-      value: _commentFilter,
-      decoration: InputDecoration(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: ReportConstants.paddingLarge,
-          vertical: ReportConstants.paddingMedium,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
-        ),
-        isDense: true,
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      items: [
-        DropdownMenuItem(
-          value: 'all',
-          child: Text('${ReportConstants.allCommentsLabel} (${widget.comments.length})'),
-        ),
-        DropdownMenuItem(
-          value: 'positive',
-          child: Text(
-            '${ReportConstants.positiveCommentsLabel} (${_sentimentCounts['positive']})',
+      child: DropdownButtonFormField<String>(
+        value: _commentFilter,
+        decoration: const InputDecoration(
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
           ),
+          border: InputBorder.none,
+          isDense: true,
         ),
-        DropdownMenuItem(
-          value: 'neutral',
-          child: Text(
-            '${ReportConstants.neutralCommentsLabel} (${_sentimentCounts['neutral']})',
+        style: const TextStyle(
+          fontSize: 13,
+          color: Color(0xFF374151),
+          fontWeight: FontWeight.w500,
+        ),
+        icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF6B7280)),
+        dropdownColor: Colors.white,
+        items: [
+          DropdownMenuItem(
+            value: 'all',
+            child: Text('${ReportConstants.allCommentsLabel} (${widget.comments.length})'),
           ),
-        ),
-        DropdownMenuItem(
-          value: 'negative',
-          child: Text(
-            '${ReportConstants.negativeCommentsLabel} (${_sentimentCounts['negative']})',
+          DropdownMenuItem(
+            value: 'positive',
+            child: Row(
+              children: [
+                const Icon(Icons.sentiment_satisfied, size: 16, color: Color(0xFF10B981)),
+                const SizedBox(width: 6),
+                Text('${ReportConstants.positiveCommentsLabel} (${_sentimentCounts['positive']})'),
+              ],
+            ),
           ),
-        ),
-      ],
-      onChanged: (value) {
-        setState(() {
-          _commentFilter = value!;
-        });
-      },
+          DropdownMenuItem(
+            value: 'neutral',
+            child: Row(
+              children: [
+                const Icon(Icons.sentiment_neutral, size: 16, color: Color(0xFF6B7280)),
+                const SizedBox(width: 6),
+                Text('${ReportConstants.neutralCommentsLabel} (${_sentimentCounts['neutral']})'),
+              ],
+            ),
+          ),
+          DropdownMenuItem(
+            value: 'negative',
+            child: Row(
+              children: [
+                const Icon(Icons.sentiment_dissatisfied, size: 16, color: Color(0xFFEF4444)),
+                const SizedBox(width: 6),
+                Text('${ReportConstants.negativeCommentsLabel} (${_sentimentCounts['negative']})'),
+              ],
+            ),
+          ),
+        ],
+        onChanged: (value) {
+          setState(() {
+            _commentFilter = value!;
+          });
+        },
+      ),
     );
   }
 
   Widget _buildSubjectFilter() {
-    return DropdownButtonFormField<String>(
-      value: _subjectFilter,
-      decoration: InputDecoration(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: ReportConstants.paddingLarge,
-          vertical: ReportConstants.paddingMedium,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
-        ),
-        isDense: true,
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFB),
+        borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
-      items: [
-        const DropdownMenuItem(
-          value: 'all',
-          child: Text(ReportConstants.allSubjectsLabel),
+      child: DropdownButtonFormField<String>(
+        value: _subjectFilter,
+        decoration: const InputDecoration(
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+          border: InputBorder.none,
+          isDense: true,
         ),
-        ...widget.subjects.map((subject) => DropdownMenuItem(
-          value: subject.code,
-          child: Text(subject.name),
-        )),
-      ],
-      onChanged: (value) {
-        setState(() {
-          _subjectFilter = value!;
-        });
-      },
+        style: const TextStyle(
+          fontSize: 13,
+          color: Color(0xFF374151),
+          fontWeight: FontWeight.w500,
+        ),
+        icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF6B7280)),
+        dropdownColor: Colors.white,
+        items: [
+          const DropdownMenuItem(
+            value: 'all',
+            child: Text(ReportConstants.allSubjectsLabel),
+          ),
+          ...widget.subjects.map((subject) => DropdownMenuItem(
+            value: subject.code,
+            child: Text(subject.name),
+          )),
+        ],
+        onChanged: (value) {
+          setState(() {
+            _subjectFilter = value!;
+          });
+        },
+      ),
     );
   }
 
   Widget _buildSentimentDistribution() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: ReportConstants.paddingXLarge,
-        vertical: ReportConstants.paddingLarge,
+      padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ReportConstants.largeBorderRadius),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      color: Colors.grey[50],
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: _buildSentimentCard(
-              ReportConstants.positiveCommentsLabel,
-              _sentimentCounts['positive']!,
-              const Color(0xFF4CAF50),
-              ReportConstants.positiveIcon,
+          const Text(
+            'Distribución de Sentimientos',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F2937),
             ),
           ),
-          const SizedBox(width: ReportConstants.paddingMedium),
-          Expanded(
-            child: _buildSentimentCard(
-              ReportConstants.neutralCommentsLabel,
-              _sentimentCounts['neutral']!,
-              Colors.grey,
-              ReportConstants.neutralIcon,
-            ),
-          ),
-          const SizedBox(width: ReportConstants.paddingMedium),
-          Expanded(
-            child: _buildSentimentCard(
-              ReportConstants.negativeCommentsLabel,
-              _sentimentCounts['negative']!,
-              const Color(0xFFEF4444),
-              ReportConstants.negativeIcon,
-            ),
+          const SizedBox(height: ReportConstants.paddingLarge),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSentimentCard(
+                  ReportConstants.positiveCommentsLabel,
+                  _sentimentCounts['positive']!,
+                  const Color(0xFF10B981),
+                  ReportConstants.positiveIcon,
+                ),
+              ),
+              const SizedBox(width: ReportConstants.paddingMedium),
+              Expanded(
+                child: _buildSentimentCard(
+                  ReportConstants.neutralCommentsLabel,
+                  _sentimentCounts['neutral']!,
+                  const Color(0xFF6B7280),
+                  ReportConstants.neutralIcon,
+                ),
+              ),
+              const SizedBox(width: ReportConstants.paddingMedium),
+              Expanded(
+                child: _buildSentimentCard(
+                  ReportConstants.negativeCommentsLabel,
+                  _sentimentCounts['negative']!,
+                  const Color(0xFFEF4444),
+                  ReportConstants.negativeIcon,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -204,27 +290,21 @@ class _CommentsTabState extends State<CommentsTab> {
     return Container(
       padding: const EdgeInsets.all(ReportConstants.paddingLarge),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
-        border: Border.all(color: color.withOpacity(0.3), width: 2),
+        border: Border.all(color: color.withOpacity(0.2), width: 1.5),
       ),
       child: Column(
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-              Icon(icon, size: 14, color: color),
-            ],
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 20, color: color),
           ),
-          const SizedBox(height: ReportConstants.paddingSmall),
+          const SizedBox(height: ReportConstants.paddingMedium),
           Text(
             '$count',
             style: TextStyle(
@@ -233,70 +313,149 @@ class _CommentsTabState extends State<CommentsTab> {
               color: color,
             ),
           ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color.withOpacity(0.8),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCommentsList() {
-    return ListView(
-      padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
-      children: _filteredComments.map((comment) => _buildCommentCard(comment)).toList(),
-    );
-  }
-
   Widget _buildCommentCard(CommentReport comment) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: ReportConstants.paddingMedium),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
-        side: BorderSide(color: comment.borderColor, width: 3),
+    final sentimentConfig = _getSentimentConfig(comment.sentiment);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: ReportConstants.paddingLarge),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ReportConstants.largeBorderRadius),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(ReportConstants.paddingLarge),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header del comentario
+          Container(
+            padding: const EdgeInsets.all(ReportConstants.paddingLarge),
+            decoration: BoxDecoration(
+              color: sentimentConfig['backgroundColor'] as Color,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(12),
+                topRight: Radius.circular(12),
+              ),
+            ),
+            child: Row(
               children: [
                 Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: sentimentConfig['color'] as Color,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    sentimentConfig['icon'] as IconData,
+                    size: 14,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: ReportConstants.paddingMedium),
+                Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: ReportConstants.paddingMedium,
-                    vertical: ReportConstants.paddingSmall,
+                    horizontal: 8,
+                    vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: comment.chipColor,
-                    borderRadius: BorderRadius.circular(ReportConstants.chipBorderRadius),
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: (sentimentConfig['color'] as Color).withOpacity(0.3),
+                    ),
                   ),
                   child: Text(
-                    comment.chipLabel,
+                    sentimentConfig['label'] as String,
                     style: TextStyle(
-                      fontSize: 10,
+                      fontSize: 11,
                       fontWeight: FontWeight.bold,
-                      color: comment.borderColor,
+                      color: sentimentConfig['color'] as Color,
                     ),
                   ),
                 ),
-                Text(
-                  comment.subject,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: Colors.grey,
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.book,
+                        size: 12,
+                        color: Color(0xFF6B7280),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        comment.subject,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF6B7280),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: ReportConstants.paddingMedium),
-            Text(
-              comment.text,
-              style: const TextStyle(
-                fontSize: 13,
-                height: 1.4,
-              ),
+          ),
+          
+          // Contenido del comentario
+          Padding(
+            padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 3,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: sentimentConfig['color'] as Color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: ReportConstants.paddingLarge),
+                Expanded(
+                  child: Text(
+                    comment.text,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.5,
+                      color: Color(0xFF374151),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -308,22 +467,65 @@ class _CommentsTabState extends State<CommentsTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              ReportConstants.emptyCommentIcon,
-              size: ReportConstants.emptyIconSize,
-              color: Colors.grey[300],
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF3F4F6),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                ReportConstants.emptyCommentIcon,
+                size: ReportConstants.emptyIconSize,
+                color: Colors.grey[400],
+              ),
             ),
             const SizedBox(height: ReportConstants.paddingXLarge),
             Text(
               ReportConstants.emptyCommentsMessage,
               style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
               ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No se encontraron comentarios con los filtros seleccionados',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
       ),
     );
+  }
+
+  Map<String, dynamic> _getSentimentConfig(String sentiment) {
+    switch (sentiment) {
+      case 'positive':
+        return {
+          'label': 'Positivo',
+          'color': const Color(0xFF10B981),
+          'backgroundColor': const Color(0xFFD1FAE5),
+          'icon': Icons.sentiment_satisfied,
+        };
+      case 'negative':
+        return {
+          'label': 'Negativo',
+          'color': const Color(0xFFEF4444),
+          'backgroundColor': const Color(0xFFFEE2E2),
+          'icon': Icons.sentiment_dissatisfied,
+        };
+      default:
+        return {
+          'label': 'Neutral',
+          'color': const Color(0xFF6B7280),
+          'backgroundColor': const Color(0xFFF3F4F6),
+          'icon': Icons.sentiment_neutral,
+        };
+    }
   }
 }
