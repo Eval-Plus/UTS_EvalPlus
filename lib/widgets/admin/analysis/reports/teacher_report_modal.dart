@@ -1,4 +1,4 @@
-/// Modal de Informe Completo del Docente (Refactorizado)
+/// Modal de Informe Completo del Docente (Actualizado)
 /// Ubicación: lib/widgets/admin/analysis/reports/teacher_report_modal.dart
 
 import 'package:flutter/material.dart';
@@ -90,60 +90,57 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       ),
     ];
 
+    // Comentarios simplificados (sin subject ni career)
     _comments = [
       CommentReport(
         id: 1,
         text: "Excelente profesor, explica muy bien y siempre está dispuesto a ayudar",
         sentiment: "positive",
-        subject: widget.teacher.subjects.isNotEmpty
-            ? widget.teacher.subjects[0].code
-            : "POO-101",
-        career: widget.teacher.careerName,
       ),
       CommentReport(
         id: 2,
         text: "Debería usar más ejemplos prácticos en clase",
         sentiment: "neutral",
-        subject: widget.teacher.subjects.isNotEmpty
-            ? widget.teacher.subjects[0].code
-            : "ED-201",
-        career: widget.teacher.careerName,
       ),
       CommentReport(
         id: 3,
         text: "Muy buen dominio de la materia, pero a veces va muy rápido",
         sentiment: "positive",
-        subject: widget.teacher.subjects.isNotEmpty
-            ? widget.teacher.subjects[0].code
-            : "POO-101",
-        career: widget.teacher.careerName,
       ),
       CommentReport(
         id: 4,
         text: "Me gustaría más retroalimentación en los trabajos",
         sentiment: "neutral",
-        subject: widget.teacher.subjects.length > 1
-            ? widget.teacher.subjects[1].code
-            : "BD-301",
-        career: widget.teacher.careerName,
       ),
       CommentReport(
         id: 5,
         text: "El mejor profesor que he tenido, muy dedicado",
         sentiment: "positive",
-        subject: widget.teacher.subjects.isNotEmpty
-            ? widget.teacher.subjects[0].code
-            : "ED-201",
-        career: widget.teacher.careerName,
       ),
       CommentReport(
         id: 6,
         text: "Las evaluaciones son muy teóricas",
         sentiment: "negative",
-        subject: widget.teacher.subjects.length > 1
-            ? widget.teacher.subjects[1].code
-            : "BD-301",
-        career: widget.teacher.careerName,
+      ),
+      CommentReport(
+        id: 7,
+        text: "Excelente metodología, se nota su experiencia",
+        sentiment: "positive",
+      ),
+      CommentReport(
+        id: 8,
+        text: "Clases dinámicas y participativas",
+        sentiment: "positive",
+      ),
+      CommentReport(
+        id: 9,
+        text: "A veces no responde las dudas a tiempo",
+        sentiment: "negative",
+      ),
+      CommentReport(
+        id: 10,
+        text: "Buen profesor en general",
+        sentiment: "neutral",
       ),
     ];
 
@@ -200,7 +197,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                     ),
                     CommentsTab(
                       comments: _comments,
-                      subjects: widget.teacher.subjects,
                     ),
                   ],
                 ),
@@ -223,7 +219,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Determinar si hay suficiente espacio para mostrar texto
           final showText = constraints.maxWidth > 500;
           
           return Center(

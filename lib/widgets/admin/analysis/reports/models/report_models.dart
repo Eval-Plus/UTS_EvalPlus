@@ -102,22 +102,18 @@ class QuestionReport {
 }
 
 // ==============================================
-// MODELO DE COMENTARIO
+// MODELO DE COMENTARIO (Simplificado - Sin Subject/Career)
 // ==============================================
 
 class CommentReport {
   final int id;
   final String text;
   final String sentiment;
-  final String subject;
-  final String career;
 
   CommentReport({
     required this.id,
     required this.text,
     required this.sentiment,
-    required this.subject,
-    required this.career,
   });
 
   /// Obtiene el color del borde según el sentimiento

@@ -1,19 +1,16 @@
-/// Tab de comentarios del reporte (Diseño Mejorado)
+/// Tab de comentarios del reporte (Sin filtro de materias + Satisfacción)
 /// Ubicación: lib/widgets/admin/analysis/reports/tabs/comments_tab.dart
 
 import 'package:flutter/material.dart';
-import 'package:eval_plus/models/teacher_analysis_model.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_constants.dart';
 
 class CommentsTab extends StatefulWidget {
   final List<CommentReport> comments;
-  final List<SubjectData> subjects;
 
   const CommentsTab({
     super.key,
     required this.comments,
-    required this.subjects,
   });
 
   @override
@@ -22,13 +19,10 @@ class CommentsTab extends StatefulWidget {
 
 class _CommentsTabState extends State<CommentsTab> {
   String _commentFilter = 'all';
-  String _subjectFilter = 'all';
 
   List<CommentReport> get _filteredComments {
     return widget.comments.where((comment) {
-      final sentimentMatch = _commentFilter == 'all' || comment.sentiment == _commentFilter;
-      final subjectMatch = _subjectFilter == 'all' || comment.subject == _subjectFilter;
-      return sentimentMatch && subjectMatch;
+      return _commentFilter == 'all' || comment.sentiment == _commentFilter;
     }).toList();
   }
 
@@ -40,6 +34,18 @@ class _CommentsTabState extends State<CommentsTab> {
     };
   }
 
+  /// Calcula el porcentaje de satisfacción general
+  double get _satisfactionRate {
+    if (widget.comments.isEmpty) return 0.0;
+    
+    final positive = _sentimentCounts['positive']!;
+    final neutral = _sentimentCounts['neutral']!;
+    final total = widget.comments.length;
+    
+    // Fórmula: (Positivos + 50% de Neutrales) / Total * 100
+    return ((positive + (neutral * 0.5)) / total) * 100;
+  }
+
   @override
   Widget build(BuildContext context) {
     return _filteredComments.isEmpty
@@ -47,7 +53,9 @@ class _CommentsTabState extends State<CommentsTab> {
         : ListView(
             padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
             children: [
-              _buildFilters(),
+              _buildFiltersPanel(),
+              const SizedBox(height: ReportConstants.paddingLarge),
+              _buildSatisfactionSection(),
               const SizedBox(height: ReportConstants.paddingLarge),
               _buildSentimentDistribution(),
               const SizedBox(height: ReportConstants.paddingLarge),
@@ -56,7 +64,7 @@ class _CommentsTabState extends State<CommentsTab> {
           );
   }
 
-  Widget _buildFilters() {
+  Widget _buildFiltersPanel() {
     return Container(
       padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
       decoration: BoxDecoration(
@@ -100,13 +108,7 @@ class _CommentsTabState extends State<CommentsTab> {
             ],
           ),
           const SizedBox(height: ReportConstants.paddingLarge),
-          Row(
-            children: [
-              Expanded(child: _buildSentimentFilter()),
-              const SizedBox(width: ReportConstants.paddingMedium),
-              Expanded(child: _buildSubjectFilter()),
-            ],
-          ),
+          _buildSentimentFilter(),
         ],
       ),
     );
@@ -181,46 +183,194 @@ class _CommentsTabState extends State<CommentsTab> {
     );
   }
 
-  Widget _buildSubjectFilter() {
-    return Container(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFB),
-        borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-      ),
-      child: DropdownButtonFormField<String>(
-        value: _subjectFilter,
-        decoration: const InputDecoration(
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 12,
+  Widget _buildSatisfactionSection() {
+    final satisfactionData = _getSatisfactionData(_satisfactionRate);
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Tarjeta de Satisfacción
+          Expanded(
+            flex: 2,
+            child: Container(
+              padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: satisfactionData['colors'] as List<Color>,
+                ),
+                borderRadius: BorderRadius.circular(
+                  ReportConstants.largeBorderRadius,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: (satisfactionData['colors'] as List<Color>)[0]
+                        .withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center, // 🔑 centra verticalmente
+                children: [
+                  const Text(
+                    'Satisfacción',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: ReportConstants.paddingXLarge),
+                  Text(
+                    '${_satisfactionRate.toStringAsFixed(1)}%',
+                    style: const TextStyle(
+                      fontSize: 38,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    satisfactionData['label'] as String,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
-          border: InputBorder.none,
-          isDense: true,
-        ),
-        style: const TextStyle(
-          fontSize: 13,
-          color: Color(0xFF374151),
-          fontWeight: FontWeight.w500,
-        ),
-        icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF6B7280)),
-        dropdownColor: Colors.white,
-        items: [
-          const DropdownMenuItem(
-            value: 'all',
-            child: Text(ReportConstants.allSubjectsLabel),
+
+          const SizedBox(width: ReportConstants.paddingLarge),
+
+          // Tarjeta Informativa
+          Expanded(
+            flex: 3,
+            child: Container(
+              padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(
+                  ReportConstants.largeBorderRadius,
+                ),
+                border: Border.all(color: const Color(0xFFE5E7EB)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.info_outline,
+                          size: 16,
+                          color: Color(0xFF3B82F6),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Text(
+                        '¿Cómo se calcula?',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1F2937),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: ReportConstants.paddingMedium),
+                  const Text(
+                    'Ponderando los comentarios:',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6B7280),
+                      height: 1.4,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildCalculationItem(
+                    icon: Icons.sentiment_satisfied,
+                    color: Color(0xFF10B981),
+                    label: 'Positivos',
+                    value: '100%',
+                  ),
+                  const SizedBox(height: 4),
+                  _buildCalculationItem(
+                    icon: Icons.sentiment_neutral,
+                    color: Color(0xFF6B7280),
+                    label: 'Neutrales',
+                    value: '50%',
+                  ),
+                  const SizedBox(height: 4),
+                  _buildCalculationItem(
+                    icon: Icons.sentiment_dissatisfied,
+                    color: Color(0xFFEF4444),
+                    label: 'Negativos',
+                    value: '0%',
+                  ),
+                ],
+              ),
+            ),
           ),
-          ...widget.subjects.map((subject) => DropdownMenuItem(
-            value: subject.code,
-            child: Text(subject.name),
-          )),
         ],
-        onChanged: (value) {
-          setState(() {
-            _subjectFilter = value!;
-          });
-        },
       ),
+    );
+  }
+
+  Widget _buildCalculationItem({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Color(0xFF374151),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -347,7 +497,7 @@ class _CommentsTabState extends State<CommentsTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header del comentario
+          // Header del comentario (sin código de materia)
           Container(
             padding: const EdgeInsets.all(ReportConstants.paddingLarge),
             decoration: BoxDecoration(
@@ -394,6 +544,7 @@ class _CommentsTabState extends State<CommentsTab> {
                   ),
                 ),
                 const Spacer(),
+                // Indicador anónimo
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -403,18 +554,18 @@ class _CommentsTabState extends State<CommentsTab> {
                     color: Colors.white.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
-                        Icons.book,
+                      Icon(
+                        Icons.person_outline,
                         size: 12,
                         color: Color(0xFF6B7280),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: 4),
                       Text(
-                        comment.subject,
-                        style: const TextStyle(
+                        'Anónimo',
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w500,
                           color: Color(0xFF6B7280),
@@ -469,8 +620,8 @@ class _CommentsTabState extends State<CommentsTab> {
           children: [
             Container(
               padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
+              decoration: const BoxDecoration(
+                color: Color(0xFFF3F4F6),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -527,5 +678,41 @@ class _CommentsTabState extends State<CommentsTab> {
           'icon': Icons.sentiment_neutral,
         };
     }
+  }
+
+  Map<String, dynamic> _getSatisfactionData(double rate) {
+    if (rate >= 80) {
+      return {
+        'colors': [const Color(0xFF10B981), const Color(0xFF059669)], // Verde
+        'label': 'Excelente',
+        'icon': Icons.sentiment_very_satisfied,
+      };
+    }
+    if (rate >= 60) {
+      return {
+        'colors': [const Color(0xFF8BC34A), const Color(0xFF689F38)], // Verde claro
+        'label': 'Bueno',
+        'icon': Icons.sentiment_satisfied,
+      };
+    }
+    if (rate >= 40) {
+      return {
+        'colors': [const Color(0xFFFCD34D), const Color(0xFFF59E0B)], // Amarillo
+        'label': 'Regular',
+        'icon': Icons.sentiment_neutral,
+      };
+    }
+    if (rate >= 20) {
+      return {
+        'colors': [const Color(0xFFF59E0B), const Color(0xFFD97706)], // Naranja
+        'label': 'Bajo',
+        'icon': Icons.sentiment_dissatisfied,
+      };
+    }
+    return {
+      'colors': [const Color(0xFFEF4444), const Color(0xFFDC2626)], // Rojo
+      'label': 'Muy bajo',
+      'icon': Icons.sentiment_very_dissatisfied,
+    };
   }
 }
