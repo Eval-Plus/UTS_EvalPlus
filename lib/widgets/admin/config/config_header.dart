@@ -2,7 +2,7 @@
 /// Ubicación: lib/widgets/admin/config_header.dart
 
 import 'package:flutter/material.dart';
-import 'package:eval_plus/models/admin_dashboard_model.dart';
+import 'package:eval_plus/models/admin/admin_dashboard_model.dart';
 import 'package:eval_plus/utils/admin/admin_config_constants.dart';
 
 class ConfigHeader extends StatelessWidget {

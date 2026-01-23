@@ -1,4 +1,4 @@
-/// Tab de respuestas del reporte (Rediseñado)
+/// Tab de respuestas del reporte (Actualizado con datos reales)
 /// Ubicación: lib/widgets/admin/analysis/reports/tabs/responses_tab.dart
 
 import 'package:flutter/material.dart';
@@ -9,8 +9,8 @@ import 'package:eval_plus/widgets/admin/analysis/reports/components/question_car
 class ResponsesTab extends StatefulWidget {
   final List<QuestionReport> questions;
   final double averageScore;
-  final int totalResponses;
-  final int expectedResponses; // Total esperado de respuestas
+  final int totalResponses; // completedEvaluations
+  final int expectedResponses; // totalEvaluations
 
   const ResponsesTab({
     super.key,
@@ -46,28 +46,39 @@ class _ResponsesTabState extends State<ResponsesTab> {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
-      children: [
-        _buildSummaryCards(),
-        const SizedBox(height: ReportConstants.paddingLarge),
-        _buildCategoryDivider('Preguntas de Evaluación'),
-        const SizedBox(height: ReportConstants.paddingMedium),
-        ...widget.questions.asMap().entries.map((entry) {
-          final index = entry.key;
-          final question = entry.value;
+    return RefreshIndicator(
+      onRefresh: () async {
+        // TODO: Implementar refresh cuando se necesite
+        await Future.delayed(const Duration(seconds: 1));
+      },
+      child: ListView(
+        padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
+        children: [
+          _buildSummaryCards(),
+          const SizedBox(height: ReportConstants.paddingLarge),
+          _buildCategoryDivider('Preguntas de Evaluación'),
+          const SizedBox(height: ReportConstants.paddingMedium),
           
-          return Padding(
-            padding: const EdgeInsets.only(bottom: ReportConstants.paddingMedium),
-            child: QuestionCardReport(
-              question: question,
-              isExpanded: _expandedQuestionId == question.id,
-              onTap: () => _toggleQuestion(question.id),
-              categoryColor: _getCategoryColor(index),
-            ),
-          );
-        }),
-      ],
+          // Mostrar mensaje si no hay preguntas
+          if (widget.questions.isEmpty)
+            _buildEmptyState()
+          else
+            ...widget.questions.asMap().entries.map((entry) {
+              final index = entry.key;
+              final question = entry.value;
+              
+              return Padding(
+                padding: const EdgeInsets.only(bottom: ReportConstants.paddingMedium),
+                child: QuestionCardReport(
+                  question: question,
+                  isExpanded: _expandedQuestionId == question.id,
+                  onTap: () => _toggleQuestion(question.id),
+                  categoryColor: _getCategoryColor(index),
+                ),
+              );
+            }),
+        ],
+      ),
     );
   }
 
@@ -297,8 +308,43 @@ class _ResponsesTabState extends State<ResponsesTab> {
     );
   }
 
+  Widget _buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(48),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.assignment_outlined,
+              size: 64,
+              color: Colors.grey[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No hay preguntas disponibles',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'No se encontraron respuestas para este docente',
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   /// Obtiene el color de categoría basado en el índice
-  /// Alterna entre diferentes colores suaves para diferenciar visualmente
   Color _getCategoryColor(int index) {
     final colors = [
       const Color(0xFF3B82F6), // Azul
@@ -315,30 +361,30 @@ class _ResponsesTabState extends State<ResponsesTab> {
   Map<String, dynamic> _getCompletionData(double rate) {
     if (rate >= 90) {
       return {
-        'colors': [const Color(0xFF10B981), const Color(0xFF059669)], // Verde
+        'colors': [const Color(0xFF10B981), const Color(0xFF059669)],
         'icon': Icons.check_circle,
       };
     }
     if (rate >= 70) {
       return {
-        'colors': [const Color(0xFF8BC34A), const Color(0xFF689F38)], // Verde claro
+        'colors': [const Color(0xFF8BC34A), const Color(0xFF689F38)],
         'icon': Icons.trending_up,
       };
     }
     if (rate >= 50) {
       return {
-        'colors': [const Color(0xFFFCD34D), const Color(0xFFF59E0B)], // Amarillo
+        'colors': [const Color(0xFFFCD34D), const Color(0xFFF59E0B)],
         'icon': Icons.trending_flat,
       };
     }
     if (rate >= 30) {
       return {
-        'colors': [const Color(0xFFF59E0B), const Color(0xFFD97706)], // Naranja
+        'colors': [const Color(0xFFF59E0B), const Color(0xFFD97706)],
         'icon': Icons.trending_down,
       };
     }
     return {
-      'colors': [const Color(0xFFEF4444), const Color(0xFFDC2626)], // Rojo
+      'colors': [const Color(0xFFEF4444), const Color(0xFFDC2626)],
       'icon': Icons.warning,
     };
   }

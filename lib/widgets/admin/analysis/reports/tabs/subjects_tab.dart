@@ -3,7 +3,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
-import 'package:eval_plus/models/teacher_analysis_model.dart';
+import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_constants.dart';
 
 class SubjectsTab extends StatelessWidget {

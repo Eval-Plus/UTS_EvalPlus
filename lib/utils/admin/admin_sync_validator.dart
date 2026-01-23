@@ -2,7 +2,7 @@
 /// Ubicación: lib/utils/admin/admin_sync_validator.dart
 
 import 'package:flutter/material.dart';
-import 'package:eval_plus/models/admin_dashboard_model.dart';
+import 'package:eval_plus/models/admin/admin_dashboard_model.dart';
 import 'package:eval_plus/utils/admin/admin_config_constants.dart';
 
 /// Resultado de una validación de sincronización

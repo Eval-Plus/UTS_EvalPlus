@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:eval_plus/config/constants.dart';
-import 'package:eval_plus/models/admin_dashboard_model.dart';
+import 'package:eval_plus/models/admin/admin_dashboard_model.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 
 class AdminDashboardService {

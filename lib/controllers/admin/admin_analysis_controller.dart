@@ -2,9 +2,9 @@
 /// Ubicación: lib/controllers/admin/admin_analysis_controller.dart
 
 import 'package:flutter/material.dart';
-import 'package:eval_plus/models/teacher_analysis_model.dart';
+import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
 import 'package:eval_plus/models/career_model.dart';
-import 'package:eval_plus/services/admin_analysis_service.dart';
+import 'package:eval_plus/services/admin/admin_analysis_service.dart';
 import 'package:eval_plus/services/careers_service.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 

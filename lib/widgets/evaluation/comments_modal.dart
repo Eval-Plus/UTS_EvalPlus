@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:eval_plus/models/teacher_evaluation_model.dart';
+import 'package:eval_plus/models/teacher/teacher_evaluation_model.dart';
 import 'package:eval_plus/services/teacher_evaluation_service.dart';
 
 /// Modal para mostrar comentarios anónimos de una evaluación

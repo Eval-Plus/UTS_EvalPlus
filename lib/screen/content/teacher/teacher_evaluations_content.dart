@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:eval_plus/models/teacher_evaluation_model.dart';
+import 'package:eval_plus/models/teacher/teacher_evaluation_model.dart';
 import 'package:eval_plus/services/teacher_evaluation_service.dart';
 import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
 import 'package:eval_plus/widgets/evaluation/comments_modal.dart';

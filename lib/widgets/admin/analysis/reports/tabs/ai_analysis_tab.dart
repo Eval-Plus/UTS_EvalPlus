@@ -293,7 +293,7 @@ class AIAnalysisTab extends StatelessWidget {
                 ),
                 const SizedBox(width: ReportConstants.paddingMedium),
                 const Text(
-                  'Retroalimentación por Evaluaciones',
+                  'Análisis de respuestas',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -458,7 +458,7 @@ class AIAnalysisTab extends StatelessWidget {
                 ),
                 const SizedBox(width: ReportConstants.paddingMedium),
                 const Text(
-                  'Retroalimentación por Comentarios',
+                  'Análisis de Comentarios',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:eval_plus/config/constants.dart';
-import 'package:eval_plus/models/teacher_analysis_model.dart';
+import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
 
 class AdminAnalysisService extends ChangeNotifier {
   final Future<String?> Function() getToken;

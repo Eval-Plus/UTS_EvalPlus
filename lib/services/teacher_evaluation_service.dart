@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:eval_plus/config/constants.dart';
-import 'package:eval_plus/models/teacher_evaluation_model.dart';
+import 'package:eval_plus/models/teacher/teacher_evaluation_model.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 
 /// Servicio para manejar evaluaciones de profesores

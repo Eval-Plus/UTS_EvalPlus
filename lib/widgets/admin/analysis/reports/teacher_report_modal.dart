@@ -1,9 +1,11 @@
-/// Modal de Informe Completo del Docente (Actualizado con expectedResponses)
+/// Modal de Informe Completo del Docente (Con datos reales de API) - FIXED
 /// Ubicación: lib/widgets/admin/analysis/reports/teacher_report_modal.dart
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
-import 'package:eval_plus/models/teacher_analysis_model.dart';
+import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
+import 'package:eval_plus/models/admin/teacher_report_model.dart';
+import 'package:eval_plus/services/admin/teacher_report_service.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_constants.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/components/report_header.dart';
@@ -11,6 +13,7 @@ import 'package:eval_plus/widgets/admin/analysis/reports/tabs/responses_tab.dart
 import 'package:eval_plus/widgets/admin/analysis/reports/tabs/subjects_tab.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/tabs/ai_analysis_tab.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/tabs/comments_tab.dart';
+import 'package:eval_plus/widgets/admin/analysis/reports/loading/report_loading_dialog.dart';
 
 class TeacherReportModal extends StatefulWidget {
   final TeacherData teacher;
@@ -27,17 +30,32 @@ class TeacherReportModal extends StatefulWidget {
 class _TeacherReportModalState extends State<TeacherReportModal>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final TeacherReportService _reportService = TeacherReportService();
 
-  // Datos hardcodeados (después se obtendrán del backend)
-  late List<QuestionReport> _questions;
+  // Datos de la API
+  TeacherResponsesReport? _responsesData;
+  
+  // Datos hardcodeados (temporalmente para otras tabs)
   late List<CommentReport> _comments;
   late AIInsights _aiInsights;
+
+  // Estado de carga
+  bool _isLoading = true;
+  String? _errorMessage;
+  bool _isLoadingDialogShown = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _initializeHardcodedData();
+    
+    // Cargar datos después de que el widget esté montado
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadReportData();
+      }
+    });
   }
 
   @override
@@ -46,50 +64,136 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     super.dispose();
   }
 
-  void _initializeHardcodedData() {
-    _questions = [
-      QuestionReport(
-        id: 1,
-        text: "Demuestra dominio y actualización en la presentación de los temas del curso",
-        category: "Competencia Disciplinaria",
-        aspect: "Formativo",
-        responses: {1: 2, 2: 3, 3: 8, 4: 45, 5: 61},
-        average: 4.3,
-      ),
-      QuestionReport(
-        id: 2,
-        text: "Orienta de manera clara los conceptos y teorías del curso",
-        category: "Conocimiento y dominio de la materia",
-        aspect: "Formativo",
-        responses: {1: 1, 2: 4, 3: 12, 4: 38, 5: 64},
-        average: 4.4,
-      ),
-      QuestionReport(
-        id: 3,
-        text: "Promueve el uso de textos u otros materiales en idioma extranjero",
-        category: "Dominio de una segunda lengua",
-        aspect: "Formativo",
-        responses: {1: 8, 2: 15, 3: 32, 4: 41, 5: 23},
-        average: 3.6,
-      ),
-      QuestionReport(
-        id: 4,
-        text: "Presenta el plan de curso y explica su importancia para la formación profesional",
-        category: "Planeación y organización del trabajo pedagógico",
-        aspect: "Destrezas para desarrollar el proceso de enseñanza y aprendizaje",
-        responses: {1: 3, 2: 5, 3: 15, 4: 48, 5: 48},
-        average: 4.1,
-      ),
-      QuestionReport(
-        id: 5,
-        text: "Relaciona el contenido del curso con experiencias y problemas reales",
-        category: "Estrategias metodológicas",
-        aspect: "Destrezas para desarrollar el proceso de enseñanza y aprendizaje",
-        responses: {1: 2, 2: 6, 3: 18, 4: 52, 5: 41},
-        average: 4.0,
-      ),
-    ];
+  // ==================== CARGA DE DATOS ====================
 
+  /// Carga los datos del reporte desde la API
+  Future<void> _loadReportData() async {
+    if (!mounted) return;
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      debugPrint('📊 Cargando datos del reporte para docente ${widget.teacher.id}...');
+
+      // Mostrar diálogo de carga
+      await _showLoadingDialog();
+
+      // Cargar datos de respuestas desde la API
+      final responsesData = await _reportService.getResponsesReport(
+        teacherId: widget.teacher.id,
+        periodo: widget.teacher.period,
+        forceRefresh: false,
+      );
+
+      if (!mounted) return;
+
+      // Cerrar loading dialog
+      if (_isLoadingDialogShown) {
+        Navigator.of(context).pop();
+        _isLoadingDialogShown = false;
+      }
+
+      if (responsesData == null) {
+        throw Exception(_reportService.responsesError ?? 'Error al cargar datos');
+      }
+
+      setState(() {
+        _responsesData = responsesData;
+        _isLoading = false;
+        _errorMessage = null;
+      });
+      
+      debugPrint('✅ Datos del reporte cargados exitosamente');
+    } catch (e) {
+      debugPrint('💥 Error cargando datos del reporte: $e');
+      
+      if (!mounted) return;
+
+      // Cerrar loading dialog si está abierto
+      if (_isLoadingDialogShown) {
+        Navigator.of(context).pop();
+        _isLoadingDialogShown = false;
+      }
+      
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+
+      // Esperar un frame antes de mostrar el error
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _showErrorDialog(e.toString());
+        }
+      });
+    }
+  }
+
+  /// Muestra el diálogo de carga
+  Future<void> _showLoadingDialog() async {
+    if (!mounted || _isLoadingDialogShown) return;
+    
+    final palette = AppColors.getPaletteForRole(UserRole.admin);
+    
+    _isLoadingDialogShown = true;
+    
+    // Mostrar el diálogo sin await completo para no bloquear
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ReportLoadingDialog(
+        teacherName: widget.teacher.name,
+        palette: palette,
+      ),
+    );
+
+    // Dar tiempo para que el diálogo se muestre
+    await Future.delayed(const Duration(milliseconds: 300));
+  }
+
+  /// Muestra un diálogo de error
+  void _showErrorDialog(String message) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.error_outline, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Error al Cargar Informe'),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (!mounted) return;
+              Navigator.of(context).pop(); // Cerrar diálogo de error
+              Navigator.of(context).pop(); // Cerrar el modal completo
+            },
+            child: const Text('Cerrar'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (!mounted) return;
+              Navigator.of(context).pop(); // Cerrar diálogo de error
+              _loadReportData(); // Reintentar
+            },
+            child: const Text('Reintentar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==================== DATOS HARDCODEADOS (TEMPORAL) ====================
+
+  void _initializeHardcodedData() {
     _comments = [
       CommentReport(
         id: 1,
@@ -106,41 +210,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
         text: "Muy buen dominio de la materia, pero a veces va muy rápido",
         sentiment: "positive",
       ),
-      CommentReport(
-        id: 4,
-        text: "Me gustaría más retroalimentación en los trabajos",
-        sentiment: "neutral",
-      ),
-      CommentReport(
-        id: 5,
-        text: "El mejor profesor que he tenido, muy dedicado",
-        sentiment: "positive",
-      ),
-      CommentReport(
-        id: 6,
-        text: "Las evaluaciones son muy teóricas",
-        sentiment: "negative",
-      ),
-      CommentReport(
-        id: 7,
-        text: "Excelente metodología, se nota su experiencia",
-        sentiment: "positive",
-      ),
-      CommentReport(
-        id: 8,
-        text: "Clases dinámicas y participativas",
-        sentiment: "positive",
-      ),
-      CommentReport(
-        id: 9,
-        text: "A veces no responde las dudas a tiempo",
-        sentiment: "negative",
-      ),
-      CommentReport(
-        id: 10,
-        text: "Buen profesor en general",
-        sentiment: "neutral",
-      ),
     ];
 
     _aiInsights = AIInsights(
@@ -149,23 +218,49 @@ class _TeacherReportModalState extends State<TeacherReportModal>
         "Dominio excepcional de la materia y actualización constante",
         "Claridad en la orientación de conceptos y teorías",
         "Buena organización y presentación del plan de curso",
-        "Capacidad para relacionar teoría con práctica",
       ],
       improvements: [
         "Incrementar el uso de materiales en idioma extranjero",
         "Diversificar las estrategias metodológicas",
-        "Fortalecer la retroalimentación individualizada",
       ],
       recommendations: [
         "Integrar más recursos multimedia en idioma inglés gradualmente",
         "Implementar metodologías activas como aprendizaje basado en proyectos",
-        "Crear espacios de consulta personalizada adicionales",
       ],
     );
   }
 
+  // ==================== CONVERSIÓN DE DATOS ====================
+
+  /// Convierte QuestionResponseData a QuestionReport para la UI
+  List<QuestionReport> _convertToQuestionReports(List<QuestionResponseData> data) {
+    return data.map((q) {
+      return QuestionReport(
+        id: q.id,
+        text: q.text,
+        category: q.category,
+        aspect: q.aspect,
+        responses: q.responses,
+        average: q.average,
+      );
+    }).toList();
+  }
+
+  // ==================== BUILD ====================
+
   @override
   Widget build(BuildContext context) {
+    // Si hay error y no hay datos, mostrar pantalla de error
+    if (_errorMessage != null && _responsesData == null && !_isLoading) {
+      return _buildErrorScreen();
+    }
+
+    // Si está cargando y no hay datos, mostrar pantalla de carga
+    if (_isLoading && _responsesData == null) {
+      return _buildLoadingScreen();
+    }
+
+    // Mostrar contenido normal
     return Container(
       color: Colors.black87,
       child: SafeArea(
@@ -175,31 +270,37 @@ class _TeacherReportModalState extends State<TeacherReportModal>
             children: [
               ReportHeader(
                 teacherName: widget.teacher.name,
-                onClose: () => Navigator.pop(context),
+                onClose: () {
+                  if (mounted) {
+                    Navigator.pop(context);
+                  }
+                },
               ),
               _buildTabs(),
               Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    ResponsesTab(
-                      questions: _questions,
-                      averageScore: 4.1,
-                      totalResponses: 119,
-                      expectedResponses: 150, // Hardcodeado: 150 respuestas esperadas
-                    ),
-                    SubjectsTab(
-                      subjects: widget.teacher.subjects,
-                      careerName: widget.teacher.careerName,
-                    ),
-                    AIAnalysisTab(
-                      insights: _aiInsights,
-                    ),
-                    CommentsTab(
-                      comments: _comments,
-                    ),
-                  ],
-                ),
+                child: _responsesData == null
+                    ? _buildEmptyState()
+                    : TabBarView(
+                        controller: _tabController,
+                        children: [
+                          ResponsesTab(
+                            questions: _convertToQuestionReports(_responsesData!.questions),
+                            averageScore: _responsesData!.averageScore,
+                            totalResponses: _responsesData!.completedEvaluations,
+                            expectedResponses: _responsesData!.totalEvaluations,
+                          ),
+                          SubjectsTab(
+                            subjects: widget.teacher.subjects,
+                            careerName: widget.teacher.careerName,
+                          ),
+                          AIAnalysisTab(
+                            insights: _aiInsights,
+                          ),
+                          CommentsTab(
+                            comments: _comments,
+                          ),
+                        ],
+                      ),
               ),
             ],
           ),
@@ -288,6 +389,105 @@ class _TeacherReportModalState extends State<TeacherReportModal>
             ),
           );
         },
+      ),
+    );
+  }
+
+  // ==================== ESTADOS ====================
+
+  Widget _buildLoadingScreen() {
+    final palette = AppColors.getPaletteForRole(UserRole.admin);
+    
+    return Container(
+      color: Colors.white,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: palette.primary),
+            const SizedBox(height: 16),
+            const Text(
+              'Cargando informe...',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorScreen() {
+    return Container(
+      color: Colors.white,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Colors.red,
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Error al cargar el informe',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                _errorMessage ?? 'Error desconocido',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF6B7280),
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  OutlinedButton(
+                    onPressed: () {
+                      if (mounted) {
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: const Text('Cerrar'),
+                  ),
+                  const SizedBox(width: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      if (mounted) {
+                        _loadReportData();
+                      }
+                    },
+                    child: const Text('Reintentar'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return const Center(
+      child: Text(
+        'No hay datos disponibles',
+        style: TextStyle(
+          fontSize: 14,
+          color: Color(0xFF6B7280),
+        ),
       ),
     );
   }

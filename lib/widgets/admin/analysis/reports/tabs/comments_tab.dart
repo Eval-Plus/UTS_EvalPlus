@@ -228,7 +228,7 @@ class _CommentsTabState extends State<CommentsTab> {
                   Text(
                     '${_satisfactionRate.toStringAsFixed(1)}%',
                     style: const TextStyle(
-                      fontSize: 38,
+                      fontSize: 32,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       height: 1,

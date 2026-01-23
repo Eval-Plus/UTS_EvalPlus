@@ -69,7 +69,7 @@ class ConfigProgressCard extends StatelessWidget {
             Text(
               title,
               style: TextStyle(
-                fontSize: 13.5,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: textColor,
               ),
@@ -79,7 +79,7 @@ class ConfigProgressCard extends StatelessWidget {
         Text(
           '${percentage.toStringAsFixed(1)}%',
           style: TextStyle(
-            fontSize: 16.5,
+            fontSize: 15,
             fontWeight: FontWeight.bold,
             color: textColor,
           ),

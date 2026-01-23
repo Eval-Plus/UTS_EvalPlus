@@ -2,7 +2,7 @@
 /// Ubicación: lib/widgets/admin/analysis/analysis_stats_grid.dart
 
 import 'package:flutter/material.dart';
-import 'package:eval_plus/models/teacher_analysis_model.dart';
+import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
 import 'package:eval_plus/utils/admin/admin_analysis_constants.dart';
 
 class AnalysisStatsGrid extends StatelessWidget {
