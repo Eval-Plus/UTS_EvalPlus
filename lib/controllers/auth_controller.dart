@@ -7,7 +7,6 @@ import 'dart:io' show Platform;
 import 'package:eval_plus/webviews/microsoft_auth_webview.dart';
 
 // Services
-import 'package:eval_plus/services/api/auth_api_service.dart';
 import 'package:eval_plus/services/storage/auth_storage_service.dart';
 
 // Screens

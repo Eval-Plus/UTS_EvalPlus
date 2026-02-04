@@ -4,7 +4,6 @@ import 'package:eval_plus/widgets/common/custom_bottom_nav_bar.dart';
 import 'package:eval_plus/widgets/common/custom_header_wave.dart';
 import 'package:eval_plus/widgets/common/custom_top_bar.dart';
 // Models
-import 'package:eval_plus/models/user_model.dart';
 class BaseScreenLayout extends StatelessWidget {
   final String topBarTitle;
   final String topBarSubtitle;

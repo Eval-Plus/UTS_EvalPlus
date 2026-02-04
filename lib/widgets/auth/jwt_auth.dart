@@ -11,10 +11,10 @@ class ManualJwtAuthWidget extends StatefulWidget {
   final Function(String token)? onTokenSubmit;
 
   const ManualJwtAuthWidget({
-    Key? key,
+    super.key,
     this.onCancel,
     this.onTokenSubmit,
-  }) : super(key: key);
+  });
 
   @override
   State<ManualJwtAuthWidget> createState() => _ManualJwtAuthWidgetState();

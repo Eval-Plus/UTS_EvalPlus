@@ -1,5 +1,6 @@
 /// Controlador para el análisis administrativo (Actualizado)
 /// Ubicación: lib/controllers/admin/admin_analysis_controller.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/admin/teacher_analysis_model.dart';

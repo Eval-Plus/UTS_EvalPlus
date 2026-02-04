@@ -1,5 +1,6 @@
 /// Widget del header de configuración
 /// Ubicación: lib/widgets/admin/config_header.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/admin/admin_dashboard_model.dart';

@@ -1,5 +1,6 @@
 /// Pantalla principal después del login (Refactorizada)
 /// Ubicación: lib/screen/inside_screen.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

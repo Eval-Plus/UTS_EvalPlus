@@ -1,5 +1,6 @@
 /// Tab de comentarios del reporte (Sin filtro de materias + Satisfacción)
 /// Ubicación: lib/widgets/admin/analysis/reports/tabs/comments_tab.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';
@@ -122,7 +123,7 @@ class _CommentsTabState extends State<CommentsTab> {
         border: Border.all(color: const Color(0xFFE5E7EB)),
       ),
       child: DropdownButtonFormField<String>(
-        value: _commentFilter,
+        initialValue: _commentFilter,
         decoration: const InputDecoration(
           contentPadding: EdgeInsets.symmetric(
             horizontal: 12,

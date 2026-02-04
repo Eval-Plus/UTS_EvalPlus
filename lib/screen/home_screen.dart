@@ -198,7 +198,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _BoxInferior extends StatelessWidget {
-  const _BoxInferior({super.key});
+  const _BoxInferior();
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +214,6 @@ class _BoxInferior extends StatelessWidget {
 
 class _ImageBoxSuperior extends StatelessWidget {
   const _ImageBoxSuperior({
-    super.key,
     required this.size,
   });
 

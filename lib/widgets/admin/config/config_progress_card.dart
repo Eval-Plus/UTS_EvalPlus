@@ -1,5 +1,6 @@
 /// Widget de tarjeta de progreso para sincronizaciones
 /// Ubicación: lib/widgets/admin/config_progress_card.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/utils/admin/admin_config_constants.dart';

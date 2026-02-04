@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'package:eval_plus/config/app_colors.dart';
 
 // Controllers
 import 'package:eval_plus/controllers/user_session_controller.dart';

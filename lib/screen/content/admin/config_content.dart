@@ -1,6 +1,7 @@
 /// Contenido de configuración para ADMINISTRADORES (Refactorizado v3)
 /// Panel de sincronización y gestión del sistema
 /// Ubicación: lib/screen/content/admin/config_content.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

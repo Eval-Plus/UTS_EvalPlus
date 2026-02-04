@@ -1,5 +1,6 @@
 /// Servicio para el dashboard de administración
 /// Ubicación: lib/services/admin_dashboard_service.dart
+library;
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';

@@ -1,5 +1,6 @@
 /// Widget para el diálogo de confirmación de logout
 /// Ubicación: lib/widgets/inside_screen/logout_confirmation_dialog.dart
+library;
 
 import 'package:flutter/material.dart';
 

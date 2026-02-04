@@ -1,5 +1,6 @@
 /// Tab de materias del reporte (Diseño Elegante y Refinado)
 /// Ubicación: lib/widgets/admin/analysis/reports/tabs/subjects_tab.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';

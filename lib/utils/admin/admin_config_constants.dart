@@ -1,5 +1,6 @@
 /// Constantes para la configuración de administrador
 /// Ubicación: lib/utils/admin_config_constants.dart
+library;
 
 import 'package:flutter/material.dart';
 

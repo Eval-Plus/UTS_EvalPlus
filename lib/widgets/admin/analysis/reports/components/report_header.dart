@@ -1,5 +1,6 @@
 /// Header del modal de reporte
 /// Ubicación: lib/widgets/admin/analysis/reports/components/report_header.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';

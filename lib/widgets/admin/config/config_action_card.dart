@@ -1,5 +1,6 @@
 /// Widget de tarjeta de acción para sincronizaciones (con estado deshabilitado)
 /// Ubicación: lib/widgets/admin/config/config_action_card.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';

@@ -1,5 +1,6 @@
 /// Widget para el PageView de contenidos con animaciones
 /// Ubicación: lib/widgets/inside_screen/content_page_view.dart
+library;
 
 import 'package:flutter/material.dart';
 

@@ -1,5 +1,6 @@
 /// Widget animado para expansión de tarjeta de docente
 /// Ubicación: lib/animations/admin/animated_teacher_expansion.dart
+library;
 
 import 'package:flutter/material.dart';
 

@@ -1,5 +1,6 @@
 /// Widget del header de análisis
 /// Ubicación: lib/widgets/admin/analysis_header.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/utils/admin/admin_analysis_constants.dart';

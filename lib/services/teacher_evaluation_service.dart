@@ -261,7 +261,7 @@ class TeacherEvaluationsService {
             debugPrint('📦 [Teacher Comments] Estructura: Array directo (${commentsData.length} items)');
           } else {
             debugPrint('⚠️ [Teacher Comments] Estructura desconocida');
-            debugPrint('⚠️ [Teacher Comments] Data keys: ${responseData is Map ? (responseData as Map).keys.toList() : 'No es Map'}');
+            debugPrint('⚠️ [Teacher Comments] Data keys: ${responseData is Map ? (responseData).keys.toList() : 'No es Map'}');
             throw Exception('Estructura de respuesta no reconocida');
           }
           

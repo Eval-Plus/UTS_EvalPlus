@@ -1,5 +1,6 @@
 /// Servicio Singleton para reportes de docentes con caché
 /// Ubicación: lib/services/teacher_report_service.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/services/api/teacher_report_api_service.dart';

@@ -1,5 +1,6 @@
 /// Tab de análisis de IA del reporte (Rediseñado)
 /// Ubicación: lib/widgets/admin/analysis/reports/tabs/ai_analysis_tab.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';

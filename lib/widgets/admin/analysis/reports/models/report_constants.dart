@@ -1,5 +1,6 @@
 /// Constantes para el sistema de reportes
 /// Ubicación: lib/widgets/admin/analysis/reports/models/report_constants.dart
+library;
 
 import 'package:flutter/material.dart';
 

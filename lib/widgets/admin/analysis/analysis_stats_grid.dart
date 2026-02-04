@@ -1,5 +1,6 @@
 /// Grid de estadísticas globales (con gradientes)
 /// Ubicación: lib/widgets/admin/analysis/analysis_stats_grid.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/admin/teacher_analysis_model.dart';

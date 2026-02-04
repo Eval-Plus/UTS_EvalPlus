@@ -1,5 +1,6 @@
 /// Widget para el diálogo de loading durante logout
 /// Ubicación: lib/widgets/inside_screen/logout_loading_dialog.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';

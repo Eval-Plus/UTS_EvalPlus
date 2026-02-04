@@ -1,5 +1,6 @@
 /// Controlador para la pantalla principal (Inside Screen)
 /// Ubicación: lib/controllers/inside_screen_controller.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';

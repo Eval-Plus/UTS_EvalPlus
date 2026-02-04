@@ -1,5 +1,6 @@
 /// Tarjeta de docente para análisis (Con animaciones y modal de informe)
 /// Ubicación: lib/widgets/admin/analysis/analysis_teacher_card.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';

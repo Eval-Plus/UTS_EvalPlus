@@ -1,5 +1,6 @@
 /// Botón animado para toggle de filtros
 /// Ubicación: lib/animations/admin/animated_filter_button.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';

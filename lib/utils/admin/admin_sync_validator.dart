@@ -1,5 +1,6 @@
 /// Validador de reglas de negocio para sincronizaciones de administrador
 /// Ubicación: lib/utils/admin/admin_sync_validator.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/admin/admin_dashboard_model.dart';

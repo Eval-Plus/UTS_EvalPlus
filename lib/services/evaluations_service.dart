@@ -28,7 +28,7 @@ class EvaluationsService {
     if (!_listeners.contains(listener)) {
       _listeners.add(listener);
       debugPrint('📢 Listener agregado. Total: ${_listeners.length}');
-      debugPrint('🔍 Hash del servicio: ${this.hashCode}');
+      debugPrint('🔍 Hash del servicio: ${hashCode}');
     }
   }
 
@@ -129,7 +129,7 @@ class EvaluationsService {
   /// Se debe llamar cuando se completa una evaluación
   void invalidateCache() {
     debugPrint('🗑️ Invalidando cache de evaluaciones...');
-    debugPrint('🔍 Hash del servicio: ${this.hashCode}');
+    debugPrint('🔍 Hash del servicio: ${hashCode}');
     debugPrint('📢 Total listeners registrados: ${_listeners.length}');
     _cachedEvaluations = null;
     _lastFetchTime = null;

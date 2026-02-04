@@ -75,7 +75,7 @@ class DashboardStats {
 
   factory DashboardStats.fromJson(Map<String, dynamic> json) {
     // 🔥 HELPER: Parsea int de forma segura
-    int _parseInt(dynamic value) {
+    int parseInt(dynamic value) {
       if (value == null) return 0;
       if (value is int) return value;
       if (value is String) return int.tryParse(value) ?? 0;
@@ -83,7 +83,7 @@ class DashboardStats {
     }
 
     // 🔥 HELPER: Parsea double de forma segura
-    double _parseDouble(dynamic value) {
+    double parseDouble(dynamic value) {
       if (value == null) return 0.0;
       if (value is double) return value;
       if (value is int) return value.toDouble();
@@ -92,20 +92,20 @@ class DashboardStats {
     }
 
     return DashboardStats(
-      totalStudents: _parseInt(json['totalStudents']),
-      syncedStudents: _parseInt(json['syncedStudents']),
-      pendingStudents: _parseInt(json['pendingStudents']),
-      studentsSyncRate: _parseDouble(json['studentsSyncRate']),
-      totalTeachers: _parseInt(json['totalTeachers']),
-      enrolledTeachers: _parseInt(json['enrolledTeachers']),
-      pendingTeachers: _parseInt(json['pendingTeachers']),
-      teachersEnrollRate: _parseDouble(json['teachersEnrollRate']),
-      totalEvaluations: _parseInt(json['totalEvaluations']),
-      activeEvaluations: _parseInt(json['activeEvaluations']),
-      completedEvaluations: _parseInt(json['completedEvaluations']),
-      closedEvaluations: _parseInt(json['closedEvaluations']),
-      evaluationsCompletionRate: _parseDouble(json['evaluationsCompletionRate']),
-      pendingFirstLogin: _parseInt(json['pendingFirstLogin']),
+      totalStudents: parseInt(json['totalStudents']),
+      syncedStudents: parseInt(json['syncedStudents']),
+      pendingStudents: parseInt(json['pendingStudents']),
+      studentsSyncRate: parseDouble(json['studentsSyncRate']),
+      totalTeachers: parseInt(json['totalTeachers']),
+      enrolledTeachers: parseInt(json['enrolledTeachers']),
+      pendingTeachers: parseInt(json['pendingTeachers']),
+      teachersEnrollRate: parseDouble(json['teachersEnrollRate']),
+      totalEvaluations: parseInt(json['totalEvaluations']),
+      activeEvaluations: parseInt(json['activeEvaluations']),
+      completedEvaluations: parseInt(json['completedEvaluations']),
+      closedEvaluations: parseInt(json['closedEvaluations']),
+      evaluationsCompletionRate: parseDouble(json['evaluationsCompletionRate']),
+      pendingFirstLogin: parseInt(json['pendingFirstLogin']),
     );
   }
 
@@ -292,14 +292,14 @@ class SyncResult {
 
   factory SyncResult.fromJson(Map<String, dynamic> json) {
     // 🔥 HELPER: Parsea int de forma segura (puede ser null)
-    int? _parseIntNullable(dynamic value) {
+    int? parseIntNullable(dynamic value) {
       if (value == null) return null;
       if (value is int) return value;
       if (value is String) return int.tryParse(value);
       return null;
     }
 
-    int _parseInt(dynamic value) {
+    int parseInt(dynamic value) {
       if (value == null) return 0;
       if (value is int) return value;
       if (value is String) return int.tryParse(value) ?? 0;
@@ -307,14 +307,14 @@ class SyncResult {
     }
 
     return SyncResult(
-      total: _parseInt(json['total']),
-      procesados: _parseInt(json['procesados']),
-      exitosos: _parseInt(json['exitosos']),
-      errores: _parseInt(json['errores']),
-      yaInscritos: _parseIntNullable(json['yaInscritos']),
-      yaAsignados: _parseIntNullable(json['yaAsignados']),
-      creadas: _parseIntNullable(json['creadas']),
-      omitidas: _parseIntNullable(json['omitidas']),
+      total: parseInt(json['total']),
+      procesados: parseInt(json['procesados']),
+      exitosos: parseInt(json['exitosos']),
+      errores: parseInt(json['errores']),
+      yaInscritos: parseIntNullable(json['yaInscritos']),
+      yaAsignados: parseIntNullable(json['yaAsignados']),
+      creadas: parseIntNullable(json['creadas']),
+      omitidas: parseIntNullable(json['omitidas']),
       duracion: json['duracion'] as String,
       timestamp: json['timestamp'] as String,
     );

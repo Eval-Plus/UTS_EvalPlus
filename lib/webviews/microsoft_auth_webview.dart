@@ -15,11 +15,11 @@ class MicrosoftAuthWebView extends StatefulWidget {
   final VoidCallback onAuthError;
 
   const MicrosoftAuthWebView({
-    Key? key,
+    super.key,
     required this.authUrl,
     required this.onAuthSuccess,
     required this.onAuthError,
-  }) : super(key: key);
+  });
 
   @override
   State<MicrosoftAuthWebView> createState() => _MicrosoftAuthWebViewState();
@@ -126,8 +126,6 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView>
       final content = await _controller.runJavaScriptReturningResult(
         'document.body.innerText'
       );
-
-      if (content == null) return;
 
       String contentString = content.toString().trim();
 

@@ -1,5 +1,6 @@
 /// Constantes para el análisis administrativo
 /// Ubicación: lib/utils/admin_analysis_constants.dart
+library;
 
 import 'package:flutter/material.dart';
 

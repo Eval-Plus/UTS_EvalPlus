@@ -1,5 +1,6 @@
 /// Widget animado para el panel de filtros
 /// Ubicación: lib/animations/admin/animated_filter_panel.dart
+library;
 
 import 'package:flutter/material.dart';
 

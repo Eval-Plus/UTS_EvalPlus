@@ -1,5 +1,6 @@
 /// Modal de Informe Completo del Docente (Con datos reales de API) - FIXED
 /// Ubicación: lib/widgets/admin/analysis/reports/teacher_report_modal.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';

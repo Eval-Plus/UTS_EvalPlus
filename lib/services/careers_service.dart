@@ -1,5 +1,6 @@
 /// Servicio UNIFICADO para manejar carreras
 /// Ubicación: lib/services/careers_service.dart
+library;
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;

@@ -1,5 +1,6 @@
 /// Modelos para el reporte completo del docente
 /// Ubicación: lib/models/teacher_report_model.dart
+library;
 
 // ==============================================
 // RESPUESTA DE ANÁLISIS DE RESPUESTAS

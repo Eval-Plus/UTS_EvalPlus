@@ -1,5 +1,6 @@
 /// Tab de respuestas del reporte (Actualizado con datos reales)
 /// Ubicación: lib/widgets/admin/analysis/reports/tabs/responses_tab.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';

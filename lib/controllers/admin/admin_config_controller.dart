@@ -1,5 +1,6 @@
 /// Controlador para la configuración de administrador (Refactorizado)
 /// Ubicación: lib/controllers/admin/admin_config_controller.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/models/admin/admin_dashboard_model.dart';

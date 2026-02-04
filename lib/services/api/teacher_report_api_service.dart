@@ -1,5 +1,6 @@
 /// Servicio API para reportes de docentes
 /// Ubicación: lib/services/api/teacher_report_api_service.dart
+library;
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;

@@ -1,5 +1,6 @@
 /// Panel de filtros para el análisis (Con carreras dinámicas)
 /// Ubicación: lib/widgets/admin/analysis/analysis_filters_panel.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';

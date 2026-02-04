@@ -1,5 +1,6 @@
 /// Widget del estado del sistema
 /// Ubicación: lib/widgets/admin/config_system_status.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';

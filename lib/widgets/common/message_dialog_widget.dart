@@ -21,7 +21,7 @@ class MessageDialogWidget extends StatelessWidget {
   final Color? customColor; // 🎨 Color personalizado para el diálogo
 
   const MessageDialogWidget({
-    Key? key,
+    super.key,
     required this.type,
     required this.title,
     required this.message,
@@ -32,7 +32,7 @@ class MessageDialogWidget extends StatelessWidget {
     this.customIcon,
     this.barrierDismissible = false,
     this.customColor, // 🎨 Nuevo parámetro
-  }) : super(key: key);
+  });
 
   // Constructor para error de conexión (retrocompatibilidad)
   const MessageDialogWidget.connectionError({

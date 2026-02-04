@@ -1,5 +1,6 @@
 /// Contenido de análisis administrativo (Refactorizado - v2)
 /// Ubicación: lib/screen/content/admin/analysis_content.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

@@ -1,5 +1,6 @@
 /// Tarjeta de pregunta para reportes (Actualizada)
 /// Ubicación: lib/widgets/admin/analysis/reports/components/question_card.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';

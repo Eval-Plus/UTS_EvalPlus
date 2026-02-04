@@ -1,5 +1,6 @@
 /// Modelos para el sistema de reportes de docentes
 /// Ubicación: lib/widgets/admin/analysis/reports/models/report_models.dart
+library;
 
 import 'package:flutter/material.dart';
 

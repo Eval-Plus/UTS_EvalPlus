@@ -135,42 +135,6 @@ class NavigationConfig {
   /// Obtiene el índice inicial seguro (siempre 0)
   static int getInitialIndex() => 0;
 
-  /// Widget placeholder para contenidos no implementados
-  static Widget _buildPlaceholder(String title, String description, IconData icon) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 80,
-              color: Colors.grey.shade400,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 /// Clase inmutable que representa un tab de navegación

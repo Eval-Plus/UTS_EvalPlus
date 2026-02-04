@@ -1,5 +1,6 @@
 /// Widget para el diálogo de carga de reportes
 /// Ubicación: lib/widgets/admin/analysis/reports/loading/report_loading_dialog.dart
+library;
 
 import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
