@@ -154,7 +154,7 @@ class _ManualJwtAuthWidgetState extends State<ManualJwtAuthWidget> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 14),
 
             // Instrucciones
             Container(
@@ -193,7 +193,7 @@ class _ManualJwtAuthWidgetState extends State<ManualJwtAuthWidget> {
                 ],
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 14),
 
             // Campo de texto
             TextField(
@@ -210,7 +210,7 @@ class _ManualJwtAuthWidgetState extends State<ManualJwtAuthWidget> {
                 contentPadding: const EdgeInsets.all(16),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 14),
 
             // Botones
             Row(
