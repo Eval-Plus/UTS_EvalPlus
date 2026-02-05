@@ -69,6 +69,9 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView>
             }
             debugPrint('Page finished: $url');
             
+            // 🔧 MEJORA: Inyectar CSS y JS para mejorar el comportamiento de inputs
+            await _injectInputFixes();
+            
             await _checkForAuthResponse();
           },
           onNavigationRequest: (request) {
@@ -85,6 +88,48 @@ class _MicrosoftAuthWebViewState extends State<MicrosoftAuthWebView>
       );
 
     _loadAuthUrl();
+  }
+
+  /// 🔧 NUEVO: Inyecta mejoras de CSS y JavaScript para los inputs
+  Future<void> _injectInputFixes() async {
+    try {
+      // JavaScript para mejorar el comportamiento de los inputs
+      const String jsCode = '''
+        (function() {
+          // Mejorar todos los inputs de tipo text, email, password
+          const inputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
+          
+          inputs.forEach(function(input) {
+            // Forzar comportamiento nativo del input
+            input.setAttribute('autocomplete', 'off');
+            input.setAttribute('autocorrect', 'off');
+            input.setAttribute('autocapitalize', 'off');
+            input.setAttribute('spellcheck', 'false');
+            
+            // Agregar listeners para mejorar respuesta
+            input.addEventListener('input', function(e) {
+              // Forzar actualización del valor
+              this.value = this.value;
+            }, true);
+            
+            // Mejorar el borrado
+            input.addEventListener('keydown', function(e) {
+              if (e.key === 'Backspace' || e.keyCode === 8) {
+                // Permitir propagación natural del evento
+                return true;
+              }
+            }, true);
+          });
+          
+          console.log('Input fixes injected successfully');
+        })();
+      ''';
+      
+      await _controller.runJavaScript(jsCode);
+      debugPrint('✅ Input fixes injected');
+    } catch (e) {
+      debugPrint('⚠️ Error injecting input fixes: $e');
+    }
   }
 
   Future<void> _loadAuthUrl() async {

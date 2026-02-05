@@ -14,6 +14,12 @@ void main() {
   // Asegurar que los widgets estén inicializados
   WidgetsFlutterBinding.ensureInitialized();
   
+  // 🔒 Bloquear orientación solo a modo vertical (portrait)
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  
   // Configurar modo inmersivo (ocultar barras del sistema)
   SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.immersiveSticky,
