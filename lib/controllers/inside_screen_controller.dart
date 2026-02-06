@@ -13,6 +13,9 @@ import 'package:eval_plus/services/storage/auth_storage_service.dart';
 import 'package:eval_plus/services/careers_service.dart';
 import 'package:eval_plus/services/questions_service.dart';
 import 'package:eval_plus/services/subjects_service.dart';
+import 'package:eval_plus/services/admin/admin_dashboard_service.dart';
+import 'package:eval_plus/services/admin/admin_analysis_service.dart';
+import 'package:eval_plus/services/admin/teacher_report_service.dart';
 
 class InsideScreenController extends ChangeNotifier {
   // ==================== ESTADO ====================
@@ -206,12 +209,17 @@ class InsideScreenController extends ChangeNotifier {
       await AuthStorageService.clearAuthData();
       await UserController.clearUserProfile();
 
-      // Limpiar cachés
+      // Limpiar cachés generales
       CareersService().clearCache();
       QuestionsService().clearCache();
       SubjectsService().clearCache();
+
+      // Limpiar cachés de servicios admin
+      AdminDashboardService().clearCache();
+      AdminAnalysisService().clearCache();
+      TeacherReportService().clearAllCache();
       
-      debugPrint('🔴 Auth data cleared');
+      debugPrint('🔴 Auth data and all caches cleared');
       
       await Future.delayed(const Duration(milliseconds: 1500));
       

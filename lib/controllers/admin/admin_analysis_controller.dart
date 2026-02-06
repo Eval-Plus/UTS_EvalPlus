@@ -7,7 +7,6 @@ import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
 import 'package:eval_plus/models/career_model.dart';
 import 'package:eval_plus/services/admin/admin_analysis_service.dart';
 import 'package:eval_plus/services/careers_service.dart';
-import 'package:eval_plus/services/storage/auth_storage_service.dart';
 
 class AdminAnalysisController extends ChangeNotifier {
   final AdminAnalysisService _analysisService;
@@ -75,9 +74,7 @@ class AdminAnalysisController extends ChangeNotifier {
   AdminAnalysisController({
     AdminAnalysisService? analysisService,
     CareersService? careersService,
-  })  : _analysisService = analysisService ?? AdminAnalysisService(
-          getToken: () => AuthStorageService.getToken(),
-        ),
+  })  : _analysisService = analysisService ?? AdminAnalysisService(),
         _careersService = careersService ?? CareersService() {
     _init();
   }

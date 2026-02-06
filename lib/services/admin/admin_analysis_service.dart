@@ -5,9 +5,14 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:eval_plus/config/constants.dart';
 import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
+import 'package:eval_plus/services/storage/auth_storage_service.dart';
 
 class AdminAnalysisService extends ChangeNotifier {
-  final Future<String?> Function() getToken;
+  // ==================== SINGLETON ====================
+  
+  static final AdminAnalysisService _instance = AdminAnalysisService._internal();
+  factory AdminAnalysisService() => _instance;
+  AdminAnalysisService._internal();
 
   // ==================== CACHÉ ====================
   
@@ -19,12 +24,6 @@ class AdminAnalysisService extends ChangeNotifier {
   String? _cachedSortBy;
   
   static const Duration _cacheDuration = Duration(minutes: 5);
-
-  // ==================== CONSTRUCTOR ====================
-
-  AdminAnalysisService({
-    required this.getToken,
-  });
 
   // ==================== HELPERS DE CACHÉ ====================
 
@@ -78,7 +77,7 @@ class AdminAnalysisService extends ChangeNotifier {
 
   /// Headers comunes para todas las peticiones
   Future<Map<String, String>> _buildHeaders() async {
-    final token = await getToken();
+    final token = await AuthStorageService.getToken();
 
     if (token == null || token.isEmpty) {
       throw UnauthorizedException(
