@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_constants.dart';
+import 'package:eval_plus/widgets/admin/analysis/reports/components/states/empty_state.dart';
 
 class SubjectsTab extends StatelessWidget {
   final List<SubjectData> subjects;
@@ -19,6 +20,14 @@ class SubjectsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (subjects.isEmpty) {
+      return const EmptyState(
+        icon: Icons.menu_book_outlined,
+        title: 'No hay materias disponibles',
+        description: 'No se encontraron materias asignadas para este docente',
+      );
+    }
+
     return ListView(
       padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
       children: subjects.map((subject) => _buildSubjectCard(subject)).toList(),

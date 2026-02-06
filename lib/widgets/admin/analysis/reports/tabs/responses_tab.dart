@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_constants.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/components/question_card.dart';
+import 'package:eval_plus/widgets/admin/analysis/reports/components/states/empty_state.dart';
 
 class ResponsesTab extends StatefulWidget {
   final List<QuestionReport> questions;
@@ -62,7 +63,11 @@ class _ResponsesTabState extends State<ResponsesTab> {
           
           // Mostrar mensaje si no hay preguntas
           if (widget.questions.isEmpty)
-            _buildEmptyState()
+            const EmptyState(
+              icon: Icons.assignment_outlined,
+              title: 'No hay preguntas disponibles',
+              description: 'No se encontraron respuestas para este docente',
+            )
           else
             ...widget.questions.asMap().entries.map((entry) {
               final index = entry.key;
@@ -306,42 +311,6 @@ class _ResponsesTabState extends State<ResponsesTab> {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(48),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.assignment_outlined,
-              size: 64,
-              color: Colors.grey[300],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'No hay preguntas disponibles',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'No se encontraron respuestas para este docente',
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.grey[500],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
     );
   }
 
