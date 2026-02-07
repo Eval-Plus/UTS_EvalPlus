@@ -103,19 +103,55 @@ class QuestionReport {
 }
 
 // ==============================================
-// MODELO DE COMENTARIO (Simplificado - Sin Subject/Career)
+// MODELO DE COMENTARIO (Con datos completos del backend)
 // ==============================================
 
 class CommentReport {
   final int id;
   final String text;
   final String sentiment;
+  final double? sentimentScore;
+  final DateTime? analyzedAt;
+  final DateTime? completedAt;
 
   CommentReport({
     required this.id,
     required this.text,
     required this.sentiment,
+    this.sentimentScore,
+    this.analyzedAt,
+    this.completedAt,
   });
+
+  /// Factory constructor desde JSON del backend
+  factory CommentReport.fromJson(Map<String, dynamic> json) {
+    return CommentReport(
+      id: json['id'] as int,
+      text: json['text'] as String,
+      sentiment: json['sentiment'] as String? ?? 'neutral',
+      sentimentScore: json['sentimentScore'] != null 
+          ? (json['sentimentScore'] as num).toDouble() 
+          : null,
+      analyzedAt: json['analyzedAt'] != null 
+          ? DateTime.parse(json['analyzedAt'] as String) 
+          : null,
+      completedAt: json['completedAt'] != null 
+          ? DateTime.parse(json['completedAt'] as String) 
+          : null,
+    );
+  }
+
+  /// Convierte a JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'text': text,
+      'sentiment': sentiment,
+      'sentimentScore': sentimentScore,
+      'analyzedAt': analyzedAt?.toIso8601String(),
+      'completedAt': completedAt?.toIso8601String(),
+    };
+  }
 
   /// Obtiene el color del borde según el sentimiento
   Color get borderColor {
@@ -150,6 +186,30 @@ class CommentReport {
         return 'Negativo';
       default:
         return 'Neutral';
+    }
+  }
+
+  /// Obtiene el ícono según el sentimiento
+  IconData get icon {
+    switch (sentiment) {
+      case 'positive':
+        return Icons.sentiment_satisfied;
+      case 'negative':
+        return Icons.sentiment_dissatisfied;
+      default:
+        return Icons.sentiment_neutral;
+    }
+  }
+
+  /// Obtiene el color del ícono según el sentimiento
+  Color get iconColor {
+    switch (sentiment) {
+      case 'positive':
+        return const Color(0xFF10B981);
+      case 'negative':
+        return const Color(0xFFEF4444);
+      default:
+        return const Color(0xFF6B7280);
     }
   }
 }

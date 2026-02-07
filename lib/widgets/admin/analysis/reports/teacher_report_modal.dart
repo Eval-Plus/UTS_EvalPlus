@@ -1,4 +1,4 @@
-/// Modal de Informe Completo del Docente (Con datos reales de API) - FIXED
+/// Modal de Informe Completo del Docente (Con datos reales de API + Comentarios)
 /// Ubicación: lib/widgets/admin/analysis/reports/teacher_report_modal.dart
 library;
 
@@ -35,14 +35,16 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   // Datos de la API
   TeacherResponsesReport? _responsesData;
+  List<CommentReport> _comments = [];
   
-  // Datos hardcodeados (temporalmente para otras tabs)
-  late List<CommentReport> _comments;
+  // Datos hardcodeados (temporalmente para IA)
   late AIInsights _aiInsights;
 
   // Estado de carga
-  bool _isLoading = true;
-  String? _errorMessage;
+  bool _isLoadingResponses = true;
+  bool _isLoadingComments = true;
+  String? _responsesError;
+  String? _commentsError;
   bool _isLoadingDialogShown = false;
 
   @override
@@ -72,8 +74,10 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     if (!mounted) return;
 
     setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+      _isLoadingResponses = true;
+      _isLoadingComments = true;
+      _responsesError = null;
+      _commentsError = null;
     });
 
     try {
@@ -82,12 +86,19 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       // Mostrar diálogo de carga
       await _showLoadingDialog();
 
-      // Cargar datos de respuestas desde la API
-      final responsesData = await _reportService.getResponsesReport(
-        teacherId: widget.teacher.id,
-        periodo: widget.teacher.period,
-        forceRefresh: false,
-      );
+      // Cargar datos en paralelo
+      final results = await Future.wait([
+        _reportService.getResponsesReport(
+          teacherId: widget.teacher.id,
+          periodo: widget.teacher.period,
+          forceRefresh: false,
+        ),
+        _reportService.getTeacherComments(
+          teacherId: widget.teacher.id,
+          periodo: widget.teacher.period,
+          forceRefresh: false,
+        ),
+      ]);
 
       if (!mounted) return;
 
@@ -97,17 +108,22 @@ class _TeacherReportModalState extends State<TeacherReportModal>
         _isLoadingDialogShown = false;
       }
 
-      if (responsesData == null) {
-        throw Exception(_reportService.responsesError ?? 'Error al cargar datos');
-      }
+      // Extraer resultados
+      final responsesData = results[0] as TeacherResponsesReport?;
+      final comments = results[1] as List<CommentReport>;
 
       setState(() {
         _responsesData = responsesData;
-        _isLoading = false;
-        _errorMessage = null;
+        _comments = comments;
+        _isLoadingResponses = false;
+        _isLoadingComments = false;
+        _responsesError = responsesData == null ? _reportService.responsesError : null;
+        _commentsError = _reportService.commentsError;
       });
       
       debugPrint('✅ Datos del reporte cargados exitosamente');
+      debugPrint('   - Respuestas: ${responsesData != null ? "OK" : "Error"}');
+      debugPrint('   - Comentarios: ${comments.length}');
     } catch (e) {
       debugPrint('💥 Error cargando datos del reporte: $e');
       
@@ -120,8 +136,10 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       }
       
       setState(() {
-        _isLoading = false;
-        _errorMessage = e.toString();
+        _isLoadingResponses = false;
+        _isLoadingComments = false;
+        _responsesError = e.toString();
+        _commentsError = e.toString();
       });
 
       // Esperar un frame antes de mostrar el error
@@ -195,24 +213,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
   // ==================== DATOS HARDCODEADOS (TEMPORAL) ====================
 
   void _initializeHardcodedData() {
-    _comments = [
-      CommentReport(
-        id: 1,
-        text: "Excelente profesor, explica muy bien y siempre está dispuesto a ayudar",
-        sentiment: "positive",
-      ),
-      CommentReport(
-        id: 2,
-        text: "Debería usar más ejemplos prácticos en clase",
-        sentiment: "neutral",
-      ),
-      CommentReport(
-        id: 3,
-        text: "Muy buen dominio de la materia, pero a veces va muy rápido",
-        sentiment: "positive",
-      ),
-    ];
-
     _aiInsights = AIInsights(
       profile: "Docente con excelente dominio técnico y fuerte compromiso con el aprendizaje estudiantil",
       strengths: [
@@ -251,14 +251,9 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   @override
   Widget build(BuildContext context) {
-    // Si hay error y no hay datos, mostrar pantalla de error
-    if (_errorMessage != null && _responsesData == null && !_isLoading) {
+    // Si hay error crítico en respuestas y no hay datos, mostrar pantalla de error
+    if (_responsesError != null && _responsesData == null && !_isLoadingResponses) {
       return _buildErrorScreen();
-    }
-
-    // Si está cargando y no hay datos, mostrar pantalla de carga
-    if (_isLoading && _responsesData == null) {
-      return _buildLoadingScreen();
     }
 
     // Mostrar contenido normal
@@ -279,29 +274,38 @@ class _TeacherReportModalState extends State<TeacherReportModal>
               ),
               _buildTabs(),
               Expanded(
-                child: _responsesData == null
-                    ? _buildEmptyState()
-                    : TabBarView(
-                        controller: _tabController,
-                        children: [
-                          ResponsesTab(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // Tab 1: Respuestas
+                    _isLoadingResponses || _responsesData == null
+                        ? _buildLoadingTab()
+                        : ResponsesTab(
                             questions: _convertToQuestionReports(_responsesData!.questions),
                             averageScore: _responsesData!.averageScore,
                             totalResponses: _responsesData!.completedEvaluations,
                             expectedResponses: _responsesData!.totalEvaluations,
                           ),
-                          SubjectsTab(
-                            subjects: widget.teacher.subjects,
-                            careerName: widget.teacher.careerName,
-                          ),
-                          AIAnalysisTab(
-                            insights: _aiInsights,
-                          ),
-                          CommentsTab(
-                            comments: _comments,
-                          ),
-                        ],
-                      ),
+                    
+                    // Tab 2: Materias
+                    SubjectsTab(
+                      subjects: widget.teacher.subjects,
+                      careerName: widget.teacher.careerName,
+                    ),
+                    
+                    // Tab 3: Análisis IA
+                    AIAnalysisTab(
+                      insights: _aiInsights,
+                    ),
+                    
+                    // Tab 4: Comentarios (con datos reales)
+                    CommentsTab(
+                      comments: _comments,
+                      isLoading: _isLoadingComments,
+                      errorMessage: _commentsError,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -380,7 +384,39 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                   ),
                   Tab(
                     height: 44,
-                    icon: const Icon(ReportConstants.commentsIcon, size: ReportConstants.tabIconSize),
+                    icon: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(ReportConstants.commentsIcon, size: ReportConstants.tabIconSize),
+                        // Badge con cantidad de comentarios
+                        if (_comments.isNotEmpty && !_isLoadingComments)
+                          Positioned(
+                            right: -8,
+                            top: -4,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                              constraints: const BoxConstraints(
+                                minWidth: 16,
+                                minHeight: 16,
+                              ),
+                              child: Text(
+                                '${_comments.length}',
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                     iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
                     text: showText ? ReportConstants.commentsTabLabel : null,
                     child: !showText ? const Text('Com.', maxLines: 1, overflow: TextOverflow.ellipsis) : null,
@@ -396,26 +432,23 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   // ==================== ESTADOS ====================
 
-  Widget _buildLoadingScreen() {
+  Widget _buildLoadingTab() {
     final palette = AppColors.getPaletteForRole(UserRole.admin);
     
-    return Container(
-      color: Colors.white,
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(color: palette.primary),
-            const SizedBox(height: 16),
-            const Text(
-              'Cargando informe...',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF6B7280),
-              ),
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          CircularProgressIndicator(color: palette.primary),
+          const SizedBox(height: 16),
+          const Text(
+            'Cargando datos...',
+            style: TextStyle(
+              fontSize: 14,
+              color: Color(0xFF6B7280),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -444,7 +477,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
               ),
               const SizedBox(height: 8),
               Text(
-                _errorMessage ?? 'Error desconocido',
+                _responsesError ?? 'Error desconocido',
                 style: const TextStyle(
                   fontSize: 14,
                   color: Color(0xFF6B7280),
@@ -476,18 +509,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return const Center(
-      child: Text(
-        'No hay datos disponibles',
-        style: TextStyle(
-          fontSize: 14,
-          color: Color(0xFF6B7280),
         ),
       ),
     );
