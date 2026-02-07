@@ -148,6 +148,8 @@ class AppColors {
       const Color(0xFF1A1A1A).withOpacity(0.10),
     ],
   );
+
+  static Color? get primary => null;
 }
 
 /// Clase que encapsula una paleta de colores para un rol específico

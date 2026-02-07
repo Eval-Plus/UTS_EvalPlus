@@ -17,7 +17,7 @@ class AppTheme {
       
       // Esquema de colores
       colorScheme: ColorScheme.light(
-        primary: AppColors.primary,
+        primary: AppColors.primary ?? Colors.blue,
         secondary: AppColors.accent,
         surface: AppColors.surface,
         error: AppColors.error,
@@ -156,6 +156,10 @@ class AppTheme {
       // ... configuración para dark mode
     );
   }
+}
+
+class DarkThemeColors {
+  static Color? get primary => null;
 }
 
 /// Extensiones útiles para colores

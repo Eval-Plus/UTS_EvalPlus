@@ -1,45 +1,51 @@
-## v0.5.3-rc (2026-02-05)
+## v0.5.4-rc (2026-02-07)
 ### Alcance de la versión
-Esta versión se enfoca en **mejoras de experiencia de usuario** mediante el bloqueo de orientación horizontal y optimizaciones en el sistema de autenticación de Microsoft.
+Esta versión se enfoca en **integrar datos reales, mejoras visuales y ajustes de experiencia de usuario** en módulos clave del sistema.
 
 ---
 
 ### Cambios principales
 
-#### 📱 Bloqueo de orientación horizontal
-- La aplicación ahora **solo permite orientación vertical** (portrait)
-- Mejora la consistencia visual y evita problemas de diseño en modo landscape
-- Implementación a nivel de sistema usando `SystemChrome.setPreferredOrientations`
+#### 💬 Integración de datos reales en comentarios
+- Se implementa el **mapeo de información real** en `comments_tab.dart`
+- Los comentarios ahora reflejan datos provenientes del backend en lugar de datos simulados
+- Mejora en la coherencia entre métricas y retroalimentación mostrada
 
-#### 🔐 Mejoras en WebView de autenticación Microsoft
-- **Inyección de JavaScript** para optimizar el comportamiento de campos de texto
-- Mejora significativa en la respuesta al escribir y borrar texto
-- Deshabilitación de autocompletado, autocorrección y autocapitalización para evitar conflictos
-- Mejor manejo del evento `Backspace` para borrado fluido
+#### 🤖 Mejoras en análisis con IA
+- Actualización de `ai_analysis_tab.dart`
+- Implementación de **animación tipo máquina de escribir (typewriter effect)** para mostrar resultados progresivamente
+- Nuevo botón de **actualizar análisis**, permitiendo regenerar resultados dinámicamente
+
+#### 🎨 Actualización de paleta de colores
+- Ajustes visuales en:
+  - `config_constants.dart`
+  - `analysis_constants.dart`
+- Nueva armonización de colores para métricas y acciones
+- Mejora de consistencia visual entre módulos administrativos y de análisis
 
 ---
 
 ### Mejoras técnicas
 
-#### UX/UI
-- Experiencia más consistente al forzar modo portrait
-- Input más responsivo en flujo de autenticación
+#### UI/UX
+- Transiciones más dinámicas en análisis de IA
+- Mejor jerarquía visual en métricas y tarjetas de información
 
-#### WebView
-- Script de inyección ejecutado después de cada carga de página
-- Compatibilidad mejorada con diferentes dispositivos Android
+#### Arquitectura
+- Separación más clara entre datos simulados y datos reales
+- Preparación para futuras expansiones del módulo de análisis
 
 ---
 
 ### Próximos pasos (v0.6.0)
-- Conexión real del Informe Completo con la API
-- Métricas dinámicas y comparativas por periodo
-- Exportación del informe (PDF)
-- Mejoras visuales y animaciones internas
+- Conexión completa del Informe Docente con endpoints productivos
+- Métricas comparativas entre periodos
+- Exportación de informes en PDF
+- Optimización de rendimiento en carga de dashboards
 
 ---
 
 **Tipo:** Release Candidate (RC)  
-**Fecha de lanzamiento:** 05 de Febrero, 2026  
+**Fecha de lanzamiento:** 07 de Febrero, 2026  
 **Compilación:** `flutter build apk --release`  
-**Tag:** v0.5.3-rc
+**Tag:** v0.5.4-rc

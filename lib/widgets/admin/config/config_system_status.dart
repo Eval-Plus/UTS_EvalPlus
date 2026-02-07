@@ -45,7 +45,7 @@ class ConfigSystemStatus extends StatelessWidget {
             total: stats.totalStudents,
             percentage: stats.studentsSyncRate,
             icon: AdminConfigConstants.studentsIcon,
-            color: AdminConfigConstants.emeraldColor,
+            color: AdminConfigConstants.syncBlueLight,
           ),
           const SizedBox(height: AdminConfigConstants.paddingMedium),
           ConfigProgressCard(
@@ -54,7 +54,7 @@ class ConfigSystemStatus extends StatelessWidget {
             total: stats.totalTeachers,
             percentage: stats.teachersEnrollRate,
             icon: AdminConfigConstants.teachersIcon,
-            color: AdminConfigConstants.limeColor,
+            color: AdminConfigConstants.enrollPurpleLight,
           ),
         ],
       ),

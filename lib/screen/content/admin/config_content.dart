@@ -111,17 +111,17 @@ class _ConfigContentState extends State<ConfigContent> {
     switch (actionKey) {
       case 'sync-students':
         return _SyncActionMetadata(
-          color: AdminConfigConstants.emeraldColor,
+          color: AdminConfigConstants.syncBlueLight,
           icon: AdminConfigConstants.studentsIcon,
         );
       case 'enroll-teachers':
         return _SyncActionMetadata(
-          color: AdminConfigConstants.limeColor,
+          color: AdminConfigConstants.enrollPurpleLight,
           icon: AdminConfigConstants.teachersIcon,
         );
       case 'generate-evaluations':
         return _SyncActionMetadata(
-          color: AdminConfigConstants.tealColor,
+          color: AdminConfigConstants.generateGreenLight,
           icon: AdminConfigConstants.evaluationsIcon,
         );
       default:
@@ -237,7 +237,7 @@ class _ConfigContentState extends State<ConfigContent> {
             title: AdminConfigConstants.studentsTitle,
             description: AdminConfigConstants.studentsDescription,
             actionLabel: AdminConfigConstants.studentsAction,
-            gradient: AdminConfigConstants.emeraldGradient,
+            gradient: AdminConfigConstants.syncBlueGradient,
             stats: [
               ActionStat(label: 'Total', value: stats.totalStudents),
               ActionStat(label: 'Sincronizados', value: stats.syncedStudents),
@@ -253,7 +253,7 @@ class _ConfigContentState extends State<ConfigContent> {
             title: AdminConfigConstants.teachersTitle,
             description: AdminConfigConstants.teachersDescription,
             actionLabel: AdminConfigConstants.teachersAction,
-            gradient: AdminConfigConstants.limeGradient,
+            gradient: AdminConfigConstants.enrollPurpleGradient,
             stats: [
               ActionStat(label: 'Total', value: stats.totalTeachers),
               ActionStat(label: 'Inscritos', value: stats.enrolledTeachers),
@@ -269,7 +269,7 @@ class _ConfigContentState extends State<ConfigContent> {
             title: AdminConfigConstants.evaluationsTitle,
             description: AdminConfigConstants.evaluationsDescription,
             actionLabel: AdminConfigConstants.evaluationsAction,
-            gradient: AdminConfigConstants.tealGradient,
+            gradient: AdminConfigConstants.generateGreenGradient,
             stats: [
               ActionStat(label: 'Existentes', value: stats.totalEvaluations),
               ActionStat(label: 'Activas', value: stats.activeEvaluations),

@@ -21,38 +21,38 @@ class AdminAnalysisConstants {
   static const Color successLight = Color(0xFFE8F5E9);
   static const Color successBorder = Color(0xFFC8E6C9);
   
-  // ==================== COLORES DE ESTADÍSTICAS (Actualizados) ====================
-  
-  /// Verde lima para docentes (Teachers)
-  static const Color teachersColor = Color(0xFF8BC34A);
-  static const Color teachersDark = Color(0xFF689F38);
-  
-  /// Verde azulado para evaluaciones (Evaluations)
-  static const Color evaluationsColor = Color(0xFF009688);
-  static const Color evaluationsDark = Color(0xFF00796B);
-  
-  /// Verde esmeralda para completitud (Completion)
-  static const Color completionColor = Color(0xFF4CAF50);
-  static const Color completionDark = Color(0xFF388E3C);
-  
-  /// Naranja para estudiantes (Students)
-  static const Color studentsColor = Color(0xFF2ECC71);
-  static const Color studentsDark = Color(0xFF27AE60);
+  // ==================== COLORES DE MÉTRICAS ====================
 
-  // ==================== GRADIENTES DE ESTADÍSTICAS ====================
-  
+  /// 👨‍🏫 Docentes
+  static const Color teachersColor = Color(0xFF9C27B0);
+  static const Color teachersDark  = Color(0xFF6A1B9A);
+
+  /// 📝 Evaluaciones
+  static const Color evaluationsColor = Color(0xFF4CAF50);
+  static const Color evaluationsDark  = Color.fromARGB(255, 20, 99, 24);
+
+  /// ✅ Completitud
+  static const Color completionColor = Color(0xFF26C6DA);
+  static const Color completionDark  = Color.fromARGB(255, 1, 131, 146);
+
+  /// 🎓 Estudiantes
+  static const Color studentsColor = Color(0xFF3DA9FC);
+  static const Color studentsDark  = Color.fromARGB(255, 14, 123, 220);
+
+  // ==================== GRADIENTES DE MÉTRICAS ====================
+
   static const LinearGradient teachersGradient = LinearGradient(
     colors: [teachersColor, teachersDark],
   );
-  
+
   static const LinearGradient evaluationsGradient = LinearGradient(
     colors: [evaluationsColor, evaluationsDark],
   );
-  
+
   static const LinearGradient completionGradient = LinearGradient(
     colors: [completionColor, completionDark],
   );
-  
+
   static const LinearGradient studentsGradient = LinearGradient(
     colors: [studentsColor, studentsDark],
   );

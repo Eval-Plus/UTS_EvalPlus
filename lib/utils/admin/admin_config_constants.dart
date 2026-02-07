@@ -7,32 +7,32 @@ import 'package:flutter/material.dart';
 class AdminConfigConstants {
   AdminConfigConstants._();
 
-  // ==================== COLORES DE SINCRONIZACIÓN ====================
-  
-  /// Verde esmeralda para estudiantes
-  static const Color emeraldColor = Color(0xFF2ECC71);
-  static const Color emeraldDark = Color(0xFF27AE60);
-  
-  /// Verde lima para docentes
-  static const Color limeColor = Color(0xFF8BC34A);
-  static const Color limeDark = Color(0xFF689F38);
-  
-  /// Verde azulado para evaluaciones
-  static const Color tealColor = Color(0xFF009688);
-  static const Color tealDark = Color(0xFF00796B);
+  // ==================== COLORES POR ACCIÓN ====================
+
+  /// 🔵 SINCRONIZAR ESTUDIANTES
+  static const Color syncBlueLight = Color(0xFF3DA9FC);
+  static const Color syncBlueDark  = Color(0xFF1E88E5);
+
+  /// 🟣 INSCRIBIR DOCENTES
+  static const Color enrollPurpleLight = Color(0xFF9C27B0);
+  static const Color enrollPurpleDark  = Color(0xFF6A1B9A);
+
+  /// 🟢 GENERAR EVALUACIONES
+  static const Color generateGreenLight = Color(0xFF4CAF50);
+  static const Color generateGreenDark  = Color(0xFF2E7D32);
 
   // ==================== GRADIENTES ====================
-  
-  static const LinearGradient emeraldGradient = LinearGradient(
-    colors: [emeraldColor, emeraldDark],
+
+  static const LinearGradient syncBlueGradient = LinearGradient(
+    colors: [syncBlueLight, syncBlueDark],
   );
-  
-  static const LinearGradient limeGradient = LinearGradient(
-    colors: [limeColor, limeDark],
+
+  static const LinearGradient enrollPurpleGradient = LinearGradient(
+    colors: [enrollPurpleLight, enrollPurpleDark],
   );
-  
-  static const LinearGradient tealGradient = LinearGradient(
-    colors: [tealColor, tealDark],
+
+  static const LinearGradient generateGreenGradient = LinearGradient(
+    colors: [generateGreenLight, generateGreenDark],
   );
 
   // ==================== TEXTOS Y ETIQUETAS ====================

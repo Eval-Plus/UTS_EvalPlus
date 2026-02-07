@@ -79,7 +79,7 @@ class AdminSyncValidator {
             'Es necesario que haya estudiantes en el sistema académico '
             'antes de poder sincronizarlos.',
         icon: AdminConfigConstants.infoIcon,
-        color: AdminConfigConstants.emeraldColor,
+        color: AdminConfigConstants.syncBlueLight,
         internalMessage: 'Total students = 0',
       );
     }
@@ -91,7 +91,7 @@ class AdminSyncValidator {
         message: 'Ya se han sincronizado todos los estudiantes que estaban pendientes. '
             'No hay acciones por realizar en este momento.',
         icon: AdminConfigConstants.checkIcon,
-        color: AdminConfigConstants.emeraldColor,
+        color: AdminConfigConstants.syncBlueLight,
         internalMessage: 'Pending students = 0, Synced students = ${stats.syncedStudents}',
       );
     }
@@ -112,7 +112,7 @@ class AdminSyncValidator {
             'Es necesario sincronizar estudiantes primero para tener '
             'las materias disponibles y poder asignarles docentes.',
         icon: AdminConfigConstants.studentsIcon,
-        color: AdminConfigConstants.limeColor,
+        color: AdminConfigConstants.enrollPurpleLight,
         internalMessage: 'Synced students = 0',
       );
     }
@@ -125,7 +125,7 @@ class AdminSyncValidator {
             'Es necesario que haya docentes en el sistema académico '
             'antes de poder inscribirlos.',
         icon: AdminConfigConstants.infoIcon,
-        color: AdminConfigConstants.limeColor,
+        color: AdminConfigConstants.enrollPurpleLight,
         internalMessage: 'Total teachers = 0',
       );
     }
@@ -137,7 +137,7 @@ class AdminSyncValidator {
         message: 'Ya se han sincronizado todos los docentes que estaban pendientes. '
             'No hay acciones por realizar en este momento.',
         icon: AdminConfigConstants.checkIcon,
-        color: AdminConfigConstants.limeColor,
+        color: AdminConfigConstants.enrollPurpleLight,
         internalMessage: 'Pending teachers = 0, Enrolled teachers = ${stats.enrolledTeachers}',
       );
     }
@@ -149,7 +149,7 @@ class AdminSyncValidator {
         message: 'Todas las materias con estudiantes ya tienen docente asignado. '
             'No es necesario realizar más sincronizaciones en este momento.',
         icon: AdminConfigConstants.checkIcon,
-        color: AdminConfigConstants.limeColor,
+        color: AdminConfigConstants.enrollPurpleLight,
         internalMessage: 'Synced students (${stats.syncedStudents}) == Enrolled teachers (${stats.enrolledTeachers})',
       );
     }
@@ -170,7 +170,7 @@ class AdminSyncValidator {
             'Es necesario sincronizar docentes primero porque no se asignan '
             'evaluaciones en materias sin docente.',
         icon: AdminConfigConstants.teachersIcon,
-        color: AdminConfigConstants.tealColor,
+        color: AdminConfigConstants.generateGreenLight,
         internalMessage: 'Enrolled teachers = 0',
       );
     }
