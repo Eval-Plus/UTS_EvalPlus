@@ -7,11 +7,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// - Windows: usa SharedPreferences (problemas con flutter_secure_storage en Windows 11)
 /// - Android/iOS/Linux: usa FlutterSecureStorage
 /// - Web: usa SharedPreferences
+/// 
+/// 🔧 MEJORADO: Manejo de archivos corruptos y reintentos
 class SecureStorageService {
   static SecureStorageService? _instance;
   static FlutterSecureStorage? _secureStorage;
   static SharedPreferences? _sharedPrefs;
   static bool _isWindows = false;
+  static bool _hasHandledCorruption = false; // 🆕 Para evitar loops infinitos
 
   SecureStorageService._();
 
@@ -25,7 +28,7 @@ class SecureStorageService {
     if (kIsWeb) {
       _isWindows = false;
       _sharedPrefs = await SharedPreferences.getInstance();
-      debugPrint('🌐 Storage: Usando SharedPreferences (Web)');
+      debugPrint('🌐 [Storage] Usando SharedPreferences (Web)');
     } else {
       try {
         _isWindows = Platform.isWindows;
@@ -36,7 +39,7 @@ class SecureStorageService {
       if (_isWindows) {
         // Windows: usar SharedPreferences
         _sharedPrefs = await SharedPreferences.getInstance();
-        debugPrint('🪟 Storage: Usando SharedPreferences (Windows)');
+        debugPrint('🪟 [Storage] Usando SharedPreferences (Windows)');
       } else {
         // Android/iOS/Linux: usar FlutterSecureStorage
         _secureStorage = const FlutterSecureStorage(
@@ -44,14 +47,14 @@ class SecureStorageService {
             encryptedSharedPreferences: true,
           ),
         );
-        debugPrint('🔐 Storage: Usando FlutterSecureStorage (${Platform.operatingSystem})');
+        debugPrint('🔐 [Storage] Usando FlutterSecureStorage (${Platform.operatingSystem})');
       }
     }
 
     return _instance!;
   }
 
-  /// Lee un valor del storage
+  /// 🔧 MEJORADO: Lee un valor del storage con manejo de corrupción
   Future<String?> read({required String key}) async {
     try {
       if (_isWindows || kIsWeb) {
@@ -60,26 +63,50 @@ class SecureStorageService {
         return await _secureStorage?.read(key: key);
       }
     } catch (e) {
-      debugPrint('❌ Error leyendo $key: $e');
+      debugPrint('❌ [Storage] Error leyendo $key: $e');
+      
+      // 🔥 Si es error de corrupción, intentar limpiar y reintentar
+      if (e.toString().contains('decrypt') || 
+          e.toString().contains('corrupt') ||
+          e.toString().contains('CryptUnprotectData')) {
+        debugPrint('🔧 [Storage] Detectada corrupción de datos, limpiando...');
+        await _handleCorruptedStorage();
+        return null;
+      }
+      
       return null;
     }
   }
 
-  /// Escribe un valor en el storage
+  /// 🔧 MEJORADO: Escribe un valor en el storage con reintentos
   Future<void> write({required String key, required String value}) async {
-    try {
-      if (_isWindows || kIsWeb) {
-        await _sharedPrefs?.setString(key, value);
-      } else {
-        await _secureStorage?.write(key: key, value: value);
+    int retries = 0;
+    const maxRetries = 3;
+    
+    while (retries < maxRetries) {
+      try {
+        if (_isWindows || kIsWeb) {
+          await _sharedPrefs?.setString(key, value);
+        } else {
+          await _secureStorage?.write(key: key, value: value);
+        }
+        return; // Éxito
+      } catch (e) {
+        retries++;
+        debugPrint('❌ [Storage] Error escribiendo $key (intento $retries/$maxRetries): $e');
+        
+        if (retries >= maxRetries) {
+          debugPrint('💥 [Storage] Falló después de $maxRetries intentos');
+          rethrow;
+        }
+        
+        // Esperar antes de reintentar
+        await Future.delayed(Duration(milliseconds: 100 * retries));
       }
-    } catch (e) {
-      debugPrint('❌ Error escribiendo $key: $e');
-      rethrow;
     }
   }
 
-  /// Elimina un valor del storage
+  /// Lee un valor del storage
   Future<void> delete({required String key}) async {
     try {
       if (_isWindows || kIsWeb) {
@@ -87,21 +114,64 @@ class SecureStorageService {
       } else {
         await _secureStorage?.delete(key: key);
       }
+      debugPrint('✅ [Storage] $key eliminado');
     } catch (e) {
-      debugPrint('❌ Error eliminando $key: $e');
+      debugPrint('❌ [Storage] Error eliminando $key: $e');
     }
   }
 
-  /// Elimina todos los valores del storage
+  /// 🔧 MEJORADO: Elimina todos los valores del storage con manejo de errores
   Future<void> deleteAll() async {
     try {
+      debugPrint('🗑️ [Storage] Limpiando todo el storage...');
+      
       if (_isWindows || kIsWeb) {
         await _sharedPrefs?.clear();
       } else {
         await _secureStorage?.deleteAll();
       }
+      
+      debugPrint('✅ [Storage] Storage limpiado exitosamente');
     } catch (e) {
-      debugPrint('❌ Error limpiando storage: $e');
+      debugPrint('❌ [Storage] Error limpiando storage: $e');
+      
+      // 🔥 Si falla el deleteAll, intentar eliminar archivo corrupto manualmente
+      if (!_isWindows && !kIsWeb) {
+        await _handleCorruptedStorage();
+      }
+    }
+  }
+
+  /// 🆕 Maneja archivos de storage corruptos
+  Future<void> _handleCorruptedStorage() async {
+    if (_hasHandledCorruption) {
+      debugPrint('⚠️ [Storage] Ya se manejó la corrupción, evitando loop');
+      return;
+    }
+    
+    try {
+      _hasHandledCorruption = true;
+      debugPrint('🔧 [Storage] Intentando recuperar de corrupción...');
+      
+      // Intentar recrear el storage
+      if (!_isWindows && !kIsWeb) {
+        _secureStorage = const FlutterSecureStorage(
+          aOptions: AndroidOptions(
+            encryptedSharedPreferences: true,
+            resetOnError: true, // 🔥 Importante: resetear en error
+          ),
+        );
+        
+        debugPrint('✅ [Storage] Storage recreado exitosamente');
+      }
+      
+      // Resetear flag después de un tiempo
+      Future.delayed(const Duration(seconds: 5), () {
+        _hasHandledCorruption = false;
+      });
+      
+    } catch (e) {
+      debugPrint('💥 [Storage] Error manejando corrupción: $e');
     }
   }
 
@@ -115,7 +185,7 @@ class SecureStorageService {
         return value != null;
       }
     } catch (e) {
-      debugPrint('❌ Error verificando existencia de $key: $e');
+      debugPrint('❌ [Storage] Error verificando existencia de $key: $e');
       return false;
     }
   }
@@ -130,7 +200,7 @@ class SecureStorageService {
         return map?.keys.toSet() ?? {};
       }
     } catch (e) {
-      debugPrint('❌ Error obteniendo claves: $e');
+      debugPrint('❌ [Storage] Error obteniendo claves: $e');
       return {};
     }
   }

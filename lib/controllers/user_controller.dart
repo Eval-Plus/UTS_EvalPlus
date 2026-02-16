@@ -15,41 +15,39 @@ class UserController {
       final token = await AuthStorageService.getToken();
 
       if (token == null) {
-        debugPrint('❌ No hay token disponible');
+        debugPrint('❌ [UserController] No hay token disponible');
         return null;
       }
 
-      // 2. Si no se fuerza refresh, intentar desde cache
-      if (!forceRefresh) {
-        final cachedProfile = await UserStorageService.getUserProfile();
-        if (cachedProfile != null) {
-          debugPrint('⚡ Usando perfil desde cache');
-          // Actualizar en background sin bloquear
-          _refreshProfileInBackground(token);
-          return cachedProfile;
-        }
+      // 2. Si se fuerza refresh, consultar API directamente
+      if (forceRefresh) {
+        debugPrint('🔄 [UserController] Forzando refresh desde API...');
+        return await _fetchAndSaveProfile(token);
       }
 
-      // 3. Obtener desde API
-      debugPrint('🌐 Consultando perfil desde API...');
-      final profile = await ProfileApiService.fetchUserProfile(token);
-
-      if (profile != null) {
-        // Guardar en cache
-        await UserStorageService.saveUserProfile(profile);
-        debugPrint('✅ Perfil obtenido y guardado');
-        return profile;
+      // 3. Intentar desde cache
+      final cachedProfile = await UserStorageService.getUserProfile();
+      if (cachedProfile != null) {
+        debugPrint('⚡ [UserController] Usando perfil desde cache');
+        debugPrint('   - Nombre: ${cachedProfile.nombreCompleto}');
+        debugPrint('   - Email: ${cachedProfile.email}');
+        
+        // Actualizar en background sin bloquear
+        _refreshProfileInBackground(token);
+        return cachedProfile;
       }
 
-      debugPrint('❌ No se pudo obtener el perfil');
-      return null;
+      // 4. Si no hay cache, obtener desde API
+      debugPrint('🌐 [UserController] No hay cache, consultando API...');
+      return await _fetchAndSaveProfile(token);
+
     } catch (e) {
-      debugPrint('💥 Error cargando perfil: $e');
+      debugPrint('💥 [UserController] Error cargando perfil: $e');
 
       // Fallback: intentar retornar cache
       final cachedProfile = await UserStorageService.getUserProfile();
       if (cachedProfile != null) {
-        debugPrint('⚠️ Usando cache como fallback');
+        debugPrint('⚠️ [UserController] Usando cache como fallback');
         return cachedProfile;
       }
 
@@ -57,18 +55,39 @@ class UserController {
     }
   }
 
-  /// Actualiza el perfil en segundo plano
-  static Future<void> _refreshProfileInBackground(String token) async {
+  /// 🆕 Obtiene el perfil desde API y lo guarda
+  static Future<UserModel?> _fetchAndSaveProfile(String token) async {
     try {
-      debugPrint('🔄 Actualizando perfil en background...');
       final profile = await ProfileApiService.fetchUserProfile(token);
 
       if (profile != null) {
         await UserStorageService.saveUserProfile(profile);
-        debugPrint('✅ Perfil actualizado en background');
+        debugPrint('✅ [UserController] Perfil obtenido y guardado');
+        debugPrint('   - Nombre: ${profile.nombreCompleto}');
+        debugPrint('   - Email: ${profile.email}');
+        return profile;
+      }
+
+      debugPrint('❌ [UserController] API no retornó perfil');
+      return null;
+    } catch (e) {
+      debugPrint('💥 [UserController] Error obteniendo perfil: $e');
+      return null;
+    }
+  }
+
+  /// Actualiza el perfil en segundo plano
+  static Future<void> _refreshProfileInBackground(String token) async {
+    try {
+      debugPrint('🔄 [UserController] Actualizando perfil en background...');
+      final profile = await ProfileApiService.fetchUserProfile(token);
+
+      if (profile != null) {
+        await UserStorageService.saveUserProfile(profile);
+        debugPrint('✅ [UserController] Perfil actualizado en background');
       }
     } catch (e) {
-      debugPrint('⚠️ Error actualizando en background: $e');
+      debugPrint('⚠️ [UserController] Error actualizando en background: $e');
       // No hacer nada, el usuario ya tiene datos del cache
     }
   }
@@ -86,7 +105,7 @@ class UserController {
       final token = await AuthStorageService.getToken();
 
       if (token == null) {
-        debugPrint('❌ No hay token disponible');
+        debugPrint('❌ [UserController] No hay token disponible');
         return null;
       }
 
@@ -98,20 +117,42 @@ class UserController {
       if (updatedProfile != null) {
         // Guardar en cache
         await UserStorageService.saveUserProfile(updatedProfile);
-        debugPrint('✅ Perfil actualizado');
+        debugPrint('✅ [UserController] Perfil actualizado');
         return updatedProfile;
       }
 
       return null;
     } catch (e) {
-      debugPrint('💥 Error actualizando perfil: $e');
+      debugPrint('💥 [UserController] Error actualizando perfil: $e');
       return null;
     }
   }
 
-  /// Limpia el perfil del usuario (logout)
+  /// 🔧 MEJORADO: Limpia el perfil del usuario con logs detallados
   static Future<void> clearUserProfile() async {
-    await UserStorageService.clearUserProfile();
-    debugPrint('🗑️ Perfil limpiado');
+    try {
+      debugPrint('🗑️ [UserController] Limpiando perfil del usuario...');
+      
+      // Verificar si hay perfil antes de limpiar
+      final currentProfile = await UserStorageService.getUserProfile();
+      if (currentProfile != null) {
+        debugPrint('   - Perfil a limpiar: ${currentProfile.nombreCompleto}');
+      } else {
+        debugPrint('   - No hay perfil para limpiar');
+      }
+      
+      await UserStorageService.clearUserProfile();
+      debugPrint('✅ [UserController] Perfil limpiado exitosamente');
+      
+      // Verificar limpieza
+      final afterClear = await UserStorageService.getUserProfile();
+      if (afterClear == null) {
+        debugPrint('✅ [UserController] Verificación: perfil eliminado correctamente');
+      } else {
+        debugPrint('⚠️ [UserController] Advertencia: perfil aún existe después de limpiar');
+      }
+    } catch (e) {
+      debugPrint('💥 [UserController] Error limpiando perfil: $e');
+    }
   }
 }

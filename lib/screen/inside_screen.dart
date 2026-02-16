@@ -44,6 +44,8 @@ class _InsideScreenState extends State<InsideScreen>
   void initState() {
     super.initState();
 
+    debugPrint('🎬 [InsideScreen] initState llamado');
+
     // Crear el controlador del screen
     _controller = InsideScreenController();
 
@@ -62,6 +64,7 @@ class _InsideScreenState extends State<InsideScreen>
 
   @override
   void dispose() {
+    debugPrint('🎬 [InsideScreen] dispose llamado');
     _animationController.dispose();
     _controller.dispose();
     super.dispose();
@@ -70,25 +73,30 @@ class _InsideScreenState extends State<InsideScreen>
   /// Configura la sesión del usuario
   void _setupSession() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('🎬 [InsideScreen] Configurando sesión...');
+      
       final session = context.read<UserSessionController>();
       
       if (!session.isLoading && session.userRoles.isEmpty) {
+        debugPrint('🎬 [InsideScreen] Cargando roles de usuario...');
         session.loadUserSession().then((_) {
           if (mounted) {
             final initialIndex = NavigationConfig.getInitialIndex();
             _controller.setInitialIndex(initialIndex);
+            debugPrint('🎬 [InsideScreen] Sesión configurada, índice inicial: $initialIndex');
           }
         });
       } else {
         final initialIndex = NavigationConfig.getInitialIndex();
         _controller.setInitialIndex(initialIndex);
+        debugPrint('🎬 [InsideScreen] Usando sesión existente, índice inicial: $initialIndex');
       }
     });
   }
 
   /// Maneja el logout
   void _handleLogout() {
-    debugPrint('🔴 Logout initiated from InsideScreen');
+    debugPrint('🔴 [InsideScreen] Logout iniciado');
     
     showDialog(
       context: context,
@@ -118,6 +126,7 @@ class _InsideScreenState extends State<InsideScreen>
     );
     
     try {
+      debugPrint('🔴 [InsideScreen] Ejecutando logout...');
       await _controller.executeLogout();
       
       if (mounted) {
@@ -127,7 +136,7 @@ class _InsideScreenState extends State<InsideScreen>
         // Cerrar el loader
         Navigator.of(context).pop();
         
-        debugPrint('🔴 Navigating to HomeScreen...');
+        debugPrint('🔴 [InsideScreen] Navegando a HomeScreen...');
         
         // Navegar a HomeScreen
         Navigator.of(context).pushNamedAndRemoveUntil(
@@ -135,10 +144,10 @@ class _InsideScreenState extends State<InsideScreen>
           (route) => false,
         );
         
-        debugPrint('🔴 Navigation completed');
+        debugPrint('🔴 [InsideScreen] Navegación completada');
       }
     } catch (e) {
-      debugPrint('🔴 ERROR: $e');
+      debugPrint('🔴 [InsideScreen] ERROR durante logout: $e');
       
       if (mounted) {
         Navigator.of(context).pop(); // Cerrar el loader
@@ -166,6 +175,7 @@ class _InsideScreenState extends State<InsideScreen>
       builder: (context, session, child) {
         // Mostrar loading mientras la sesión se carga
         if (session.isLoading) {
+          debugPrint('🎬 [InsideScreen] Mostrando loading de sesión...');
           return const Scaffold(
             body: Center(
               child: CircularProgressIndicator(
@@ -174,6 +184,8 @@ class _InsideScreenState extends State<InsideScreen>
             ),
           );
         }
+
+        debugPrint('🎬 [InsideScreen] Sesión cargada, construyendo UI...');
 
         // 🆕 Proveer el controlador para que los widgets hijos puedan acceder
         return ChangeNotifierProvider.value(
@@ -188,8 +200,37 @@ class _InsideScreenState extends State<InsideScreen>
     // 🔥 USAR Consumer PARA ESCUCHAR CAMBIOS DEL CONTROLLER Y PASAR EL USUARIO ACTUALIZADO
     return Consumer<InsideScreenController>(
       builder: (context, controller, child) {
-        debugPrint('🎯 [InsideScreen] Renderizando con índice: ${controller.currentIndex}');
-        debugPrint('🎯 [InsideScreen] Usuario actual: ${controller.currentUser?.nombreCompleto ?? "null"}');
+        // 🔥 Mostrar loading mientras se carga el usuario
+        if (controller.isLoadingUserData) {
+          debugPrint('🎬 [InsideScreen] Cargando datos de usuario...');
+          return Scaffold(
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(
+                    color: session.palette.primary,
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Cargando tu perfil...',
+                    style: TextStyle(
+                      color: session.palette.primary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+
+        debugPrint('🎯 [InsideScreen] Renderizando con:');
+        debugPrint('   - Índice: ${controller.currentIndex}');
+        debugPrint('   - Usuario: ${controller.currentUser?.nombreCompleto ?? "null"}');
+        debugPrint('   - Email: ${controller.currentUser?.email ?? "null"}');
+        debugPrint('   - Welcome: ${controller.welcomeMessage}');
         
         // Obtener contenidos según el rol CON EL USUARIO ACTUALIZADO
         final contents = NavigationConfig.getContentsForRole(
@@ -215,7 +256,7 @@ class _InsideScreenState extends State<InsideScreen>
           paddingBottom: 20.0,
           onLogoutPressed: _handleLogout,
           onNavIndexChanged: (index) {
-            debugPrint('🎯 [InsideScreen] onNavIndexChanged llamado con índice: $index');
+            debugPrint('🎯 [InsideScreen] onNavIndexChanged: $index');
             controller.onNavIndexChanged(index, session.currentRole);
           },
           child: AnimatedBuilder(
@@ -225,7 +266,7 @@ class _InsideScreenState extends State<InsideScreen>
                 pageController: controller.pageController,
                 contents: contents,
                 onPageChanged: (index) {
-                  debugPrint('🎯 [InsideScreen] onPageChanged llamado con índice: $index');
+                  debugPrint('🎯 [InsideScreen] onPageChanged: $index');
                   controller.onPageChanged(index, session.currentRole);
                 },
                 slideAnimation: controller.slideAnimation,
