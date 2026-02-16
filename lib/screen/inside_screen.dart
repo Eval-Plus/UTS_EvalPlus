@@ -185,20 +185,20 @@ class _InsideScreenState extends State<InsideScreen>
   }
 
   Widget _buildScreenContent(UserSessionController session) {
-    // Obtener contenidos según el rol
-    final contents = NavigationConfig.getContentsForRole(
-      session.currentRole,
-      _controller.currentUser,
-    );
-    
-    // Obtener subtítulo según el rol
-    final subtitle = _controller.getSubtitleForRole(session.currentRole);
-    
-    // 🔥 USAR Consumer PARA ESCUCHAR CAMBIOS DEL CONTROLLER
+    // 🔥 USAR Consumer PARA ESCUCHAR CAMBIOS DEL CONTROLLER Y PASAR EL USUARIO ACTUALIZADO
     return Consumer<InsideScreenController>(
       builder: (context, controller, child) {
-        // 🔥 DEBUG: Imprimir el índice actual
         debugPrint('🎯 [InsideScreen] Renderizando con índice: ${controller.currentIndex}');
+        debugPrint('🎯 [InsideScreen] Usuario actual: ${controller.currentUser?.nombreCompleto ?? "null"}');
+        
+        // Obtener contenidos según el rol CON EL USUARIO ACTUALIZADO
+        final contents = NavigationConfig.getContentsForRole(
+          session.currentRole,
+          controller.currentUser, // 🔥 Pasar el usuario del controller
+        );
+        
+        // Obtener subtítulo según el rol
+        final subtitle = controller.getSubtitleForRole(session.currentRole);
         
         // Validar índice
         final safeIndex = NavigationConfig.isValidIndex(
@@ -207,9 +207,9 @@ class _InsideScreenState extends State<InsideScreen>
         ) ? controller.currentIndex : NavigationConfig.getInitialIndex();
         
         return BaseScreenLayout(
-          topBarTitle: controller.welcomeMessage,
+          topBarTitle: controller.welcomeMessage, // 🔥 Esto debería mostrar "Bienvenido, [Nombre]"
           topBarSubtitle: subtitle,
-          currentNavIndex: safeIndex, // 🔥 Este valor debería cambiar
+          currentNavIndex: safeIndex,
           centerContent: false,
           paddingTop: 80.0,
           paddingBottom: 20.0,

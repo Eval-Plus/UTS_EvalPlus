@@ -3,9 +3,6 @@ import 'package:flutter/services.dart';
 
 import 'package:flutter_svg/flutter_svg.dart';
 
-// Screens
-import 'package:eval_plus/screen/inside_screen.dart';
-
 // Controllers
 import 'package:eval_plus/controllers/auth_controller.dart';
 

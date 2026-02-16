@@ -48,7 +48,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
   late Future<List<QuestionModel>> _questionsFuture;
   
   int? _studentEvaluationId;
-  StartEvaluationResponse? _startedEvaluation;
 
   static const Map<String, int> _responseValueMap = {
     'N': 1,  // Nunca
@@ -101,7 +100,6 @@ class _EvaluationModalState extends State<EvaluationModal> {
 
       setState(() {
         _studentEvaluationId = response.id;
-        _startedEvaluation = response;
         _isInitializing = false;
         _hasError = false;
       });

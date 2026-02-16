@@ -24,6 +24,7 @@ class InsideScreenController extends ChangeNotifier {
   UserModel? _currentUser;
   String _welcomeMessage = 'Bienvenido';
   bool _isLoggingOut = false;
+  bool _isLoadingUserData = true; // 🆕 Indicador de carga
   
   // PageController para manejar el swipe
   late PageController _pageController;
@@ -46,6 +47,7 @@ class InsideScreenController extends ChangeNotifier {
   UserModel? get currentUser => _currentUser;
   String get welcomeMessage => _welcomeMessage;
   bool get isLoggingOut => _isLoggingOut;
+  bool get isLoadingUserData => _isLoadingUserData; // 🆕
   PageController get pageController => _pageController;
   
   Animation<Offset> get slideAnimation => _slideAnimation;
@@ -90,16 +92,35 @@ class InsideScreenController extends ChangeNotifier {
 
   // ==================== CARGA DE DATOS ====================
   
+  /// 🔧 CORREGIDO: Mejor manejo de la carga del usuario
   Future<void> _loadUserData() async {
-    final user = await UserController.loadUserProfile();
-    
-    if (user != null) {
-      _currentUser = user;
-      _welcomeMessage = 'Bienvenido, ${user.firstName}';
+    try {
+      _isLoadingUserData = true;
+      notifyListeners();
+      
+      debugPrint('📥 Cargando datos del usuario...');
+      
+      // Intentar cargar desde UserController (cache primero, API después)
+      final user = await UserController.loadUserProfile();
+      
+      if (user != null) {
+        _currentUser = user;
+        _welcomeMessage = 'Bienvenido, ${user.firstName}';
+        debugPrint('✅ Usuario cargado: ${user.nombreCompleto}');
+      } else {
+        debugPrint('⚠️ No se pudo cargar el usuario');
+        _welcomeMessage = 'Bienvenido';
+      }
+    } catch (e) {
+      debugPrint('💥 Error cargando usuario: $e');
+      _welcomeMessage = 'Bienvenido';
+    } finally {
+      _isLoadingUserData = false;
       notifyListeners();
     }
   }
 
+  /// 🆕 Método público para refrescar datos del usuario
   Future<void> refreshUserData() async {
     await _loadUserData();
   }
