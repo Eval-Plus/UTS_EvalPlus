@@ -8,10 +8,10 @@ import 'package:eval_plus/models/user_model.dart';
 import 'package:eval_plus/controllers/user_session_controller.dart';
 import 'package:eval_plus/controllers/inside_screen_controller.dart';
 
-/// Contenedor del perfil del usuario
+/// Contenedor del perfil del usuario - MEJORADO
 /// Muestra información básica: avatar y correo institucional
-/// 🔥 ACTUALIZADO: Colores dinámicos según rol del usuario
-class ProfileContent extends StatelessWidget {
+/// 🔥 ACTUALIZADO: Mejor manejo de estados de carga y debugging
+class ProfileContent extends StatefulWidget {
   final UserModel? user;
 
   const ProfileContent({
@@ -20,15 +20,35 @@ class ProfileContent extends StatelessWidget {
   });
 
   @override
+  State<ProfileContent> createState() => _ProfileContentState();
+}
+
+class _ProfileContentState extends State<ProfileContent> {
+  
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('🎨 [ProfileContent] initState - user: ${widget.user?.nombreCompleto ?? "null"}');
+  }
+
+  @override
   Widget build(BuildContext context) {
+    debugPrint('🎨 [ProfileContent] build llamado');
+    
     // Obtener la sesión completa (rol y paleta de colores)
     final session = context.watch<UserSessionController>();
     
-    // 🆕 Obtener el controller para acceder a los datos del usuario
+    // Obtener el controller para acceder a los datos del usuario
     final controller = context.watch<InsideScreenController>();
     
-    // 🆕 Usar el usuario del controller si está disponible, sino el que viene por parámetro
-    final currentUser = controller.currentUser ?? user;
+    // 🔥 PRIORIDAD: Controller > Widget prop
+    final currentUser = controller.currentUser ?? widget.user;
+    
+    debugPrint('🎨 [ProfileContent] Estado actual:');
+    debugPrint('   - isLoadingUserData: ${controller.isLoadingUserData}');
+    debugPrint('   - controller.currentUser: ${controller.currentUser?.nombreCompleto ?? "null"}');
+    debugPrint('   - widget.user: ${widget.user?.nombreCompleto ?? "null"}');
+    debugPrint('   - currentUser (final): ${currentUser?.nombreCompleto ?? "null"}');
     
     return SingleChildScrollView(
       physics: const BouncingScrollPhysics(),
@@ -39,8 +59,8 @@ class ProfileContent extends StatelessWidget {
           children: [
             const SizedBox(height: 20),
             
-            // 🆕 Mostrar loading si los datos se están cargando
-            if (controller.isLoadingUserData)
+            // 🔥 Mostrar loading solo si está cargando Y no hay datos
+            if (controller.isLoadingUserData && currentUser == null)
               _buildLoadingState(session.palette)
             else
               _buildProfileCard(
@@ -50,13 +70,17 @@ class ProfileContent extends StatelessWidget {
               ),
             
             const SizedBox(height: 20),
+            
+            // 🆕 Botón de debug (solo en modo desarrollo)
+            if (const bool.fromEnvironment('dart.vm.product') == false)
+              _buildDebugButton(controller),
           ],
         ),
       ),
     );
   }
 
-  /// 🆕 Widget de loading mientras se cargan los datos
+  /// Widget de loading mientras se cargan los datos
   Widget _buildLoadingState(palette) {
     return Container(
       decoration: BoxDecoration(
@@ -69,10 +93,21 @@ class ProfileContent extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(48.0),
-        child: Center(
-          child: CircularProgressIndicator(
-            color: palette.primary,
-          ),
+        child: Column(
+          children: [
+            CircularProgressIndicator(
+              color: palette.primary,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Cargando tu perfil...',
+              style: TextStyle(
+                color: palette.primary,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -80,6 +115,8 @@ class ProfileContent extends StatelessWidget {
 
   /// Construye la tarjeta principal del perfil
   Widget _buildProfileCard(UserModel? userData, String roleDisplay, palette) {
+    debugPrint('🎨 [ProfileContent] _buildProfileCard - userData: ${userData?.nombreCompleto ?? "null"}');
+    
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -254,6 +291,25 @@ class ProfileContent extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  /// 🆕 Botón de debug para forzar recarga (solo en desarrollo)
+  Widget _buildDebugButton(InsideScreenController controller) {
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          debugPrint('🔄 [ProfileContent] Forzando recarga de usuario...');
+          await controller.refreshUserData();
+        },
+        icon: const Icon(Icons.refresh),
+        label: const Text('Recargar Perfil (Debug)'),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.orange,
+          foregroundColor: Colors.white,
+        ),
+      ),
     );
   }
 }

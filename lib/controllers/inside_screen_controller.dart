@@ -1,4 +1,4 @@
-/// Controlador para la pantalla principal (Inside Screen)
+/// Controlador para la pantalla principal (Inside Screen) - MEJORADO
 /// Ubicación: lib/controllers/inside_screen_controller.dart
 library;
 
@@ -25,7 +25,7 @@ class InsideScreenController extends ChangeNotifier {
   String _welcomeMessage = 'Bienvenido';
   bool _isLoggingOut = false;
   bool _isLoadingUserData = true;
-  bool _hasLoadedOnce = false; // 🆕 Para evitar recargas innecesarias
+  bool _hasLoadedOnce = false;
   
   // PageController para manejar el swipe
   late PageController _pageController;
@@ -49,7 +49,7 @@ class InsideScreenController extends ChangeNotifier {
   String get welcomeMessage => _welcomeMessage;
   bool get isLoggingOut => _isLoggingOut;
   bool get isLoadingUserData => _isLoadingUserData;
-  bool get hasLoadedOnce => _hasLoadedOnce; // 🆕
+  bool get hasLoadedOnce => _hasLoadedOnce;
   PageController get pageController => _pageController;
   
   Animation<Offset> get slideAnimation => _slideAnimation;
@@ -71,22 +71,28 @@ class InsideScreenController extends ChangeNotifier {
   
   InsideScreenController() {
     _pageController = PageController(initialPage: 0);
+    debugPrint('🎯 [Controller] Constructor ejecutado');
   }
 
   void initialize(AnimationController animationController) {
+    debugPrint('🎯 [Controller] Initialize llamado');
+    
     _animationController = animationController;
     _updateAnimations(isMovingRight: true);
     _animationController?.value = 1.0;
     
-    // 🔥 Solo cargar si no se ha cargado antes
+    // 🔥 CAMBIO CLAVE: Cargar datos inmediatamente y de forma síncrona
     if (!_hasLoadedOnce) {
+      debugPrint('🎯 [Controller] Iniciando carga de usuario...');
       _loadUserData();
+    } else {
+      debugPrint('⚠️ [Controller] Usuario ya cargado previamente');
     }
   }
 
   @override
   void dispose() {
-    debugPrint('🎯 [InsideScreenController] Disposing...');
+    debugPrint('🎯 [Controller] Disposing...');
     _pageController.dispose();
     
     // Dispose admin controllers si fueron creados
@@ -98,7 +104,7 @@ class InsideScreenController extends ChangeNotifier {
 
   // ==================== CARGA DE DATOS ====================
   
-  /// 🔧 MEJORADO: Carga con reintentos y mejor logging
+  /// 🔧 MEJORADO: Carga con logs detallados y manejo de errores robusto
   Future<void> _loadUserData() async {
     if (_hasLoadedOnce) {
       debugPrint('⚠️ [Controller] Ya se cargó el usuario, saltando...');
@@ -106,81 +112,115 @@ class InsideScreenController extends ChangeNotifier {
     }
     
     try {
+      debugPrint('📥 [Controller] ==== INICIO CARGA DE USUARIO ====');
+      
       _isLoadingUserData = true;
       notifyListeners();
       
-      debugPrint('📥 [Controller] Iniciando carga de usuario...');
+      // 🔥 Verificar token primero
+      final token = await AuthStorageService.getToken();
+      debugPrint('📥 [Controller] Token disponible: ${token != null ? "SÍ" : "NO"}');
       
-      // 🔥 Forzar refresh desde API para evitar datos cacheados de otra sesión
-      final user = await UserController.loadUserProfile(forceRefresh: true);
+      if (token == null) {
+        debugPrint('❌ [Controller] No hay token, no se puede cargar usuario');
+        _welcomeMessage = 'Bienvenido';
+        _isLoadingUserData = false;
+        notifyListeners();
+        return;
+      }
+      
+      // 🔥 Intentar cargar desde storage primero (más rápido)
+      debugPrint('📥 [Controller] Intentando cargar desde storage local...');
+      UserModel? user = await UserController.loadUserProfile(forceRefresh: false);
       
       if (user != null) {
+        debugPrint('✅ [Controller] Usuario cargado desde storage:');
+        debugPrint('   - Nombre: ${user.nombreCompleto}');
+        debugPrint('   - Email: ${user.email}');
+        debugPrint('   - ID: ${user.id}');
+        
         _currentUser = user;
         _welcomeMessage = 'Bienvenido, ${user.firstName}';
         _hasLoadedOnce = true;
         
-        debugPrint('✅ [Controller] Usuario cargado exitosamente:');
-        debugPrint('   - Nombre: ${user.nombreCompleto}');
-        debugPrint('   - Email: ${user.email}');
-        debugPrint('   - ID: ${user.id}');
-      } else {
-        debugPrint('❌ [Controller] No se pudo cargar el usuario');
-        _welcomeMessage = 'Bienvenido';
+        // Actualizar UI inmediatamente
+        _isLoadingUserData = false;
+        notifyListeners();
         
-        // 🔥 Reintentar una vez más después de un delay
-        await Future.delayed(const Duration(milliseconds: 500));
-        await _retryLoadUser();
+        // 🔥 Refrescar en background desde API
+        debugPrint('🔄 [Controller] Refrescando desde API en background...');
+        _refreshUserInBackground();
+        
+      } else {
+        // Si no hay en storage, forzar carga desde API
+        debugPrint('⚠️ [Controller] No hay datos en storage, cargando desde API...');
+        user = await UserController.loadUserProfile(forceRefresh: true);
+        
+        if (user != null) {
+          debugPrint('✅ [Controller] Usuario cargado desde API:');
+          debugPrint('   - Nombre: ${user.nombreCompleto}');
+          debugPrint('   - Email: ${user.email}');
+          debugPrint('   - ID: ${user.id}');
+          
+          _currentUser = user;
+          _welcomeMessage = 'Bienvenido, ${user.firstName}';
+          _hasLoadedOnce = true;
+        } else {
+          debugPrint('❌ [Controller] No se pudo cargar el usuario desde API');
+          _welcomeMessage = 'Bienvenido';
+        }
       }
-    } catch (e) {
-      debugPrint('💥 [Controller] Error cargando usuario: $e');
-      _welcomeMessage = 'Bienvenido';
       
-      // 🔥 Reintentar en caso de error
-      await _retryLoadUser();
+      debugPrint('📥 [Controller] ==== FIN CARGA DE USUARIO ====');
+      
+    } catch (e, stackTrace) {
+      debugPrint('💥 [Controller] ERROR cargando usuario: $e');
+      debugPrint('💥 [Controller] Stack trace: $stackTrace');
+      _welcomeMessage = 'Bienvenido';
     } finally {
       _isLoadingUserData = false;
       notifyListeners();
     }
   }
 
-  /// 🆕 Reintento de carga de usuario
-  Future<void> _retryLoadUser() async {
+  /// 🆕 Refresca el usuario en background sin bloquear la UI
+  Future<void> _refreshUserInBackground() async {
     try {
-      debugPrint('🔄 [Controller] Reintentando carga de usuario...');
+      debugPrint('🔄 [Controller] Refrescando usuario en background...');
       
       final user = await UserController.loadUserProfile(forceRefresh: true);
       
-      if (user != null) {
+      if (user != null && user.id != _currentUser?.id) {
+        debugPrint('🔄 [Controller] Usuario actualizado en background');
         _currentUser = user;
         _welcomeMessage = 'Bienvenido, ${user.firstName}';
-        _hasLoadedOnce = true;
-        
-        debugPrint('✅ [Controller] Usuario cargado en reintento:');
-        debugPrint('   - Nombre: ${user.nombreCompleto}');
-        
         notifyListeners();
       } else {
-        debugPrint('❌ [Controller] Reintento fallido');
+        debugPrint('ℹ️ [Controller] Usuario sin cambios');
       }
+      
     } catch (e) {
-      debugPrint('💥 [Controller] Error en reintento: $e');
+      debugPrint('⚠️ [Controller] Error refrescando en background: $e');
+      // No hacer nada, ya tenemos datos del storage
     }
   }
 
-  /// 🆕 Método público para refrescar datos del usuario (fuerza recarga)
+  /// 🆕 Método público para refrescar datos del usuario (fuerza recarga completa)
   Future<void> refreshUserData() async {
+    debugPrint('🔄 [Controller] Refresh manual solicitado');
     _hasLoadedOnce = false; // Permitir recarga
     await _loadUserData();
   }
 
   /// 🆕 Método para limpiar datos del usuario (útil después de logout)
   void clearUserData() {
+    debugPrint('🗑️ [Controller] Limpiando datos de usuario...');
     _currentUser = null;
     _welcomeMessage = 'Bienvenido';
     _hasLoadedOnce = false;
     _isLoadingUserData = false;
     notifyListeners();
-    debugPrint('🗑️ [Controller] Datos de usuario limpiados');
+    debugPrint('✅ [Controller] Datos de usuario limpiados');
   }
 
   // ==================== NAVEGACIÓN ====================
@@ -301,12 +341,12 @@ class InsideScreenController extends ChangeNotifier {
       AdminAnalysisService().clearCache();
       TeacherReportService().clearAllCache();
       
-      debugPrint('🔴 [Controller] Auth data y caches limpiados');
+      debugPrint('✅ [Controller] Logout completado');
       
       await Future.delayed(const Duration(milliseconds: 1500));
       
     } catch (e) {
-      debugPrint('🔴 [Controller] ERROR durante logout: $e');
+      debugPrint('💥 [Controller] ERROR durante logout: $e');
       rethrow;
     } finally {
       _isLoggingOut = false;
