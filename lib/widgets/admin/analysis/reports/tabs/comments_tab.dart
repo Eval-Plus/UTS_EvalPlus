@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_constants.dart';
-import 'package:eval_plus/widgets/admin/analysis/reports/components/states/empty_state.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/loading/ai_regeneration_loading.dart';
 
 class CommentsTab extends StatefulWidget {
@@ -92,33 +91,50 @@ class _CommentsTabState extends State<CommentsTab> {
       return _buildErrorState(widget.errorMessage!);
     }
 
-    // Estado vacío
-    if (widget.comments.isEmpty) {
-      return _buildEmptyState(palette);
-    }
-
-    // Estado normal con datos
+    // Estado normal con datos (o vacío sin comentarios en absoluto)
     return RefreshIndicator(
       onRefresh: _handleRefresh,
-      color: palette.primary,           // 🆕 Color del spinner
-      backgroundColor: Colors.white,    // 🆕 Fondo del indicador
+      color: palette.primary,
+      backgroundColor: Colors.white,
       strokeWidth: 2.5,
-      child: _filteredComments.isEmpty
-          ? _buildFilteredEmptyState()
-          : ListView(
-              padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
-              children: [
-                _buildFiltersPanel(),
-                const SizedBox(height: ReportConstants.paddingLarge),
-                _buildSatisfactionSection(),
-                const SizedBox(height: ReportConstants.paddingLarge),
-                _buildSentimentDistribution(),
-                const SizedBox(height: ReportConstants.paddingLarge),
-                _buildCommentsHeader(),
-                const SizedBox(height: ReportConstants.paddingMedium),
-                ..._filteredComments.map((comment) => _buildCommentCard(comment)),
-              ],
-            ),
+      child: ListView(
+        padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
+        children: [
+          // Filtros: siempre visibles si hay datos o si hay comentarios base
+          if (widget.comments.isNotEmpty) ...[
+            _buildFiltersPanel(),
+            const SizedBox(height: ReportConstants.paddingLarge),
+            _buildSatisfactionSection(),
+            const SizedBox(height: ReportConstants.paddingLarge),
+            _buildSentimentDistribution(),
+            const SizedBox(height: ReportConstants.paddingLarge),
+            _buildCommentsHeader(),
+            const SizedBox(height: ReportConstants.paddingMedium),
+          ],
+
+          // Área de comentarios: empty state inline o lista real
+          if (widget.comments.isEmpty)
+            _buildInlineEmptyState(
+              icon: Icons.comment_outlined,
+              title: 'Sin comentarios',
+              description:
+                  'Este docente aún no tiene comentarios\nde evaluaciones completadas',
+              hint: 'Desliza hacia abajo para actualizar',
+              palette: palette,
+            )
+          else if (_filteredComments.isEmpty)
+            _buildInlineEmptyState(
+              icon: Icons.filter_list_off,
+              title: 'Sin resultados',
+              description:
+                  'No hay comentarios con el filtro\n"${_getFilterLabel(_commentFilter)}" aplicado',
+              hint: 'Prueba seleccionando otro filtro',
+              palette: palette,
+            )
+          else
+            ..._filteredComments.map((comment) => _buildCommentCard(comment)),
+        ],
+      ),
     );
   }
 
@@ -168,52 +184,70 @@ class _CommentsTabState extends State<CommentsTab> {
     );
   }
 
-  // 🆕 Empty state con hint de pull-to-refresh
-  Widget _buildEmptyState(RoleColorPalette palette) {
-    return CustomScrollView(
-      physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [
-        SliverFillRemaining(
-          child: Column(
+  /// Empty state inline: se muestra dentro del ListView, debajo de los filtros
+  Widget _buildInlineEmptyState({
+    required IconData icon,
+    required String title,
+    required String description,
+    required String hint,
+    required RoleColorPalette palette,
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(top: ReportConstants.paddingXLarge),
+      padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ReportConstants.largeBorderRadius),
+        border: Border.all(color: const Color(0xFFE5E7EB)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 52, color: Colors.grey[300]),
+          const SizedBox(height: 14),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[700],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 20),
+          Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.comment_outlined, size: 64, color: Colors.grey[300]),
-              const SizedBox(height: 16),
+              Icon(Icons.info_outline, size: 13, color: palette.primary.withOpacity(0.55)),
+              const SizedBox(width: 5),
               Text(
-                'Sin comentarios',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[700]),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Este docente aún no tiene comentarios de evaluaciones completadas',
-                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.arrow_downward, size: 14, color: palette.primary.withOpacity(0.6)),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Desliza hacia abajo para actualizar',
-                    style: TextStyle(fontSize: 12, color: palette.primary.withOpacity(0.7)),
-                  ),
-                ],
+                hint,
+                style: TextStyle(fontSize: 12, color: palette.primary.withOpacity(0.65)),
               ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
-  Widget _buildFilteredEmptyState() {
-    return EmptyState(
-      icon: Icons.filter_list_off,
-      title: 'Sin resultados',
-      description: 'No se encontraron comentarios con el filtro "$_commentFilter"',
-    );
+  /// Devuelve la etiqueta legible del filtro activo
+  String _getFilterLabel(String filter) {
+    switch (filter) {
+      case 'positive':
+        return ReportConstants.positiveCommentsLabel;
+      case 'neutral':
+        return ReportConstants.neutralCommentsLabel;
+      case 'negative':
+        return ReportConstants.negativeCommentsLabel;
+      default:
+        return ReportConstants.allCommentsLabel;
+    }
   }
 
   // ==================== COMPONENTES PRINCIPALES ====================
