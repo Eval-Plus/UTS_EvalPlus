@@ -7,30 +7,87 @@ import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_constants.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/components/states/empty_state.dart';
+import 'package:eval_plus/widgets/admin/analysis/reports/loading/ai_regeneration_loading.dart';
 
-class SubjectsTab extends StatelessWidget {
+class SubjectsTab extends StatefulWidget {
   final List<SubjectData> subjects;
   final String careerName;
+  final Future<void> Function()? onRefresh; // 🆕 Callback para refresh real
 
   const SubjectsTab({
     super.key,
     required this.subjects,
     required this.careerName,
+    this.onRefresh,
   });
 
   @override
+  State<SubjectsTab> createState() => _SubjectsTabState();
+}
+
+class _SubjectsTabState extends State<SubjectsTab> {
+  bool _isRefreshing = false; // 🆕 Estado de refreshing
+
+  // 🆕 Maneja el refresh real con splash loading
+  Future<void> _handleRefresh() async {
+    if (widget.onRefresh == null) return;
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    try {
+      await widget.onRefresh!();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (subjects.isEmpty) {
-      return const EmptyState(
-        icon: Icons.menu_book_outlined,
-        title: 'No hay materias disponibles',
-        description: 'No se encontraron materias asignadas para este docente',
+    final palette = AppColors.getPaletteForRole(UserRole.admin);
+
+    // 🆕 Mostrar splash de loading durante el refresh
+    if (_isRefreshing) {
+      return AIRegenerationLoading(palette: palette);
+    }
+
+    if (widget.subjects.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _handleRefresh,
+        color: palette.primary,
+        backgroundColor: Colors.white,
+        strokeWidth: 2.5,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverFillRemaining(
+              child: EmptyState(
+                icon: Icons.menu_book_outlined,
+                title: 'No hay materias disponibles',
+                description:
+                    'No se encontraron materias asignadas para este docente',
+              ),
+            ),
+          ],
+        ),
       );
     }
 
-    return ListView(
-      padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
-      children: subjects.map((subject) => _buildSubjectCard(subject)).toList(),
+    return RefreshIndicator(
+      onRefresh: _handleRefresh,
+      color: palette.primary,        // 🆕 Color del spinner
+      backgroundColor: Colors.white, // 🆕 Fondo del indicador
+      strokeWidth: 2.5,
+      child: ListView(
+        padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
+        children:
+            widget.subjects.map((subject) => _buildSubjectCard(subject)).toList(),
+      ),
     );
   }
 
@@ -68,7 +125,7 @@ class SubjectsTab extends StatelessWidget {
               children: [
                 _buildCareerBadge(),
                 const SizedBox(height: ReportConstants.paddingLarge),
-                _buildStatsGrid(subject, completionRate),
+                _buildStatsGrid(subject),
                 const SizedBox(height: ReportConstants.paddingLarge),
                 _buildProgressSection(completionRate, progressColor, progressStatus),
               ],
@@ -85,15 +142,19 @@ class SubjectsTab extends StatelessWidget {
     Color progressColor,
     Map<String, dynamic> progressStatus,
   ) {
+    final completionRate = subject.students > 0
+        ? (subject.completed / subject.students) * 100
+        : 0.0;
+
     return Container(
       padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: ReportConstants.getProgressGradient(
-            subject.students > 0 ? (subject.completed / subject.students) * 100 : 0.0,
-          ).map((color) => color.withOpacity(0.12)).toList(),
+          colors: ReportConstants.getProgressGradient(completionRate)
+              .map((color) => color.withOpacity(0.12))
+              .toList(),
         ),
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(12),
@@ -103,7 +164,6 @@ class SubjectsTab extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icono de materia
           Container(
             width: 56,
             height: 56,
@@ -111,9 +171,7 @@ class SubjectsTab extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: ReportConstants.getProgressGradient(
-                  subject.students > 0 ? (subject.completed / subject.students) * 100 : 0.0,
-                ),
+                colors: ReportConstants.getProgressGradient(completionRate),
               ),
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
@@ -124,14 +182,9 @@ class SubjectsTab extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.book,
-              color: Colors.white,
-              size: 28,
-            ),
+            child: const Icon(Icons.book, color: Colors.white, size: 28),
           ),
           const SizedBox(width: ReportConstants.paddingLarge),
-          // Información de la materia
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,10 +200,7 @@ class SubjectsTab extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
                     color: progressColor,
                     borderRadius: BorderRadius.circular(6),
@@ -189,16 +239,12 @@ class SubjectsTab extends StatelessWidget {
             color: const Color(0xFFEFF6FF),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: const Icon(
-            Icons.school,
-            size: 16,
-            color: Color(0xFF3B82F6),
-          ),
+          child: const Icon(Icons.school, size: 16, color: Color(0xFF3B82F6)),
         ),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            careerName,
+            widget.careerName,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
@@ -210,7 +256,7 @@ class SubjectsTab extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsGrid(SubjectData subject, double completionRate) {
+  Widget _buildStatsGrid(SubjectData subject) {
     return Container(
       padding: const EdgeInsets.all(ReportConstants.paddingLarge),
       decoration: BoxDecoration(
@@ -275,10 +321,7 @@ class SubjectsTab extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
           child: Icon(icon, size: 18, color: color),
         ),
         const SizedBox(height: 8),
@@ -309,9 +352,8 @@ class SubjectsTab extends StatelessWidget {
     Color progressColor,
     Map<String, dynamic> progressStatus,
   ) {
-    // Calcular el valor visual de la barra de progreso
-    final displayProgress = completionRate > 0 
-        ? completionRate / 100 
+    final displayProgress = completionRate > 0
+        ? completionRate / 100
         : ReportConstants.progressMinimumDisplay / 100;
 
     return Column(
@@ -328,11 +370,7 @@ class SubjectsTab extends StatelessWidget {
                     color: progressColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Icon(
-                    Icons.trending_up,
-                    size: 16,
-                    color: progressColor,
-                  ),
+                  child: Icon(Icons.trending_up, size: 16, color: progressColor),
                 ),
                 const SizedBox(width: 8),
                 const Text(
@@ -367,7 +405,6 @@ class SubjectsTab extends StatelessWidget {
           ],
         ),
         const SizedBox(height: ReportConstants.paddingLarge),
-        // Barra de progreso completa
         Container(
           height: 14,
           decoration: BoxDecoration(
@@ -378,9 +415,6 @@ class SubjectsTab extends StatelessWidget {
             borderRadius: BorderRadius.circular(7),
             child: Stack(
               children: [
-                // Barra de progreso completa (fondo gris ya está en el Container padre)
-                
-                // Barra de progreso llenada
                 FractionallySizedBox(
                   widthFactor: displayProgress,
                   child: Container(
@@ -398,7 +432,6 @@ class SubjectsTab extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Efecto de brillo
                 FractionallySizedBox(
                   widthFactor: displayProgress,
                   child: Container(

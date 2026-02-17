@@ -177,6 +177,14 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     }
   }
 
+  /// Callback para pull-to-refresh en el tab de Materias
+  /// Re-consulta todos los datos del docente (subjects vienen del modelo padre)
+  Future<void> _refreshSubjects() async {
+    if (!mounted) return;
+    // Re-carga los datos sin loading dialog; los tabs manejan su propio splash
+    await _loadReportData(showLoadingDialog: false);
+  }
+
   /// Callback para pull-to-refresh en el tab de Comentarios
   Future<void> _refreshComments() async {
     if (!mounted) return;
@@ -337,6 +345,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                     SubjectsTab(
                       subjects: widget.teacher.subjects,
                       careerName: widget.teacher.careerName,
+                      onRefresh: _refreshSubjects, // 🆕 Callback real
                     ),
 
                     // Tab 3: Análisis IA
