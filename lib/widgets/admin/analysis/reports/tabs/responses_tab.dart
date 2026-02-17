@@ -3,16 +3,19 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_constants.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/components/question_card.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/components/states/empty_state.dart';
+import 'package:eval_plus/widgets/admin/analysis/reports/loading/ai_regeneration_loading.dart';
 
 class ResponsesTab extends StatefulWidget {
   final List<QuestionReport> questions;
   final double averageScore;
   final int totalResponses; // completedEvaluations
   final int expectedResponses; // totalEvaluations
+  final Future<void> Function()? onRefresh; // 🆕 Callback para refresh real
 
   const ResponsesTab({
     super.key,
@@ -20,6 +23,7 @@ class ResponsesTab extends StatefulWidget {
     required this.averageScore,
     required this.totalResponses,
     required this.expectedResponses,
+    this.onRefresh,
   });
 
   @override
@@ -28,6 +32,7 @@ class ResponsesTab extends StatefulWidget {
 
 class _ResponsesTabState extends State<ResponsesTab> {
   int? _expandedQuestionId;
+  bool _isRefreshing = false; // 🆕 Estado de refreshing
 
   void _toggleQuestion(int questionId) {
     setState(() {
@@ -46,13 +51,39 @@ class _ResponsesTabState extends State<ResponsesTab> {
     return (widget.expectedResponses - widget.totalResponses).clamp(0, widget.expectedResponses);
   }
 
+  // 🆕 Maneja el refresh real con splash loading
+  Future<void> _handleRefresh() async {
+    if (widget.onRefresh == null) return;
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    try {
+      await widget.onRefresh!();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final palette = AppColors.getPaletteForRole(UserRole.admin);
+
+    // 🆕 Mostrar splash de loading durante el refresh
+    if (_isRefreshing) {
+      return AIRegenerationLoading(palette: palette);
+    }
+
     return RefreshIndicator(
-      onRefresh: () async {
-        // TODO: Implementar refresh cuando se necesite
-        await Future.delayed(const Duration(seconds: 1));
-      },
+      onRefresh: _handleRefresh,
+      color: palette.primary,           // 🆕 Color del spinner
+      backgroundColor: Colors.white,    // 🆕 Fondo del indicador
+      strokeWidth: 2.5,
       child: ListView(
         padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
         children: [
@@ -60,7 +91,7 @@ class _ResponsesTabState extends State<ResponsesTab> {
           const SizedBox(height: ReportConstants.paddingLarge),
           _buildCategoryDivider('Preguntas de Evaluación'),
           const SizedBox(height: ReportConstants.paddingMedium),
-          
+
           // Mostrar mensaje si no hay preguntas
           if (widget.questions.isEmpty)
             const EmptyState(
@@ -72,7 +103,7 @@ class _ResponsesTabState extends State<ResponsesTab> {
             ...widget.questions.asMap().entries.map((entry) {
               final index = entry.key;
               final question = entry.value;
-              
+
               return Padding(
                 padding: const EdgeInsets.only(bottom: ReportConstants.paddingMedium),
                 child: QuestionCardReport(
@@ -121,34 +152,18 @@ class _ResponsesTabState extends State<ResponsesTab> {
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.star,
-            color: Colors.white70,
-            size: 18,
-          ),
+          const Icon(Icons.star, color: Colors.white70, size: 18),
           const SizedBox(height: ReportConstants.paddingSmall),
           const Text(
             ReportConstants.averageLabel,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.white70,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: ReportConstants.paddingSmall),
           Text(
             widget.averageScore.toFixed(1),
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              height: 1,
-            ),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, height: 1),
           ),
-          const Text(
-            '/ 5.0',
-            style: TextStyle(fontSize: 10, color: Colors.white70),
-          ),
+          const Text('/ 5.0', style: TextStyle(fontSize: 10, color: Colors.white70)),
         ],
       ),
     );
@@ -175,34 +190,18 @@ class _ResponsesTabState extends State<ResponsesTab> {
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.assignment_turned_in,
-            color: Colors.white70,
-            size: 18,
-          ),
+          const Icon(Icons.assignment_turned_in, color: Colors.white70, size: 18),
           const SizedBox(height: ReportConstants.paddingSmall),
           const Text(
             ReportConstants.responsesLabel,
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.white70,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: ReportConstants.paddingSmall),
           Text(
             '${widget.totalResponses}',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              height: 1,
-            ),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, height: 1),
           ),
-          const Text(
-            ReportConstants.evaluationsLabel,
-            style: TextStyle(fontSize: 10, color: Colors.white70),
-          ),
+          const Text(ReportConstants.evaluationsLabel, style: TextStyle(fontSize: 10, color: Colors.white70)),
         ],
       ),
     );
@@ -210,13 +209,11 @@ class _ResponsesTabState extends State<ResponsesTab> {
 
   Widget _buildCompletionCard() {
     final completionData = _getCompletionData(_completionRate);
-    
+
     return Container(
       padding: const EdgeInsets.all(ReportConstants.paddingLarge),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: completionData['colors'] as List<Color>,
-        ),
+        gradient: LinearGradient(colors: completionData['colors'] as List<Color>),
         borderRadius: BorderRadius.circular(ReportConstants.cardBorderRadius),
         boxShadow: [
           BoxShadow(
@@ -228,34 +225,19 @@ class _ResponsesTabState extends State<ResponsesTab> {
       ),
       child: Column(
         children: [
-          Icon(
-            completionData['icon'] as IconData,
-            color: Colors.white70,
-            size: 18,
-          ),
+          Icon(completionData['icon'] as IconData, color: Colors.white70, size: 18),
           const SizedBox(height: ReportConstants.paddingSmall),
           const Text(
             'Completitud',
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.white70,
-              fontWeight: FontWeight.w500,
-            ),
+            style: TextStyle(fontSize: 11, color: Colors.white70, fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: ReportConstants.paddingSmall),
           Text(
             '${_completionRate.toStringAsFixed(0)}%',
-            style: const TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              height: 1,
-            ),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white, height: 1),
           ),
           Text(
-            _pendingResponses == 0 
-              ? 'Completo' 
-              : '$_pendingResponses pendientes',
+            _pendingResponses == 0 ? 'Completo' : '$_pendingResponses pendientes',
             style: const TextStyle(fontSize: 10, color: Colors.white70),
           ),
         ],
@@ -272,42 +254,25 @@ class _ResponsesTabState extends State<ResponsesTab> {
             color: const Color(0xFFF3F4F6),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: const Icon(
-            Icons.help_outline,
-            size: 18,
-            color: Color(0xFF6B7280),
-          ),
+          child: const Icon(Icons.help_outline, size: 18, color: Color(0xFF6B7280)),
         ),
         const SizedBox(width: ReportConstants.paddingMedium),
         Expanded(
           child: Text(
             title,
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
-            ),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 4,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: const Color(0xFFEFF6FF),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: const Color(0xFFBFDBFE),
-            ),
+            border: Border.all(color: const Color(0xFFBFDBFE)),
           ),
           child: Text(
             '${widget.questions.length} preguntas',
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF3B82F6),
-            ),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF3B82F6)),
           ),
         ),
       ],
@@ -317,45 +282,29 @@ class _ResponsesTabState extends State<ResponsesTab> {
   /// Obtiene el color de categoría basado en el índice
   Color _getCategoryColor(int index) {
     final colors = [
-      const Color(0xFF3B82F6), // Azul
-      const Color(0xFF8B5CF6), // Púrpura
-      const Color(0xFF10B981), // Verde
-      const Color(0xFFF59E0B), // Naranja
-      const Color(0xFFEC4899), // Rosa
+      const Color(0xFF3B82F6),
+      const Color(0xFF8B5CF6),
+      const Color(0xFF10B981),
+      const Color(0xFFF59E0B),
+      const Color(0xFFEC4899),
     ];
-    
     return colors[index % colors.length];
   }
 
   /// Obtiene la configuración visual según el porcentaje de completitud
   Map<String, dynamic> _getCompletionData(double rate) {
     if (rate >= 90) {
-      return {
-        'colors': [const Color(0xFF10B981), const Color(0xFF059669)],
-        'icon': Icons.check_circle,
-      };
+      return {'colors': [const Color(0xFF10B981), const Color(0xFF059669)], 'icon': Icons.check_circle};
     }
     if (rate >= 70) {
-      return {
-        'colors': [const Color(0xFF8BC34A), const Color(0xFF689F38)],
-        'icon': Icons.trending_up,
-      };
+      return {'colors': [const Color(0xFF8BC34A), const Color(0xFF689F38)], 'icon': Icons.trending_up};
     }
     if (rate >= 50) {
-      return {
-        'colors': [const Color(0xFFFCD34D), const Color(0xFFF59E0B)],
-        'icon': Icons.trending_flat,
-      };
+      return {'colors': [const Color(0xFFFCD34D), const Color(0xFFF59E0B)], 'icon': Icons.trending_flat};
     }
     if (rate >= 30) {
-      return {
-        'colors': [const Color(0xFFF59E0B), const Color(0xFFD97706)],
-        'icon': Icons.trending_down,
-      };
+      return {'colors': [const Color(0xFFF59E0B), const Color(0xFFD97706)], 'icon': Icons.trending_down};
     }
-    return {
-      'colors': [const Color(0xFFEF4444), const Color(0xFFDC2626)],
-      'icon': Icons.warning,
-    };
+    return {'colors': [const Color(0xFFEF4444), const Color(0xFFDC2626)], 'icon': Icons.warning};
   }
 }

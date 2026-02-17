@@ -3,20 +3,24 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_constants.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/components/states/empty_state.dart';
+import 'package:eval_plus/widgets/admin/analysis/reports/loading/ai_regeneration_loading.dart';
 
 class CommentsTab extends StatefulWidget {
   final List<CommentReport> comments;
   final bool isLoading;
   final String? errorMessage;
+  final Future<void> Function()? onRefresh; // 🆕 Callback para refresh real
 
   const CommentsTab({
     super.key,
     required this.comments,
     this.isLoading = false,
     this.errorMessage,
+    this.onRefresh,
   });
 
   @override
@@ -25,6 +29,7 @@ class CommentsTab extends StatefulWidget {
 
 class _CommentsTabState extends State<CommentsTab> {
   String _commentFilter = 'all';
+  bool _isRefreshing = false; // 🆕 Estado de refreshing
 
   List<CommentReport> get _filteredComments {
     return widget.comments.where((comment) {
@@ -41,22 +46,45 @@ class _CommentsTabState extends State<CommentsTab> {
   }
 
   /// Calcula el porcentaje de satisfacción general
-  /// Fórmula: (Positivos + 50% de Neutrales) / Total * 100
   double get _satisfactionRate {
     if (widget.comments.isEmpty) return 0.0;
-    
     final positive = _sentimentCounts['positive']!;
     final neutral = _sentimentCounts['neutral']!;
     final total = widget.comments.length;
-    
     return ((positive + (neutral * 0.5)) / total) * 100;
+  }
+
+  // 🆕 Maneja el refresh real con splash loading
+  Future<void> _handleRefresh() async {
+    if (widget.onRefresh == null) return;
+
+    setState(() {
+      _isRefreshing = true;
+    });
+
+    try {
+      await widget.onRefresh!();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Estado de carga
+    final palette = AppColors.getPaletteForRole(UserRole.admin);
+
+    // Estado de carga inicial
     if (widget.isLoading) {
       return _buildLoadingState();
+    }
+
+    // 🆕 Mostrar splash de loading durante el refresh
+    if (_isRefreshing) {
+      return AIRegenerationLoading(palette: palette);
     }
 
     // Estado de error
@@ -64,17 +92,17 @@ class _CommentsTabState extends State<CommentsTab> {
       return _buildErrorState(widget.errorMessage!);
     }
 
-    // Estado vacío (sin comentarios)
+    // Estado vacío
     if (widget.comments.isEmpty) {
-      return _buildEmptyState();
+      return _buildEmptyState(palette);
     }
 
     // Estado normal con datos
     return RefreshIndicator(
-      onRefresh: () async {
-        // TODO: Implementar refresh cuando sea necesario
-        await Future.delayed(const Duration(seconds: 1));
-      },
+      onRefresh: _handleRefresh,
+      color: palette.primary,           // 🆕 Color del spinner
+      backgroundColor: Colors.white,    // 🆕 Fondo del indicador
+      strokeWidth: 2.5,
       child: _filteredComments.isEmpty
           ? _buildFilteredEmptyState()
           : ListView(
@@ -107,10 +135,7 @@ class _CommentsTabState extends State<CommentsTab> {
             SizedBox(height: 16),
             Text(
               'Cargando comentarios...',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF6B7280),
-              ),
+              style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
             ),
           ],
         ),
@@ -125,27 +150,16 @@ class _CommentsTabState extends State<CommentsTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red,
-            ),
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
             const SizedBox(height: 16),
             const Text(
               'Error al cargar comentarios',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1F2937),
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF1F2937)),
             ),
             const SizedBox(height: 8),
             Text(
               errorMessage,
-              style: const TextStyle(
-                fontSize: 13,
-                color: Color(0xFF6B7280),
-              ),
+              style: const TextStyle(fontSize: 13, color: Color(0xFF6B7280)),
               textAlign: TextAlign.center,
             ),
           ],
@@ -154,11 +168,43 @@ class _CommentsTabState extends State<CommentsTab> {
     );
   }
 
-  Widget _buildEmptyState() {
-    return const EmptyState(
-      icon: Icons.comment_outlined,
-      title: 'Sin comentarios',
-      description: 'Este docente aún no tiene comentarios de evaluaciones completadas',
+  // 🆕 Empty state con hint de pull-to-refresh
+  Widget _buildEmptyState(RoleColorPalette palette) {
+    return CustomScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      slivers: [
+        SliverFillRemaining(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.comment_outlined, size: 64, color: Colors.grey[300]),
+              const SizedBox(height: 16),
+              Text(
+                'Sin comentarios',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Colors.grey[700]),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Este docente aún no tiene comentarios de evaluaciones completadas',
+                style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.arrow_downward, size: 14, color: palette.primary.withOpacity(0.6)),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Desliza hacia abajo para actualizar',
+                    style: TextStyle(fontSize: 12, color: palette.primary.withOpacity(0.7)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -180,11 +226,7 @@ class _CommentsTabState extends State<CommentsTab> {
         borderRadius: BorderRadius.circular(ReportConstants.largeBorderRadius),
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
@@ -194,24 +236,13 @@ class _CommentsTabState extends State<CommentsTab> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  ReportConstants.filterIcon,
-                  size: 18,
-                  color: Color(0xFF6B7280),
-                ),
+                decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(8)),
+                child: const Icon(ReportConstants.filterIcon, size: 18, color: Color(0xFF6B7280)),
               ),
               const SizedBox(width: ReportConstants.paddingMedium),
               const Text(
                 ReportConstants.filtersTitle,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1F2937),
-                ),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1F2937)),
               ),
             ],
           ),
@@ -232,18 +263,11 @@ class _CommentsTabState extends State<CommentsTab> {
       child: DropdownButtonFormField<String>(
         value: _commentFilter,
         decoration: const InputDecoration(
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 12,
-          ),
+          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           border: InputBorder.none,
           isDense: true,
         ),
-        style: const TextStyle(
-          fontSize: 13,
-          color: Color(0xFF374151),
-          fontWeight: FontWeight.w500,
-        ),
+        style: const TextStyle(fontSize: 13, color: Color(0xFF374151), fontWeight: FontWeight.w500),
         icon: const Icon(Icons.keyboard_arrow_down, size: 20, color: Color(0xFF6B7280)),
         dropdownColor: Colors.white,
         items: [
@@ -253,33 +277,27 @@ class _CommentsTabState extends State<CommentsTab> {
           ),
           DropdownMenuItem(
             value: 'positive',
-            child: Row(
-              children: [
-                const Icon(Icons.sentiment_satisfied, size: 16, color: Color(0xFF10B981)),
-                const SizedBox(width: 6),
-                Text('${ReportConstants.positiveCommentsLabel} (${_sentimentCounts['positive']})'),
-              ],
-            ),
+            child: Row(children: [
+              const Icon(Icons.sentiment_satisfied, size: 16, color: Color(0xFF10B981)),
+              const SizedBox(width: 6),
+              Text('${ReportConstants.positiveCommentsLabel} (${_sentimentCounts['positive']})'),
+            ]),
           ),
           DropdownMenuItem(
             value: 'neutral',
-            child: Row(
-              children: [
-                const Icon(Icons.sentiment_neutral, size: 16, color: Color(0xFF6B7280)),
-                const SizedBox(width: 6),
-                Text('${ReportConstants.neutralCommentsLabel} (${_sentimentCounts['neutral']})'),
-              ],
-            ),
+            child: Row(children: [
+              const Icon(Icons.sentiment_neutral, size: 16, color: Color(0xFF6B7280)),
+              const SizedBox(width: 6),
+              Text('${ReportConstants.neutralCommentsLabel} (${_sentimentCounts['neutral']})'),
+            ]),
           ),
           DropdownMenuItem(
             value: 'negative',
-            child: Row(
-              children: [
-                const Icon(Icons.sentiment_dissatisfied, size: 16, color: Color(0xFFEF4444)),
-                const SizedBox(width: 6),
-                Text('${ReportConstants.negativeCommentsLabel} (${_sentimentCounts['negative']})'),
-              ],
-            ),
+            child: Row(children: [
+              const Icon(Icons.sentiment_dissatisfied, size: 16, color: Color(0xFFEF4444)),
+              const SizedBox(width: 6),
+              Text('${ReportConstants.negativeCommentsLabel} (${_sentimentCounts['negative']})'),
+            ]),
           ),
         ],
         onChanged: (value) {
@@ -298,7 +316,6 @@ class _CommentsTabState extends State<CommentsTab> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Tarjeta de Satisfacción
           Expanded(
             flex: 2,
             child: Container(
@@ -309,13 +326,10 @@ class _CommentsTabState extends State<CommentsTab> {
                   end: Alignment.bottomRight,
                   colors: satisfactionData['colors'] as List<Color>,
                 ),
-                borderRadius: BorderRadius.circular(
-                  ReportConstants.largeBorderRadius,
-                ),
+                borderRadius: BorderRadius.circular(ReportConstants.largeBorderRadius),
                 boxShadow: [
                   BoxShadow(
-                    color: (satisfactionData['colors'] as List<Color>)[0]
-                        .withOpacity(0.3),
+                    color: (satisfactionData['colors'] as List<Color>)[0].withOpacity(0.3),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -324,117 +338,70 @@ class _CommentsTabState extends State<CommentsTab> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'Satisfacción',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
+                  const Text('Satisfacción',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white)),
                   const SizedBox(height: ReportConstants.paddingXLarge),
                   Text(
                     '${_satisfactionRate.toStringAsFixed(1)}%',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1,
-                    ),
+                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, height: 1),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     satisfactionData['label'] as String,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.white70,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: const TextStyle(fontSize: 13, color: Colors.white70, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
             ),
           ),
-
           const SizedBox(width: ReportConstants.paddingLarge),
-
-          // Tarjeta Informativa
           Expanded(
             flex: 3,
             child: Container(
               padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(
-                  ReportConstants.largeBorderRadius,
-                ),
+                borderRadius: BorderRadius.circular(ReportConstants.largeBorderRadius),
                 border: Border.all(color: const Color(0xFFE5E7EB)),
                 boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
+                  BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEFF6FF),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Icon(
-                          Icons.info_outline,
-                          size: 16,
-                          color: Color(0xFF3B82F6),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        '¿Cómo se calcula?',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1F2937),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: ReportConstants.paddingMedium),
-                  const Text(
-                    'Ponderando los comentarios:',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6B7280),
-                      height: 1.4,
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF), borderRadius: BorderRadius.circular(6)),
+                      child: const Icon(Icons.info_outline, size: 16, color: Color(0xFF3B82F6)),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    const Text('¿Cómo se calcula?',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
+                  ]),
+                  const SizedBox(height: ReportConstants.paddingMedium),
+                  const Text('Ponderando los comentarios:',
+                      style: TextStyle(fontSize: 12, color: Color(0xFF6B7280), height: 1.4)),
                   const SizedBox(height: 8),
                   _buildCalculationItem(
-                    icon: Icons.sentiment_satisfied,
-                    color: const Color(0xFF10B981),
-                    label: 'Positivos',
-                    value: '100%',
-                  ),
+                      icon: Icons.sentiment_satisfied,
+                      color: const Color(0xFF10B981),
+                      label: 'Positivos',
+                      value: '100%'),
                   const SizedBox(height: 4),
                   _buildCalculationItem(
-                    icon: Icons.sentiment_neutral,
-                    color: const Color(0xFF6B7280),
-                    label: 'Neutrales',
-                    value: '50%',
-                  ),
+                      icon: Icons.sentiment_neutral,
+                      color: const Color(0xFF6B7280),
+                      label: 'Neutrales',
+                      value: '50%'),
                   const SizedBox(height: 4),
                   _buildCalculationItem(
-                    icon: Icons.sentiment_dissatisfied,
-                    color: const Color(0xFFEF4444),
-                    label: 'Negativos',
-                    value: '0%',
-                  ),
+                      icon: Icons.sentiment_dissatisfied,
+                      color: const Color(0xFFEF4444),
+                      label: 'Negativos',
+                      value: '0%'),
                 ],
               ),
             ),
@@ -454,29 +421,15 @@ class _CommentsTabState extends State<CommentsTab> {
       children: [
         Icon(icon, size: 14, color: color),
         const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Color(0xFF374151),
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+        Text(label,
+            style: const TextStyle(fontSize: 11, color: Color(0xFF374151), fontWeight: FontWeight.w500)),
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
+              color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+          child: Text(value,
+              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: color)),
         ),
       ],
     );
@@ -490,52 +443,39 @@ class _CommentsTabState extends State<CommentsTab> {
         borderRadius: BorderRadius.circular(ReportConstants.largeBorderRadius),
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Distribución de Sentimientos',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
-            ),
-          ),
+          const Text('Distribución de Sentimientos',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
           const SizedBox(height: ReportConstants.paddingLarge),
           Row(
             children: [
               Expanded(
                 child: _buildSentimentCard(
-                  ReportConstants.positiveCommentsLabel,
-                  _sentimentCounts['positive']!,
-                  const Color(0xFF10B981),
-                  ReportConstants.positiveIcon,
-                ),
+                    ReportConstants.positiveCommentsLabel,
+                    _sentimentCounts['positive']!,
+                    const Color(0xFF10B981),
+                    ReportConstants.positiveIcon),
               ),
               const SizedBox(width: ReportConstants.paddingMedium),
               Expanded(
                 child: _buildSentimentCard(
-                  ReportConstants.neutralCommentsLabel,
-                  _sentimentCounts['neutral']!,
-                  const Color(0xFF6B7280),
-                  ReportConstants.neutralIcon,
-                ),
+                    ReportConstants.neutralCommentsLabel,
+                    _sentimentCounts['neutral']!,
+                    const Color(0xFF6B7280),
+                    ReportConstants.neutralIcon),
               ),
               const SizedBox(width: ReportConstants.paddingMedium),
               Expanded(
                 child: _buildSentimentCard(
-                  ReportConstants.negativeCommentsLabel,
-                  _sentimentCounts['negative']!,
-                  const Color(0xFFEF4444),
-                  ReportConstants.negativeIcon,
-                ),
+                    ReportConstants.negativeCommentsLabel,
+                    _sentimentCounts['negative']!,
+                    const Color(0xFFEF4444),
+                    ReportConstants.negativeIcon),
               ),
             ],
           ),
@@ -556,30 +496,15 @@ class _CommentsTabState extends State<CommentsTab> {
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: color.withOpacity(0.15), shape: BoxShape.circle),
             child: Icon(icon, size: 20, color: color),
           ),
           const SizedBox(height: ReportConstants.paddingMedium),
-          Text(
-            '$count',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
+          Text('$count',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)),
           const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color.withOpacity(0.8),
-            ),
-          ),
+          Text(label,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color.withOpacity(0.8))),
         ],
       ),
     );
@@ -591,45 +516,24 @@ class _CommentsTabState extends State<CommentsTab> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: const Color(0xFFF3F4F6),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: const Icon(
-            Icons.comment,
-            size: 18,
-            color: Color(0xFF6B7280),
-          ),
+              color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(8)),
+          child: const Icon(Icons.comment, size: 18, color: Color(0xFF6B7280)),
         ),
         const SizedBox(width: ReportConstants.paddingMedium),
         const Expanded(
-          child: Text(
-            'Comentarios Anónimos',
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1F2937),
-            ),
-          ),
+          child: Text('Comentarios Anónimos',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1F2937))),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: 4,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: const Color(0xFFEFF6FF),
             borderRadius: BorderRadius.circular(6),
-            border: Border.all(
-              color: const Color(0xFFBFDBFE),
-            ),
+            border: Border.all(color: const Color(0xFFBFDBFE)),
           ),
           child: Text(
             '${_filteredComments.length} comentarios',
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF3B82F6),
-            ),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF3B82F6)),
           ),
         ),
       ],
@@ -638,7 +542,7 @@ class _CommentsTabState extends State<CommentsTab> {
 
   Widget _buildCommentCard(CommentReport comment) {
     final sentimentConfig = _getSentimentConfig(comment.sentiment);
-    
+
     return Container(
       margin: const EdgeInsets.only(bottom: ReportConstants.paddingLarge),
       decoration: BoxDecoration(
@@ -646,98 +550,67 @@ class _CommentsTabState extends State<CommentsTab> {
         borderRadius: BorderRadius.circular(ReportConstants.largeBorderRadius),
         border: Border.all(color: const Color(0xFFE5E7EB)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header del comentario
           Container(
             padding: const EdgeInsets.all(ReportConstants.paddingLarge),
             decoration: BoxDecoration(
               color: sentimentConfig['backgroundColor'] as Color,
               borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
+                  topLeft: Radius.circular(12), topRight: Radius.circular(12)),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: sentimentConfig['color'] as Color,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    sentimentConfig['icon'] as IconData,
-                    size: 14,
-                    color: Colors.white,
-                  ),
+                      color: sentimentConfig['color'] as Color, shape: BoxShape.circle),
+                  child: Icon(sentimentConfig['icon'] as IconData,
+                      size: 14, color: Colors.white),
                 ),
                 const SizedBox(width: ReportConstants.paddingMedium),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
-                      color: (sentimentConfig['color'] as Color).withOpacity(0.3),
-                    ),
+                        color: (sentimentConfig['color'] as Color).withOpacity(0.3)),
                   ),
                   child: Text(
                     sentimentConfig['label'] as String,
                     style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: sentimentConfig['color'] as Color,
-                    ),
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: sentimentConfig['color'] as Color),
                   ),
                 ),
                 const Spacer(),
-                // Indicador anónimo
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.7),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
+                      color: Colors.white.withOpacity(0.7),
+                      borderRadius: BorderRadius.circular(6)),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.person_outline,
-                        size: 12,
-                        color: Color(0xFF6B7280),
-                      ),
+                      Icon(Icons.person_outline, size: 12, color: Color(0xFF6B7280)),
                       SizedBox(width: 4),
-                      Text(
-                        'Anónimo',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF6B7280),
-                        ),
-                      ),
+                      Text('Anónimo',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF6B7280))),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          
-          // Contenido del comentario
           Padding(
             padding: const EdgeInsets.all(ReportConstants.paddingXLarge),
             child: Row(
@@ -747,20 +620,13 @@ class _CommentsTabState extends State<CommentsTab> {
                   width: 3,
                   height: 60,
                   decoration: BoxDecoration(
-                    color: sentimentConfig['color'] as Color,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                      color: sentimentConfig['color'] as Color,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
                 const SizedBox(width: ReportConstants.paddingLarge),
                 Expanded(
-                  child: Text(
-                    comment.text,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      height: 1.5,
-                      color: Color(0xFF374151),
-                    ),
-                  ),
+                  child: Text(comment.text,
+                      style: const TextStyle(fontSize: 14, height: 1.5, color: Color(0xFF374151))),
                 ),
               ],
             ),
@@ -800,37 +666,17 @@ class _CommentsTabState extends State<CommentsTab> {
 
   Map<String, dynamic> _getSatisfactionData(double rate) {
     if (rate >= 80) {
-      return {
-        'colors': [const Color(0xFF10B981), const Color(0xFF059669)], // Verde
-        'label': 'Excelente',
-        'icon': Icons.sentiment_very_satisfied,
-      };
+      return {'colors': [const Color(0xFF10B981), const Color(0xFF059669)], 'label': 'Excelente'};
     }
     if (rate >= 60) {
-      return {
-        'colors': [const Color(0xFF8BC34A), const Color(0xFF689F38)], // Verde claro
-        'label': 'Bueno',
-        'icon': Icons.sentiment_satisfied,
-      };
+      return {'colors': [const Color(0xFF8BC34A), const Color(0xFF689F38)], 'label': 'Bueno'};
     }
     if (rate >= 40) {
-      return {
-        'colors': [const Color(0xFFFCD34D), const Color(0xFFF59E0B)], // Amarillo
-        'label': 'Regular',
-        'icon': Icons.sentiment_neutral,
-      };
+      return {'colors': [const Color(0xFFFCD34D), const Color(0xFFF59E0B)], 'label': 'Regular'};
     }
     if (rate >= 20) {
-      return {
-        'colors': [const Color(0xFFF59E0B), const Color(0xFFD97706)], // Naranja
-        'label': 'Bajo',
-        'icon': Icons.sentiment_dissatisfied,
-      };
+      return {'colors': [const Color(0xFFF59E0B), const Color(0xFFD97706)], 'label': 'Bajo'};
     }
-    return {
-      'colors': [const Color(0xFFEF4444), const Color(0xFFDC2626)], // Rojo
-      'label': 'Muy bajo',
-      'icon': Icons.sentiment_very_dissatisfied,
-    };
+    return {'colors': [const Color(0xFFEF4444), const Color(0xFFDC2626)], 'label': 'Muy bajo'};
   }
 }

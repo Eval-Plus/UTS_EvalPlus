@@ -36,7 +36,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
   // Datos de la API
   TeacherResponsesReport? _responsesData;
   List<CommentReport> _comments = [];
-  
+
   // Datos hardcodeados (temporalmente para IA)
   late AIInsights _aiInsights;
 
@@ -52,11 +52,10 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
     _initializeHardcodedData();
-    
-    // Cargar datos después de que el widget esté montado
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        _loadReportData();
+        _loadReportData(showLoadingDialog: true);
       }
     });
   }
@@ -69,8 +68,10 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   // ==================== CARGA DE DATOS ====================
 
-  /// Carga los datos del reporte desde la API
-  Future<void> _loadReportData() async {
+  /// Carga los datos del reporte desde la API.
+  /// [showLoadingDialog] controla si se muestra el fullscreen loading (carga inicial)
+  /// o si se deja que cada tab maneje su propio splash (pull-to-refresh).
+  Future<void> _loadReportData({bool showLoadingDialog = false}) async {
     if (!mounted) return;
 
     setState(() {
@@ -83,32 +84,34 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     try {
       debugPrint('📊 Cargando datos del reporte para docente ${widget.teacher.id}...');
 
-      // Mostrar diálogo de carga
-      await _showLoadingDialog();
+      if (showLoadingDialog) {
+        await _showLoadingDialog();
+      }
 
-      // Cargar datos en paralelo
+      // Siempre forzar refresh cuando se llama desde pull-to-refresh
+      final forceRefresh = !showLoadingDialog;
+
       final results = await Future.wait([
         _reportService.getResponsesReport(
           teacherId: widget.teacher.id,
           periodo: widget.teacher.period,
-          forceRefresh: false,
+          forceRefresh: forceRefresh,
         ),
         _reportService.getTeacherComments(
           teacherId: widget.teacher.id,
           periodo: widget.teacher.period,
-          forceRefresh: false,
+          forceRefresh: forceRefresh,
         ),
       ]);
 
       if (!mounted) return;
 
-      // Cerrar loading dialog
+      // Cerrar loading dialog si estaba mostrado
       if (_isLoadingDialogShown) {
         Navigator.of(context).pop();
         _isLoadingDialogShown = false;
       }
 
-      // Extraer resultados
       final responsesData = results[0] as TeacherResponsesReport?;
       final comments = results[1] as List<CommentReport>;
 
@@ -120,21 +123,20 @@ class _TeacherReportModalState extends State<TeacherReportModal>
         _responsesError = responsesData == null ? _reportService.responsesError : null;
         _commentsError = _reportService.commentsError;
       });
-      
+
       debugPrint('✅ Datos del reporte cargados exitosamente');
       debugPrint('   - Respuestas: ${responsesData != null ? "OK" : "Error"}');
       debugPrint('   - Comentarios: ${comments.length}');
     } catch (e) {
       debugPrint('💥 Error cargando datos del reporte: $e');
-      
+
       if (!mounted) return;
 
-      // Cerrar loading dialog si está abierto
       if (_isLoadingDialogShown) {
         Navigator.of(context).pop();
         _isLoadingDialogShown = false;
       }
-      
+
       setState(() {
         _isLoadingResponses = false;
         _isLoadingComments = false;
@@ -142,7 +144,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
         _commentsError = e.toString();
       });
 
-      // Esperar un frame antes de mostrar el error
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
           _showErrorDialog(e.toString());
@@ -151,15 +152,63 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     }
   }
 
-  /// Muestra el diálogo de carga
+  /// Callback para pull-to-refresh en el tab de Respuestas
+  Future<void> _refreshResponses() async {
+    if (!mounted) return;
+
+    try {
+      final report = await _reportService.getResponsesReport(
+        teacherId: widget.teacher.id,
+        periodo: widget.teacher.period,
+        forceRefresh: true, // 🔑 Siempre desde la API
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _responsesData = report;
+        _responsesError = report == null ? _reportService.responsesError : null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _responsesError = e.toString();
+      });
+    }
+  }
+
+  /// Callback para pull-to-refresh en el tab de Comentarios
+  Future<void> _refreshComments() async {
+    if (!mounted) return;
+
+    try {
+      final comments = await _reportService.getTeacherComments(
+        teacherId: widget.teacher.id,
+        periodo: widget.teacher.period,
+        forceRefresh: true, // 🔑 Siempre desde la API
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _comments = comments;
+        _commentsError = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _commentsError = e.toString();
+      });
+    }
+  }
+
+  /// Muestra el diálogo de carga fullscreen (solo en carga inicial)
   Future<void> _showLoadingDialog() async {
     if (!mounted || _isLoadingDialogShown) return;
-    
+
     final palette = AppColors.getPaletteForRole(UserRole.admin);
-    
     _isLoadingDialogShown = true;
-    
-    // Mostrar el diálogo sin await completo para no bloquear
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -169,7 +218,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       ),
     );
 
-    // Dar tiempo para que el diálogo se muestre
     await Future.delayed(const Duration(milliseconds: 300));
   }
 
@@ -192,16 +240,16 @@ class _TeacherReportModalState extends State<TeacherReportModal>
           TextButton(
             onPressed: () {
               if (!mounted) return;
-              Navigator.of(context).pop(); // Cerrar diálogo de error
-              Navigator.of(context).pop(); // Cerrar el modal completo
+              Navigator.of(context).pop();
+              Navigator.of(context).pop();
             },
             child: const Text('Cerrar'),
           ),
           ElevatedButton(
             onPressed: () {
               if (!mounted) return;
-              Navigator.of(context).pop(); // Cerrar diálogo de error
-              _loadReportData(); // Reintentar
+              Navigator.of(context).pop();
+              _loadReportData(showLoadingDialog: true);
             },
             child: const Text('Reintentar'),
           ),
@@ -214,7 +262,8 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   void _initializeHardcodedData() {
     _aiInsights = AIInsights(
-      profile: "Docente con excelente dominio técnico y fuerte compromiso con el aprendizaje estudiantil",
+      profile:
+          "Docente con excelente dominio técnico y fuerte compromiso con el aprendizaje estudiantil",
       strengths: [
         "Dominio excepcional de la materia y actualización constante",
         "Claridad en la orientación de conceptos y teorías",
@@ -233,7 +282,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   // ==================== CONVERSIÓN DE DATOS ====================
 
-  /// Convierte QuestionResponseData a QuestionReport para la UI
   List<QuestionReport> _convertToQuestionReports(List<QuestionResponseData> data) {
     return data.map((q) {
       return QuestionReport(
@@ -251,12 +299,10 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   @override
   Widget build(BuildContext context) {
-    // Si hay error crítico en respuestas y no hay datos, mostrar pantalla de error
     if (_responsesError != null && _responsesData == null && !_isLoadingResponses) {
       return _buildErrorScreen();
     }
 
-    // Mostrar contenido normal
     return Container(
       color: Colors.black87,
       child: SafeArea(
@@ -267,9 +313,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
               ReportHeader(
                 teacherName: widget.teacher.name,
                 onClose: () {
-                  if (mounted) {
-                    Navigator.pop(context);
-                  }
+                  if (mounted) Navigator.pop(context);
                 },
               ),
               _buildTabs(),
@@ -281,28 +325,29 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                     _isLoadingResponses || _responsesData == null
                         ? _buildLoadingTab()
                         : ResponsesTab(
-                            questions: _convertToQuestionReports(_responsesData!.questions),
+                            questions:
+                                _convertToQuestionReports(_responsesData!.questions),
                             averageScore: _responsesData!.averageScore,
                             totalResponses: _responsesData!.completedEvaluations,
                             expectedResponses: _responsesData!.totalEvaluations,
+                            onRefresh: _refreshResponses, // 🆕 Callback real
                           ),
-                    
+
                     // Tab 2: Materias
                     SubjectsTab(
                       subjects: widget.teacher.subjects,
                       careerName: widget.teacher.careerName,
                     ),
-                    
+
                     // Tab 3: Análisis IA
-                    AIAnalysisTab(
-                      insights: _aiInsights,
-                    ),
-                    
-                    // Tab 4: Comentarios (con datos reales)
+                    AIAnalysisTab(insights: _aiInsights),
+
+                    // Tab 4: Comentarios
                     CommentsTab(
                       comments: _comments,
                       isLoading: _isLoadingComments,
                       errorMessage: _commentsError,
+                      onRefresh: _refreshComments, // 🆕 Callback real
                     ),
                   ],
                 ),
@@ -326,7 +371,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       child: LayoutBuilder(
         builder: (context, constraints) {
           final showText = constraints.maxWidth > 500;
-          
+
           return Center(
             child: Container(
               decoration: BoxDecoration(
@@ -343,7 +388,8 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                 dividerColor: Colors.transparent,
                 indicator: BoxDecoration(
                   color: palette.primary,
-                  borderRadius: BorderRadius.circular(ReportConstants.containerBorderRadius),
+                  borderRadius:
+                      BorderRadius.circular(ReportConstants.containerBorderRadius),
                   boxShadow: [
                     BoxShadow(
                       color: palette.primary.withOpacity(0.3),
@@ -353,42 +399,50 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                   ],
                 ),
                 labelStyle: TextStyle(
-                  fontSize: showText ? 11 : 10,
-                  fontWeight: FontWeight.w600,
-                ),
+                    fontSize: showText ? 11 : 10, fontWeight: FontWeight.w600),
                 unselectedLabelStyle: TextStyle(
-                  fontSize: showText ? 11 : 10,
-                  fontWeight: FontWeight.w500,
-                ),
+                    fontSize: showText ? 11 : 10, fontWeight: FontWeight.w500),
                 tabs: [
                   Tab(
                     height: 44,
-                    icon: const Icon(ReportConstants.responsesIcon, size: ReportConstants.tabIconSize),
+                    icon: const Icon(ReportConstants.responsesIcon,
+                        size: ReportConstants.tabIconSize),
                     iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
                     text: showText ? ReportConstants.responsesTabLabel : null,
-                    child: !showText ? const Text('Resp.', maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                    child: !showText
+                        ? const Text('Resp.',
+                            maxLines: 1, overflow: TextOverflow.ellipsis)
+                        : null,
                   ),
                   Tab(
                     height: 44,
-                    icon: const Icon(ReportConstants.subjectsIcon, size: ReportConstants.tabIconSize),
+                    icon: const Icon(ReportConstants.subjectsIcon,
+                        size: ReportConstants.tabIconSize),
                     iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
                     text: showText ? ReportConstants.subjectsTabLabel : null,
-                    child: !showText ? const Text('Mat.', maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                    child: !showText
+                        ? const Text('Mat.',
+                            maxLines: 1, overflow: TextOverflow.ellipsis)
+                        : null,
                   ),
                   Tab(
                     height: 44,
-                    icon: const Icon(ReportConstants.aiIcon, size: ReportConstants.tabIconSize),
+                    icon: const Icon(ReportConstants.aiIcon,
+                        size: ReportConstants.tabIconSize),
                     iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
                     text: showText ? ReportConstants.aiTabLabel : null,
-                    child: !showText ? const Text('IA', maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                    child: !showText
+                        ? const Text('IA',
+                            maxLines: 1, overflow: TextOverflow.ellipsis)
+                        : null,
                   ),
                   Tab(
                     height: 44,
                     icon: Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        const Icon(ReportConstants.commentsIcon, size: ReportConstants.tabIconSize),
-                        // Badge con cantidad de comentarios
+                        const Icon(ReportConstants.commentsIcon,
+                            size: ReportConstants.tabIconSize),
                         if (_comments.isNotEmpty && !_isLoadingComments)
                           Positioned(
                             right: -8,
@@ -401,16 +455,13 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                                 border: Border.all(color: Colors.white, width: 1.5),
                               ),
                               constraints: const BoxConstraints(
-                                minWidth: 16,
-                                minHeight: 16,
-                              ),
+                                  minWidth: 16, minHeight: 16),
                               child: Text(
                                 '${_comments.length}',
                                 style: const TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
                                 textAlign: TextAlign.center,
                               ),
                             ),
@@ -419,7 +470,10 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                     ),
                     iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
                     text: showText ? ReportConstants.commentsTabLabel : null,
-                    child: !showText ? const Text('Com.', maxLines: 1, overflow: TextOverflow.ellipsis) : null,
+                    child: !showText
+                        ? const Text('Com.',
+                            maxLines: 1, overflow: TextOverflow.ellipsis)
+                        : null,
                   ),
                 ],
               ),
@@ -434,7 +488,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   Widget _buildLoadingTab() {
     final palette = AppColors.getPaletteForRole(UserRole.admin);
-    
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -443,10 +497,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
           const SizedBox(height: 16),
           const Text(
             'Cargando datos...',
-            style: TextStyle(
-              fontSize: 14,
-              color: Color(0xFF6B7280),
-            ),
+            style: TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
           ),
         ],
       ),
@@ -462,26 +513,16 @@ class _TeacherReportModalState extends State<TeacherReportModal>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
-                Icons.error_outline,
-                size: 64,
-                color: Colors.red,
-              ),
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
               const SizedBox(height: 16),
               const Text(
                 'Error al cargar el informe',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
                 _responsesError ?? 'Error desconocido',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF6B7280),
-                ),
+                style: const TextStyle(fontSize: 14, color: Color(0xFF6B7280)),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 24),
@@ -490,18 +531,14 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                 children: [
                   OutlinedButton(
                     onPressed: () {
-                      if (mounted) {
-                        Navigator.pop(context);
-                      }
+                      if (mounted) Navigator.pop(context);
                     },
                     child: const Text('Cerrar'),
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton(
                     onPressed: () {
-                      if (mounted) {
-                        _loadReportData();
-                      }
+                      if (mounted) _loadReportData(showLoadingDialog: true);
                     },
                     child: const Text('Reintentar'),
                   ),

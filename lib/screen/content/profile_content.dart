@@ -71,9 +71,10 @@ class _ProfileContentState extends State<ProfileContent> {
             
             const SizedBox(height: 20),
             
-            // 🆕 Botón de debug (solo en modo desarrollo)
+            /*  Botón de debug (solo en modo desarrollo)
             if (const bool.fromEnvironment('dart.vm.product') == false)
               _buildDebugButton(controller),
+              */
           ],
         ),
       ),
@@ -294,8 +295,8 @@ class _ProfileContentState extends State<ProfileContent> {
     );
   }
 
-  /// 🆕 Botón de debug para forzar recarga (solo en desarrollo)
-  Widget _buildDebugButton(InsideScreenController controller) {
+  /// Botón de debug para forzar recarga (solo en desarrollo)
+  /*Widget _buildDebugButton(InsideScreenController controller) {
     return Container(
       margin: const EdgeInsets.only(top: 16),
       child: ElevatedButton.icon(
@@ -312,4 +313,5 @@ class _ProfileContentState extends State<ProfileContent> {
       ),
     );
   }
+  */
 }
