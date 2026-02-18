@@ -129,14 +129,14 @@ class CommentReport {
       id: json['id'] as int,
       text: json['text'] as String,
       sentiment: json['sentiment'] as String? ?? 'neutral',
-      sentimentScore: json['sentimentScore'] != null 
-          ? (json['sentimentScore'] as num).toDouble() 
+      sentimentScore: json['sentimentScore'] != null
+          ? (json['sentimentScore'] as num).toDouble()
           : null,
-      analyzedAt: json['analyzedAt'] != null 
-          ? DateTime.parse(json['analyzedAt'] as String) 
+      analyzedAt: json['analyzedAt'] != null
+          ? DateTime.parse(json['analyzedAt'] as String)
           : null,
-      completedAt: json['completedAt'] != null 
-          ? DateTime.parse(json['completedAt'] as String) 
+      completedAt: json['completedAt'] != null
+          ? DateTime.parse(json['completedAt'] as String)
           : null,
     );
   }
@@ -153,82 +153,105 @@ class CommentReport {
     };
   }
 
-  /// Obtiene el color del borde según el sentimiento
+  /// Color del borde según el sentimiento
   Color get borderColor {
     switch (sentiment) {
-      case 'positive':
-        return const Color(0xFF4CAF50);
-      case 'negative':
-        return const Color(0xFFEF4444);
-      default:
-        return Colors.grey;
+      case 'positive': return const Color(0xFF4CAF50);
+      case 'negative': return const Color(0xFFEF4444);
+      default:         return Colors.grey;
     }
   }
 
-  /// Obtiene el color del chip según el sentimiento
+  /// Color del chip según el sentimiento
   Color get chipColor {
     switch (sentiment) {
-      case 'positive':
-        return const Color(0xFFE8F5E9);
-      case 'negative':
-        return const Color(0xFFFFEBEE);
-      default:
-        return Colors.grey[200]!;
+      case 'positive': return const Color(0xFFE8F5E9);
+      case 'negative': return const Color(0xFFFFEBEE);
+      default:         return Colors.grey.shade200;
     }
   }
 
-  /// Obtiene la etiqueta según el sentimiento
+  /// Etiqueta según el sentimiento
   String get chipLabel {
     switch (sentiment) {
-      case 'positive':
-        return 'Positivo';
-      case 'negative':
-        return 'Negativo';
-      default:
-        return 'Neutral';
+      case 'positive': return 'Positivo';
+      case 'negative': return 'Negativo';
+      default:         return 'Neutral';
     }
   }
 
-  /// Obtiene el ícono según el sentimiento
+  /// Ícono según el sentimiento
   IconData get icon {
     switch (sentiment) {
-      case 'positive':
-        return Icons.sentiment_satisfied;
-      case 'negative':
-        return Icons.sentiment_dissatisfied;
-      default:
-        return Icons.sentiment_neutral;
+      case 'positive': return Icons.sentiment_satisfied;
+      case 'negative': return Icons.sentiment_dissatisfied;
+      default:         return Icons.sentiment_neutral;
     }
   }
 
-  /// Obtiene el color del ícono según el sentimiento
+  /// Color del ícono según el sentimiento
   Color get iconColor {
     switch (sentiment) {
-      case 'positive':
-        return const Color(0xFF10B981);
-      case 'negative':
-        return const Color(0xFFEF4444);
-      default:
-        return const Color(0xFF6B7280);
+      case 'positive': return const Color(0xFF10B981);
+      case 'negative': return const Color(0xFFEF4444);
+      default:         return const Color(0xFF6B7280);
     }
   }
 }
 
 // ==============================================
-// MODELO DE INSIGHTS DE IA
+// MODELOS DE ANÁLISIS IA
 // ==============================================
 
+/// Feedback de una categoría dentro del análisis de respuestas.
+class EvaluationFeedback {
+  final String category;
+  final double score;
+  final String feedback;
+
+  const EvaluationFeedback({
+    required this.category,
+    required this.score,
+    required this.feedback,
+  });
+}
+
+/// Análisis de sentimiento para una categoría de comentarios.
+class SentimentFeedback {
+  /// Valores válidos: 'positive', 'neutral', 'negative'
+  final String sentiment;
+  final int percentage;
+  final String feedback;
+
+  const SentimentFeedback({
+    required this.sentiment,
+    required this.percentage,
+    required this.feedback,
+  });
+}
+
+/// Insights completos generados por IA para un docente.
 class AIInsights {
   final String profile;
   final List<String> strengths;
   final List<String> improvements;
   final List<String> recommendations;
 
-  AIInsights({
+  /// Análisis por categoría de las respuestas cuantitativas.
+  /// Puede estar vacío si aún no se dispone del análisis.
+  final List<EvaluationFeedback> evaluationFeedback;
+
+  /// Análisis de sentimiento de los comentarios anónimos.
+  /// Puede estar vacío si aún no se dispone del análisis.
+  final List<SentimentFeedback> sentimentFeedback;
+
+  const AIInsights({
     required this.profile,
     required this.strengths,
     required this.improvements,
     required this.recommendations,
+    this.evaluationFeedback = const [],
+    this.sentimentFeedback = const [],
   });
 }
 
@@ -237,7 +260,5 @@ class AIInsights {
 // ==============================================
 
 extension DoubleExtension on double {
-  String toFixed(int decimals) {
-    return toStringAsFixed(decimals);
-  }
+  String toFixed(int decimals) => toStringAsFixed(decimals);
 }

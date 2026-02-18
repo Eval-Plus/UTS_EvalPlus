@@ -344,10 +344,10 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     );
   }
 
-  // ==================== DATOS HARDCODEADOS (TEMPORAL) ====================
+// ==================== DATOS HARDCODEADOS (TEMPORAL) ====================
 
   void _initializeHardcodedData() {
-    _aiInsights = AIInsights(
+    _aiInsights = const AIInsights(
       profile:
           'Docente con excelente dominio técnico y fuerte compromiso con el aprendizaje estudiantil',
       strengths: [
@@ -362,6 +362,46 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       recommendations: [
         'Integrar más recursos multimedia en idioma inglés gradualmente',
         'Implementar metodologías activas como aprendizaje basado en proyectos',
+      ],
+      evaluationFeedback: [
+        EvaluationFeedback(
+          category: 'Competencia Disciplinaria',
+          score: 4.3,
+          feedback:
+              'El docente demuestra un excelente dominio y actualización en los temas del curso, manteniendo alta credibilidad académica.',
+        ),
+        EvaluationFeedback(
+          category: 'Estrategias Metodológicas',
+          score: 4.0,
+          feedback:
+              'Se observa buena capacidad para relacionar teoría con práctica, aunque podría diversificar más las metodologías activas.',
+        ),
+        EvaluationFeedback(
+          category: 'Dominio de Segunda Lengua',
+          score: 3.6,
+          feedback:
+              'Área de oportunidad identificada. Se recomienda incrementar gradualmente el uso de materiales en idioma extranjero.',
+        ),
+      ],
+      sentimentFeedback: [
+        SentimentFeedback(
+          sentiment: 'positive',
+          percentage: 60,
+          feedback:
+              'Los estudiantes valoran especialmente la claridad explicativa y la disponibilidad del docente para resolver dudas.',
+        ),
+        SentimentFeedback(
+          sentiment: 'neutral',
+          percentage: 30,
+          feedback:
+              'Algunos estudiantes sugieren más ejemplos prácticos y mayor variedad en las actividades de clase.',
+        ),
+        SentimentFeedback(
+          sentiment: 'negative',
+          percentage: 10,
+          feedback:
+              'Pocas menciones negativas, principalmente relacionadas con el ritmo de las clases y la retroalimentación de trabajos.',
+        ),
       ],
     );
   }
