@@ -26,6 +26,8 @@ dependencies:
   path_provider_linux: ^2.2.1
   path_provider_windows: ^2.3.0
   shared_preferences: ^2.5.4
+  pdf: ^3.11.3
+  printing: ^5.14.2
 
 dev_dependencies:
   flutter_test:
