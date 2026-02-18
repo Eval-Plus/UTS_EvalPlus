@@ -314,3 +314,12 @@ pw.Widget bulletItem({
     ),
   );
 }
+
+// Helper para simular transparencia mezclando con blanco
+PdfColor withOpacity(PdfColor color, double opacity) {
+  return PdfColor(
+    color.red + (1.0 - color.red) * (1.0 - opacity),
+    color.green + (1.0 - color.green) * (1.0 - opacity),
+    color.blue + (1.0 - color.blue) * (1.0 - opacity),
+  );
+}
