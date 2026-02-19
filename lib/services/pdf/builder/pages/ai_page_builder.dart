@@ -2,12 +2,12 @@
 ///
 /// Secciones renderizadas (en orden):
 ///   1. Perfil Docente            → banner morado (ancho completo)
-///   2. Fortalezas | Oportunidades → dos columnas
+///   2. Fortalezas | Oportunidades → dos columnas con altura igualada
 ///   3. Recomendaciones           → ítems numerados (ancho completo)
-///   4. Análisis de Respuestas    → tabla de categorías con puntaje (ancho completo)
-///   5. Análisis de Comentarios   → distribución de sentimientos (ancho completo)
+///   4. Análisis de Respuestas y Comentarios → dos columnas compactas
 ///
-/// Las secciones 4 y 5 solo se renderizan si sus listas no están vacías.
+/// Las secciones 4 y 5 se renderizan juntas en una fila de dos columnas
+/// solo si sus listas no están vacías; si solo hay una, ocupa todo el ancho.
 ///
 /// Ubicación: lib/services/pdf/builder/pages/ai_page_builder.dart
 library;
@@ -29,6 +29,9 @@ List<pw.Widget> buildAISection({
   required pw.Font semiBoldFont,
   required pw.Font regularFont,
 }) {
+  final hasFeedback = insights.evaluationFeedback.isNotEmpty;
+  final hasSentiment = insights.sentimentFeedback.isNotEmpty;
+
   return [
     // 1. Perfil Docente
     _buildProfileCard(
@@ -50,6 +53,7 @@ List<pw.Widget> buildAISection({
             accentColor: PdfPalette.excellent,
             boldFont: boldFont,
             regularFont: regularFont,
+            fillHeight: true,
           ),
         ),
         pw.SizedBox(width: 12),
@@ -60,6 +64,7 @@ List<pw.Widget> buildAISection({
             accentColor: PdfPalette.belowAvg,
             boldFont: boldFont,
             regularFont: regularFont,
+            fillHeight: true,
           ),
         ),
       ],
@@ -74,21 +79,13 @@ List<pw.Widget> buildAISection({
       regularFont: regularFont,
     ),
 
-    // 4. Análisis de Respuestas (solo si hay datos)
-    if (insights.evaluationFeedback.isNotEmpty) ...[
+    // 4 + 5. Análisis de Respuestas y Comentarios en una fila compacta
+    if (hasFeedback || hasSentiment) ...[
       pw.SizedBox(height: 14),
-      _buildEvaluationFeedbackCard(
-        items: insights.evaluationFeedback,
-        boldFont: boldFont,
-        regularFont: regularFont,
-      ),
-    ],
-
-    // 5. Análisis de Comentarios (solo si hay datos)
-    if (insights.sentimentFeedback.isNotEmpty) ...[
-      pw.SizedBox(height: 14),
-      _buildSentimentFeedbackCard(
-        items: insights.sentimentFeedback,
+      _buildFeedbackRow(
+        insights: insights,
+        hasFeedback: hasFeedback,
+        hasSentiment: hasSentiment,
         boldFont: boldFont,
         regularFont: regularFont,
       ),
@@ -122,6 +119,7 @@ pw.Widget _buildProfileCard({
           style: pw.TextStyle(
             font: boldFont,
             fontSize: 13,
+            // Blanco puro para el título
             color: PdfPalette.white,
           ),
         ),
@@ -131,7 +129,8 @@ pw.Widget _buildProfileCard({
           style: pw.TextStyle(
             font: regularFont,
             fontSize: 11,
-            color: PdfPalette.whiteOp(0.9),
+            // Blanco con opacidad para diferenciar del título sin desaparecer
+            color: withOpacity(PdfPalette.white, 0.88),
             lineSpacing: 3,
           ),
         ),
@@ -150,24 +149,39 @@ pw.Widget _buildInsightCard({
   required PdfColor accentColor,
   required pw.Font boldFont,
   required pw.Font regularFont,
+  bool fillHeight = false,
 }) {
+  // Altura estimada por ítem: header (~30) + padding (~24) + por ítem (~26 cada uno)
+  // Usamos una altura mínima fija generosa para que ambas tarjetas luzcan parejas
+  // cuando una tiene menos ítems que la otra.
+  final double minHeight = fillHeight ? 30 + 24 + (3 * 26.0) : 0;
+
+  final content = pw.Column(
+    crossAxisAlignment: pw.CrossAxisAlignment.start,
+    children: [
+      insightHeader(title: title, color: accentColor, boldFont: boldFont),
+      pw.SizedBox(height: 10),
+      ...items.map(
+        (item) => bulletItem(
+          text: item,
+          color: accentColor,
+          regularFont: regularFont,
+        ),
+      ),
+    ],
+  );
+
   return pw.Container(
+    constraints: fillHeight
+        ? pw.BoxConstraints(minHeight: minHeight)
+        : const pw.BoxConstraints(),
     padding: const pw.EdgeInsets.all(14),
     decoration: pw.BoxDecoration(
       color: PdfPalette.white,
       borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
       border: pw.Border.all(color: PdfPalette.border, width: 1),
     ),
-    child: pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        insightHeader(title: title, color: accentColor, boldFont: boldFont),
-        pw.SizedBox(height: 10),
-        ...items.map(
-          (item) => bulletItem(text: item, color: accentColor, regularFont: regularFont),
-        ),
-      ],
-    ),
+    child: content,
   );
 }
 
@@ -260,6 +274,61 @@ pw.Widget _buildNumberedItem({
 }
 
 // ══════════════════════════════════════════════════════════════
+// SECCIONES 4 + 5 — FILA COMPACTA DE FEEDBACK
+// ══════════════════════════════════════════════════════════════
+
+/// Coloca Análisis de Respuestas y Análisis de Comentarios en una fila de
+/// dos columnas para que todo el contenido de IA quepa en una sola página.
+/// Si solo existe uno de los dos, ocupa el ancho completo.
+pw.Widget _buildFeedbackRow({
+  required AIInsights insights,
+  required bool hasFeedback,
+  required bool hasSentiment,
+  required pw.Font boldFont,
+  required pw.Font regularFont,
+}) {
+  // Ambas columnas presentes
+  if (hasFeedback && hasSentiment) {
+    return pw.Row(
+      crossAxisAlignment: pw.CrossAxisAlignment.start,
+      children: [
+        pw.Expanded(
+          child: _buildEvaluationFeedbackCard(
+            items: insights.evaluationFeedback,
+            boldFont: boldFont,
+            regularFont: regularFont,
+          ),
+        ),
+        pw.SizedBox(width: 12),
+        pw.Expanded(
+          child: _buildSentimentFeedbackCard(
+            items: insights.sentimentFeedback,
+            boldFont: boldFont,
+            regularFont: regularFont,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // Solo análisis de respuestas
+  if (hasFeedback) {
+    return _buildEvaluationFeedbackCard(
+      items: insights.evaluationFeedback,
+      boldFont: boldFont,
+      regularFont: regularFont,
+    );
+  }
+
+  // Solo análisis de comentarios
+  return _buildSentimentFeedbackCard(
+    items: insights.sentimentFeedback,
+    boldFont: boldFont,
+    regularFont: regularFont,
+  );
+}
+
+// ══════════════════════════════════════════════════════════════
 // SECCIÓN 4 — ANÁLISIS DE RESPUESTAS
 // ══════════════════════════════════════════════════════════════
 
@@ -270,7 +339,7 @@ pw.Widget _buildEvaluationFeedbackCard({
 }) {
   return pw.Container(
     width: double.infinity,
-    padding: const pw.EdgeInsets.all(14),
+    padding: const pw.EdgeInsets.all(12),
     decoration: pw.BoxDecoration(
       color: PdfPalette.white,
       borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
@@ -307,19 +376,19 @@ pw.Widget _buildEvaluationItem({
   final scoreColor = PdfPalette.forScore(item.score);
 
   return pw.Padding(
-    padding: pw.EdgeInsets.only(bottom: isLast ? 0 : 10),
+    padding: pw.EdgeInsets.only(bottom: isLast ? 0 : 8),
     child: pw.Row(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Container(
           width: 4,
-          height: 52,
+          height: 48,
           decoration: pw.BoxDecoration(
             color: scoreColor,
             borderRadius: const pw.BorderRadius.all(pw.Radius.circular(2)),
           ),
         ),
-        pw.SizedBox(width: 10),
+        pw.SizedBox(width: 8),
         pw.Expanded(
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -332,12 +401,12 @@ pw.Widget _buildEvaluationItem({
                       item.category,
                       style: pw.TextStyle(
                         font: boldFont,
-                        fontSize: 10,
+                        fontSize: 9,
                         color: PdfPalette.textPrimary,
                       ),
                     ),
                   ),
-                  pw.SizedBox(width: 8),
+                  pw.SizedBox(width: 6),
                   _buildScoreBadge(
                     label: item.score.toStringAsFixed(1),
                     color: scoreColor,
@@ -345,14 +414,14 @@ pw.Widget _buildEvaluationItem({
                   ),
                 ],
               ),
-              pw.SizedBox(height: 4),
+              pw.SizedBox(height: 3),
               pw.Text(
                 item.feedback,
                 style: pw.TextStyle(
                   font: regularFont,
-                  fontSize: 9,
+                  fontSize: 8,
                   color: PdfPalette.textSecond,
-                  lineSpacing: 2,
+                  lineSpacing: 1.5,
                 ),
               ),
             ],
@@ -374,7 +443,7 @@ pw.Widget _buildSentimentFeedbackCard({
 }) {
   return pw.Container(
     width: double.infinity,
-    padding: const pw.EdgeInsets.all(14),
+    padding: const pw.EdgeInsets.all(12),
     decoration: pw.BoxDecoration(
       color: PdfPalette.white,
       borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
@@ -411,19 +480,19 @@ pw.Widget _buildSentimentItem({
   final sentimentColor = PdfPalette.forSentiment(item.sentiment);
 
   return pw.Padding(
-    padding: pw.EdgeInsets.only(bottom: isLast ? 0 : 10),
+    padding: pw.EdgeInsets.only(bottom: isLast ? 0 : 8),
     child: pw.Row(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
         pw.Container(
           width: 4,
-          height: 52,
+          height: 48,
           decoration: pw.BoxDecoration(
             color: sentimentColor,
             borderRadius: const pw.BorderRadius.all(pw.Radius.circular(2)),
           ),
         ),
-        pw.SizedBox(width: 10),
+        pw.SizedBox(width: 8),
         pw.Expanded(
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -435,11 +504,11 @@ pw.Widget _buildSentimentItem({
                     _sentimentLabel(item.sentiment),
                     style: pw.TextStyle(
                       font: boldFont,
-                      fontSize: 10,
+                      fontSize: 9,
                       color: sentimentColor,
                     ),
                   ),
-                  pw.SizedBox(width: 8),
+                  pw.SizedBox(width: 6),
                   _buildScoreBadge(
                     label: '${item.percentage}%',
                     color: sentimentColor,
@@ -447,14 +516,14 @@ pw.Widget _buildSentimentItem({
                   ),
                 ],
               ),
-              pw.SizedBox(height: 4),
+              pw.SizedBox(height: 3),
               pw.Text(
                 item.feedback,
                 style: pw.TextStyle(
                   font: regularFont,
-                  fontSize: 9,
+                  fontSize: 8,
                   color: PdfPalette.textSecond,
-                  lineSpacing: 2,
+                  lineSpacing: 1.5,
                 ),
               ),
             ],
@@ -476,18 +545,18 @@ pw.Widget _buildScoreBadge({
   required pw.Font boldFont,
 }) {
   return pw.Container(
-    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    padding: const pw.EdgeInsets.symmetric(horizontal: 6, vertical: 3),
     decoration: pw.BoxDecoration(
-      color: PdfColor(color.red, color.green, color.blue, 0.15),
+      color: withOpacity(color, 0.15),
       borderRadius: const pw.BorderRadius.all(pw.Radius.circular(4)),
       border: pw.Border.all(
-        color: PdfColor(color.red, color.green, color.blue, 0.3),
+        color: withOpacity(color, 0.3),
         width: 1,
       ),
     ),
     child: pw.Text(
       label,
-      style: pw.TextStyle(font: boldFont, fontSize: 10, color: color),
+      style: pw.TextStyle(font: boldFont, fontSize: 9, color: color),
     ),
   );
 }
@@ -495,8 +564,11 @@ pw.Widget _buildScoreBadge({
 /// Etiqueta legible para cada tipo de sentimiento.
 String _sentimentLabel(String sentiment) {
   switch (sentiment) {
-    case 'positive': return 'Comentarios Positivos';
-    case 'negative': return 'Comentarios Negativos';
-    default:         return 'Comentarios Neutrales';
+    case 'positive':
+      return 'Positivos';
+    case 'negative':
+      return 'Negativos';
+    default:
+      return 'Neutrales';
   }
 }
