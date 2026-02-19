@@ -32,6 +32,13 @@ List<pw.Widget> buildAISection({
   final hasFeedback = insights.evaluationFeedback.isNotEmpty;
   final hasSentiment = insights.sentimentFeedback.isNotEmpty;
 
+  // Altura compartida: header (38) + padding vertical (28) + por ítem (~28 c/u).
+  // Se toma el máximo de ítems entre ambas columnas para que la más corta se estire.
+  final int maxItems = insights.strengths.length > insights.improvements.length
+      ? insights.strengths.length
+      : insights.improvements.length;
+  final double sharedHeight = 38 + 28 + (maxItems * 28.0);
+
   return [
     // 1. Perfil Docente
     _buildProfileCard(
@@ -42,7 +49,7 @@ List<pw.Widget> buildAISection({
 
     pw.SizedBox(height: 14),
 
-    // 2. Fortalezas | Oportunidades de Mejora
+    // 2. Fortalezas | Oportunidades de Mejora (altura igualada)
     pw.Row(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
@@ -53,7 +60,7 @@ List<pw.Widget> buildAISection({
             accentColor: PdfPalette.excellent,
             boldFont: boldFont,
             regularFont: regularFont,
-            fillHeight: true,
+            fixedHeight: sharedHeight,
           ),
         ),
         pw.SizedBox(width: 12),
@@ -64,7 +71,7 @@ List<pw.Widget> buildAISection({
             accentColor: PdfPalette.belowAvg,
             boldFont: boldFont,
             regularFont: regularFont,
-            fillHeight: true,
+            fixedHeight: sharedHeight,
           ),
         ),
       ],
@@ -119,7 +126,6 @@ pw.Widget _buildProfileCard({
           style: pw.TextStyle(
             font: boldFont,
             fontSize: 13,
-            // Blanco puro para el título
             color: PdfPalette.white,
           ),
         ),
@@ -129,7 +135,6 @@ pw.Widget _buildProfileCard({
           style: pw.TextStyle(
             font: regularFont,
             fontSize: 11,
-            // Blanco con opacidad para diferenciar del título sin desaparecer
             color: withOpacity(PdfPalette.white, 0.88),
             lineSpacing: 3,
           ),
@@ -149,13 +154,8 @@ pw.Widget _buildInsightCard({
   required PdfColor accentColor,
   required pw.Font boldFont,
   required pw.Font regularFont,
-  bool fillHeight = false,
+  double? fixedHeight,
 }) {
-  // Altura estimada por ítem: header (~30) + padding (~24) + por ítem (~26 cada uno)
-  // Usamos una altura mínima fija generosa para que ambas tarjetas luzcan parejas
-  // cuando una tiene menos ítems que la otra.
-  final double minHeight = fillHeight ? 30 + 24 + (3 * 26.0) : 0;
-
   final content = pw.Column(
     crossAxisAlignment: pw.CrossAxisAlignment.start,
     children: [
@@ -172,9 +172,7 @@ pw.Widget _buildInsightCard({
   );
 
   return pw.Container(
-    constraints: fillHeight
-        ? pw.BoxConstraints(minHeight: minHeight)
-        : const pw.BoxConstraints(),
+    height: fixedHeight,
     padding: const pw.EdgeInsets.all(14),
     decoration: pw.BoxDecoration(
       color: PdfPalette.white,

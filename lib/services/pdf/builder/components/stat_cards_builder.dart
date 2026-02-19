@@ -155,6 +155,8 @@ pw.Widget buildStatsBanner({
 // ══════════════════════════════════════════════════════════════
 
 /// Tarjeta con contador de un sentimiento (positivo/neutral/negativo).
+/// ✅ Usa withOpacity() en lugar del canal alpha de PdfColor para
+///    garantizar visibilidad real del fondo y borde en el PDF renderizado.
 pw.Widget buildSentimentStatCard({
   required String label,
   required int count,
@@ -165,10 +167,14 @@ pw.Widget buildSentimentStatCard({
   return pw.Container(
     padding: const pw.EdgeInsets.all(10),
     decoration: pw.BoxDecoration(
-      color: PdfColor(color.red, color.green, color.blue, 0.1),
+      // ✅ ANTES: PdfColor(color.red, color.green, color.blue, 0.1) → invisible
+      // ✅ DESPUÉS: withOpacity mezcla con blanco → fondo pastel visible
+      color: withOpacity(color, 0.15),
       borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
       border: pw.Border.all(
-        color: PdfColor(color.red, color.green, color.blue, 0.25),
+        // ✅ ANTES: PdfColor(color.red, color.green, color.blue, 0.25) → invisible
+        // ✅ DESPUÉS: withOpacity mezcla con blanco → borde suave visible
+        color: withOpacity(color, 0.35),
         width: 1,
       ),
     ),
@@ -189,7 +195,9 @@ pw.Widget buildSentimentStatCard({
           style: pw.TextStyle(
             font: regularFont,
             fontSize: 8,
-            color: PdfColor(color.red, color.green, color.blue, 0.8),
+            // ✅ ANTES: PdfColor(color.red, color.green, color.blue, 0.8) → tenue/invisible
+            // ✅ DESPUÉS: withOpacity con valor alto → texto claramente visible
+            color: withOpacity(color, 0.85),
           ),
         ),
       ],

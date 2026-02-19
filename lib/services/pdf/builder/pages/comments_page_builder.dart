@@ -3,7 +3,6 @@
 library;
 
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';
-import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import '../pdf_palette.dart';
 import '../pdf_helpers.dart';
@@ -171,13 +170,14 @@ pw.Widget _buildGroupHeader(String sentiment, int count, pw.Font boldFont) {
   final color = PdfPalette.forSentiment(sentiment);
   final label = sentimentLabel(sentiment);
 
+  // ✅ Usamos withOpacity para que el fondo y borde sean visibles en PDF
   return pw.Container(
     padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     decoration: pw.BoxDecoration(
-      color: PdfColor(color.red, color.green, color.blue, 0.1),
+      color: withOpacity(color, 0.15),
       borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
       border: pw.Border.all(
-        color: PdfColor(color.red, color.green, color.blue, 0.3),
+        color: withOpacity(color, 0.40),
         width: 1,
       ),
     ),
