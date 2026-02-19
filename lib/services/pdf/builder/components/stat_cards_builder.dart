@@ -11,7 +11,9 @@ import '../pdf_helpers.dart';
 // TARJETA DE ESTADÍSTICA (PORTADA)
 // ══════════════════════════════════════════════════════════════
 
-/// Tarjeta de métrica usada en la portada (fondo blanco con borde).
+/// Tarjeta de métrica usada en la portada.
+/// Fondo tintado con el color de la métrica (usando withOpacity para mezcla
+/// real con blanco) y borde coloreado para mayor presencia visual.
 pw.Widget buildCoverStatCard({
   required String label,
   required String value,
@@ -20,26 +22,26 @@ pw.Widget buildCoverStatCard({
   required pw.Font boldFont,
   required pw.Font regularFont,
 }) {
+  // Fondo pastel: mezcla del color con blanco al 12% de opacidad
+  final bgColor     = withOpacity(color, 0.12);
+  // Borde coloreado suave al 35%
+  final borderColor = withOpacity(color, 0.35);
+  // Color del sufijo ligeramente más oscuro que el fondo pero más claro que el valor
+  final suffixColor = withOpacity(color, 0.70);
+
   return pw.Container(
-    padding: const pw.EdgeInsets.all(14),
+    padding: const pw.EdgeInsets.symmetric(horizontal: 12, vertical: 14),
     decoration: pw.BoxDecoration(
-      color: PdfPalette.white,
+      color: bgColor,
       borderRadius: const pw.BorderRadius.all(pw.Radius.circular(10)),
-      border: pw.Border.all(color: PdfPalette.border, width: 1),
-      boxShadow: [
-        pw.BoxShadow(
-          color: PdfColor(0, 0, 0, 0.05),
-          blurRadius: 4,
-          offset: const PdfPoint(0, 2),
-        ),
-      ],
+      border: pw.Border.all(color: borderColor, width: 1.2),
     ),
     child: pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
-        // Barra de color decorativa
+        // Barra de color decorativa (más saturada para anclar el color)
         pw.Container(
-          width: 28,
+          width: 32,
           height: 4,
           decoration: pw.BoxDecoration(
             color: color,
@@ -47,6 +49,7 @@ pw.Widget buildCoverStatCard({
           ),
         ),
         pw.SizedBox(height: 10),
+        // Valor principal — usa el color puro para máximo contraste
         pw.Text(
           value,
           style: pw.TextStyle(
@@ -57,15 +60,17 @@ pw.Widget buildCoverStatCard({
           ),
         ),
         pw.SizedBox(height: 3),
+        // Sufijo con color intermedio legible
         pw.Text(
           suffix,
           style: pw.TextStyle(
             font: regularFont,
             fontSize: 9,
-            color: PdfPalette.textSecond,
+            color: suffixColor,
           ),
         ),
         pw.SizedBox(height: 6),
+        // Etiqueta inferior en gris oscuro para máxima legibilidad
         pw.Text(
           label,
           style: pw.TextStyle(
@@ -167,13 +172,9 @@ pw.Widget buildSentimentStatCard({
   return pw.Container(
     padding: const pw.EdgeInsets.all(10),
     decoration: pw.BoxDecoration(
-      // ✅ ANTES: PdfColor(color.red, color.green, color.blue, 0.1) → invisible
-      // ✅ DESPUÉS: withOpacity mezcla con blanco → fondo pastel visible
       color: withOpacity(color, 0.15),
       borderRadius: const pw.BorderRadius.all(pw.Radius.circular(6)),
       border: pw.Border.all(
-        // ✅ ANTES: PdfColor(color.red, color.green, color.blue, 0.25) → invisible
-        // ✅ DESPUÉS: withOpacity mezcla con blanco → borde suave visible
         color: withOpacity(color, 0.35),
         width: 1,
       ),
@@ -195,8 +196,6 @@ pw.Widget buildSentimentStatCard({
           style: pw.TextStyle(
             font: regularFont,
             fontSize: 8,
-            // ✅ ANTES: PdfColor(color.red, color.green, color.blue, 0.8) → tenue/invisible
-            // ✅ DESPUÉS: withOpacity con valor alto → texto claramente visible
             color: withOpacity(color, 0.85),
           ),
         ),

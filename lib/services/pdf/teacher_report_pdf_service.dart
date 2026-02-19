@@ -110,20 +110,23 @@ class TeacherReportPdfService {
       bold: boldFont,
     );
 
+    // ── Portada: construir widget ANTES de addPage (es async) ──
+    final coverWidget = await buildCoverPage(
+      teacher: teacher,
+      responsesReport: responsesReport,
+      comments: comments,
+      boldFont: boldFont,
+      semiBoldFont: semiBoldFont,
+      regularFont: regularFont,
+    );
+
     // ── Página 1: Portada ──
     doc.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
         theme: theme,
         margin: pw.EdgeInsets.zero,
-        build: (ctx) => buildCoverPage(
-          teacher: teacher,
-          responsesReport: responsesReport,
-          comments: comments,
-          boldFont: boldFont,
-          semiBoldFont: semiBoldFont,
-          regularFont: regularFont,
-        ),
+        build: (ctx) => coverWidget,
       ),
     );
 
