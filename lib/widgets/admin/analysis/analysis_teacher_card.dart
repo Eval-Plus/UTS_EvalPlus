@@ -7,7 +7,7 @@ import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
 import 'package:eval_plus/utils/admin/admin_analysis_constants.dart';
 import 'package:eval_plus/animations/admin/animated_teacher_expansion.dart';
-import 'package:eval_plus/widgets/common/message_dialog_widget.dart';
+/* import 'package:eval_plus/widgets/common/message_dialog_widget.dart'; */
 import 'package:eval_plus/widgets/admin/analysis/reports/teacher_report_modal.dart';
 
 class AnalysisTeacherCard extends StatefulWidget {
@@ -44,6 +44,7 @@ class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
     );
   }
 
+/*
   /// Muestra un diálogo indicando que la funcionalidad está en desarrollo
   void _showFeatureInDevelopmentDialog(String feature, String description) {
     showDialog(
@@ -57,6 +58,7 @@ class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
       ),
     );
   }
+*/
 
   // ==================== BUILD ====================
 
