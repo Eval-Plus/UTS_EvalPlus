@@ -489,13 +489,14 @@ class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
             style: ElevatedButton.styleFrom(
               backgroundColor: widget.palette.primary,
               foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+              padding: const EdgeInsets.symmetric(vertical: 18),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AdminAnalysisConstants.buttonBorderRadius),
               ),
             ),
           ),
         ),
+        /*
         const SizedBox(height: AdminAnalysisConstants.paddingSmall),
         Row(
           children: [
@@ -553,7 +554,7 @@ class _AnalysisTeacherCardState extends State<AnalysisTeacherCard> {
               ),
             ),
           ],
-        ),
+        ),*/
       ],
     );
   }
