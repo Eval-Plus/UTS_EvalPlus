@@ -21,7 +21,7 @@ class CareerModel {
   });
 
   // ==================== FACTORY CONSTRUCTORS ====================
-  
+
   /// Crear desde respuesta del API
   factory CareerModel.fromJson(Map<String, dynamic> json) {
     return CareerModel(
@@ -36,10 +36,49 @@ class CareerModel {
   }
 
   // ==================== COMPUTED PROPERTIES ====================
-  
-  /// Convierte el string de icono a IconData
+
+  /// Convierte el nombre de la carrera a un IconData único.
+  /// Prioriza el mapeo por nombre; si no coincide, usa el campo [icon] del API.
   IconData get iconData {
-    switch (icon.toLowerCase()) {
+    final nameIcon = _iconByCareerName(nombre);
+    if (nameIcon != null) return nameIcon;
+    return _iconByApiString(icon);
+  }
+
+  /// Mapeo de íconos por nombre de carrera.
+  /// Retorna null si el nombre no tiene un ícono asignado.
+  static IconData? _iconByCareerName(String nombre) {
+    // Normalizar para comparación: minúsculas sin espacios extra
+    final normalized = nombre.toLowerCase().trim();
+
+    if (normalized.contains('administración de empresas')) {
+      return Icons.business_center_rounded;
+    }
+    if (normalized.contains('contabilidad financiera')) {
+      return Icons.account_balance_rounded;
+    }
+    if (normalized.contains('gestión comercial')) {
+      return Icons.storefront_rounded;
+    }
+    if (normalized.contains('gestión contable')) {
+      return Icons.receipt_long_rounded;
+    }
+    if (normalized.contains('gestión empresarial')) {
+      return Icons.corporate_fare_rounded;
+    }
+    if (normalized.contains('mercadeo')) {
+      return Icons.campaign_rounded;
+    }
+    if (normalized.contains('contaduría pública')) {
+      return Icons.calculate_rounded;
+    }
+
+    return null;
+  }
+
+  /// Mapeo de íconos por el string del campo [icon] que retorna el API.
+  static IconData _iconByApiString(String iconString) {
+    switch (iconString.toLowerCase()) {
       case 'computer':
         return Icons.computer;
       case 'business_center':
@@ -58,7 +97,7 @@ class CareerModel {
         return Icons.school;
     }
   }
-  
+
   /// Convierte el string hexadecimal a Color
   Color get colorValue {
     try {
@@ -70,7 +109,7 @@ class CareerModel {
   }
 
   // ==================== SERIALIZATION ====================
-  
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -84,10 +123,10 @@ class CareerModel {
   }
 
   // ==================== UTILITY ====================
-  
+
   @override
   String toString() => 'CareerModel(id: $id, codigo: $codigo, nombre: $nombre)';
-  
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
