@@ -1,62 +1,48 @@
-## v0.5.5-rc (2026-02-17)
-### Alcance de la versión
-Esta versión se enfoca en **mejoras de experiencia de usuario en el modal de informe docente**, añadiendo funcionalidad real de actualización de datos y refinamiento de estados vacíos.
+## v1.0.0-stable (2026-02-21)
+### 🎉 Primera versión estable — Salida a producción
+Esta versión marca el **lanzamiento oficial a producción de EvalPlus**. La aplicación se considera funcional y completa en su núcleo. Los cambios futuros esperados se limitan a mejoras de diseño y la integración pendiente del módulo *Análisis de datos del docente con IA*, cuya arquitectura ya está preparada en cliente y API.
 
 ---
 
-### Cambios principales
+### Cambios respecto a v0.5.5-rc
 
-#### 🔄 Pull-to-refresh real en tabs del informe docente
-- Se implementa **refresh funcional desde la API** en los tabs de Respuestas, Comentarios y Materias
-- Anteriormente el gesto de deslizar hacia abajo solo mostraba el indicador visual sin re-consultar el servidor
-- Ahora cada tab lanza una petición con `forceRefresh: true`, evitando el caché y obteniendo datos actualizados
-- El indicador de carga usa los colores de la paleta admin (`palette.primary`) para consistencia visual
+#### 🎨 Mejoras de UI/Diseño
+- En `careers_content.dart` se añadió una nueva función en el modelo para mostrar **iconos diferenciados por carrera**, mejorando la identificación visual de cada una
 
-#### ⏳ Pantalla de splash durante el refresh
-- Al iniciar el pull-to-refresh, cada tab muestra el componente `AIRegenerationLoading` como pantalla de transición
-- Diferencia clara entre **carga inicial** (diálogo fullscreen `ReportLoadingDialog`) y **refresh posterior** (splash a nivel de tab)
-- Callbacks separados por tab: `_refreshResponses`, `_refreshComments`, `_refreshSubjects` en `teacher_report_modal.dart`
+#### 📄 Mejoras en generación de PDF
+- Mejoras visuales para facilitar la lectura del contenido generado
+- Uso de helpers como `withOpacity` para evitar textos con contraste insuficiente o invisibles sobre fondos de color
 
-#### 💬 Mejoras en estados vacíos del tab de Comentarios
-- Los estados vacíos ya **no ocupan la pantalla completa**, evitando que oculten los filtros disponibles
-- Dos escenarios diferenciados:
-  - **Sin comentarios en absoluto**: empty state inline sin filtros
-  - **Filtro activo sin resultados**: filtros visibles + empty state inline con hint *"Prueba seleccionando otro filtro"*
-- Se añade `_buildInlineEmptyState()` y helper `_getFilterLabel()` para mensajes contextuales
+#### 🧹 Limpieza de funciones no utilizadas
+- Se comentó parte de `_actionButtons` para **desactivar botones de acciones no planificadas** en el corto plazo: exportar a Excel, descargar y compartir
+- Esto simplifica la interfaz y evita exponer funcionalidades incompletas en producción
 
 ---
 
-### Archivos modificados
-- `lib/widgets/admin/analysis/reports/tabs/responses_tab.dart`
-- `lib/widgets/admin/analysis/reports/tabs/comments_tab.dart`
-- `lib/widgets/admin/analysis/reports/tabs/subjects_tab.dart`
-- `lib/widgets/admin/analysis/reports/teacher_report_modal.dart`
+### Estado del proyecto
+
+| Módulo | Estado |
+|---|---|
+| Autenticación y roles | ✅ Completo |
+| Dashboard administrador | ✅ Completo |
+| Gestión de evaluaciones | ✅ Completo |
+| Informes docentes | ✅ Completo |
+| Generación de PDF | ✅ Completo |
+| Pull-to-refresh & empty states | ✅ Completo |
+| **Análisis de datos del docente con IA** | 🔜 Pendiente (API + App listos para integrar) |
 
 ---
 
-### Mejoras técnicas
+### Funcionalidad pendiente — Análisis con IA
+El módulo de **Análisis de datos del docente con IA** está completamente planteado a nivel de arquitectura. Su activación únicamente requiere:
+1. Actualizar el endpoint correspondiente en la API
+2. Conectar la llamada desde la aplicación Flutter
 
-#### UI/UX
-- Consistencia visual del spinner de refresh con la paleta de color por rol
-- Estados vacíos contextuales con hints accionables para el usuario
-- Transición suave entre estado de carga y contenido en cada tab
-
-#### Arquitectura
-- Callbacks de refresh desacoplados por tab, facilitando migración futura a endpoints independientes
-- `SubjectsTab` migrado de `StatelessWidget` a `StatefulWidget` para soportar estado de refresh
-- `_refreshSubjects` preparado para conectarse a `getSubjectsReport()` cuando el endpoint esté disponible
+No implica cambios estructurales; es una integración puntual.
 
 ---
 
-### Próximos pasos (v0.6.0)
-- Conexión completa del Informe Docente con endpoints productivos
-- Métricas comparativas entre periodos
-- Exportación de informes en PDF
-- Optimización de rendimiento en carga de dashboards
-
----
-
-**Tipo:** Release Candidate (RC)  
-**Fecha de lanzamiento:** 17 de Febrero, 2026  
-**Compilación:** `flutter build apk --release`  
-**Tag:** v0.5.5-rc
+**Tipo:** Stable Release  
+**Fecha de lanzamiento:** 21 de Febrero, 2026  
+**Compilación:** `flutter build apk --split-per-abi --release`  
+**Tag:** v1.0.0-stable

@@ -1,10 +1,10 @@
-/// Modal de Informe Completo del Docente (Con datos reales de API + Descarga PDF)
+/// Modal de Informe Completo del Docente
 /// Ubicación: lib/widgets/admin/analysis/reports/teacher_report_modal.dart
 ///
-/// CAMBIOS v1.0.0:
-///  - Botón "PDF" en ReportHeader que genera y descarga el informe completo.
-///  - El PDF se genera con los datos ya cargados en memoria (sin nueva consulta a la API).
-///  - Estado _isGeneratingPdf para mostrar feedback visual durante la generación.
+/// CAMBIOS:
+///  - Eliminados datos hardcodeados de _aiInsights
+///  - AIAnalysisTab ahora recibe teacherId, teacherName y periodo
+///  - Se mantiene descarga PDF, carga de respuestas y comentarios
 library;
 
 import 'package:flutter/material.dart';
@@ -12,6 +12,7 @@ import 'package:eval_plus/config/app_colors.dart';
 import 'package:eval_plus/models/admin/teacher_analysis_model.dart';
 import 'package:eval_plus/models/admin/teacher_report_model.dart';
 import 'package:eval_plus/services/admin/teacher_report_service.dart';
+import 'package:eval_plus/services/admin/ai_analysis_service.dart';
 import 'package:eval_plus/services/pdf/teacher_report_pdf_service.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_models.dart';
 import 'package:eval_plus/widgets/admin/analysis/reports/models/report_constants.dart';
@@ -43,24 +44,20 @@ class _TeacherReportModalState extends State<TeacherReportModal>
   TeacherResponsesReport? _responsesData;
   List<CommentReport> _comments = [];
 
-  // Datos hardcodeados (temporalmente para IA)
-  late AIInsights _aiInsights;
-
-  // Estado de carga de datos
+  // Estado de carga
   bool _isLoadingResponses = true;
   bool _isLoadingComments = true;
   String? _responsesError;
   String? _commentsError;
   bool _isLoadingDialogShown = false;
 
-  // ── NUEVO: estado de generación del PDF ──
+  // Estado de generación del PDF
   bool _isGeneratingPdf = false;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _initializeHardcodedData();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -72,16 +69,16 @@ class _TeacherReportModalState extends State<TeacherReportModal>
   @override
   void dispose() {
     _tabController.dispose();
+    // Limpiar el estado del servicio de IA al cerrar el modal
+    AIAnalysisService().reset();
     super.dispose();
   }
 
   // ==================== PDF DOWNLOAD ====================
 
-  /// Genera y comparte el PDF usando los datos ya cargados en memoria.
   Future<void> _handleDownloadPdf() async {
     if (_isGeneratingPdf) return;
 
-    // Si aún no hay datos de respuestas, mostrar aviso
     if (_isLoadingResponses || _isLoadingComments) {
       _showSnackBar(
         'Los datos aún se están cargando. Espera un momento.',
@@ -96,14 +93,30 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     try {
       debugPrint('📄 Iniciando generación del PDF...');
 
+      // Obtener insights del servicio de IA para incluirlos en el PDF
+      final aiService = AIAnalysisService();
+      AIInsights? aiInsights;
+      if (aiService.hasAnalysis && aiService.currentAnalysis != null) {
+        final analysis = aiService.currentAnalysis!;
+        aiInsights = AIInsights(
+          profile: analysis.profile,
+          strengths: analysis.strengths,
+          improvements: analysis.improvements,
+          recommendations: analysis.recommendations,
+        );
+      }
+
       await TeacherReportPdfService.generateAndDownload(
         teacher: widget.teacher,
         responsesReport: _responsesData,
         comments: _comments,
-        aiInsights: _aiInsights,
+        aiInsights: aiInsights ?? const AIInsights(
+          profile: '',
+          strengths: [],
+          improvements: [],
+          recommendations: [],
+        ),
       );
-
-      debugPrint('✅ PDF generado y compartido exitosamente');
 
       if (mounted) {
         _showSnackBar(
@@ -114,7 +127,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       }
     } catch (e) {
       debugPrint('💥 Error generando PDF: $e');
-
       if (mounted) {
         _showSnackBar(
           'No se pudo generar el PDF. Intenta de nuevo.',
@@ -123,9 +135,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isGeneratingPdf = false);
-      }
+      if (mounted) setState(() => _isGeneratingPdf = false);
     }
   }
 
@@ -139,10 +149,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
             Icon(icon, color: Colors.white, size: 18),
             const SizedBox(width: 8),
             Expanded(
-              child: Text(
-                message,
-                style: const TextStyle(fontSize: 13),
-              ),
+              child: Text(message, style: const TextStyle(fontSize: 13)),
             ),
           ],
         ),
@@ -168,9 +175,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     });
 
     try {
-      debugPrint(
-          '📊 Cargando datos del reporte para docente ${widget.teacher.id}...');
-
       if (showLoadingDialog) {
         await _showLoadingDialog();
       }
@@ -209,8 +213,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
             responsesData == null ? _reportService.responsesError : null;
         _commentsError = _reportService.commentsError;
       });
-
-      debugPrint('✅ Datos del reporte cargados exitosamente');
     } catch (e) {
       debugPrint('💥 Error cargando datos del reporte: $e');
 
@@ -229,25 +231,20 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       });
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _showErrorDialog(e.toString());
-        }
+        if (mounted) _showErrorDialog(e.toString());
       });
     }
   }
 
   Future<void> _refreshResponses() async {
     if (!mounted) return;
-
     try {
       final report = await _reportService.getResponsesReport(
         teacherId: widget.teacher.id,
         periodo: widget.teacher.period,
         forceRefresh: true,
       );
-
       if (!mounted) return;
-
       setState(() {
         _responsesData = report;
         _responsesError =
@@ -255,9 +252,7 @@ class _TeacherReportModalState extends State<TeacherReportModal>
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _responsesError = e.toString();
-      });
+      setState(() => _responsesError = e.toString());
     }
   }
 
@@ -268,25 +263,20 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   Future<void> _refreshComments() async {
     if (!mounted) return;
-
     try {
       final comments = await _reportService.getTeacherComments(
         teacherId: widget.teacher.id,
         periodo: widget.teacher.period,
         forceRefresh: true,
       );
-
       if (!mounted) return;
-
       setState(() {
         _comments = comments;
         _commentsError = null;
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _commentsError = e.toString();
-      });
+      setState(() => _commentsError = e.toString());
     }
   }
 
@@ -310,7 +300,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   void _showErrorDialog(String message) {
     if (!mounted) return;
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -344,82 +333,18 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     );
   }
 
-// ==================== DATOS HARDCODEADOS (TEMPORAL) ====================
-
-  void _initializeHardcodedData() {
-    _aiInsights = const AIInsights(
-      profile:
-          'Docente con excelente dominio técnico y fuerte compromiso con el aprendizaje estudiantil',
-      strengths: [
-        'Dominio excepcional de la materia y actualización constante',
-        'Claridad en la orientación de conceptos y teorías',
-        'Buena organización y presentación del plan de curso',
-      ],
-      improvements: [
-        'Incrementar el uso de materiales en idioma extranjero',
-        'Diversificar las estrategias metodológicas',
-      ],
-      recommendations: [
-        'Integrar más recursos multimedia en idioma inglés gradualmente',
-        'Implementar metodologías activas como aprendizaje basado en proyectos',
-      ],
-      evaluationFeedback: [
-        EvaluationFeedback(
-          category: 'Competencia Disciplinaria',
-          score: 4.3,
-          feedback:
-              'El docente demuestra un excelente dominio y actualización en los temas del curso, manteniendo alta credibilidad académica.',
-        ),
-        EvaluationFeedback(
-          category: 'Estrategias Metodológicas',
-          score: 4.0,
-          feedback:
-              'Se observa buena capacidad para relacionar teoría con práctica, aunque podría diversificar más las metodologías activas.',
-        ),
-        EvaluationFeedback(
-          category: 'Dominio de Segunda Lengua',
-          score: 3.6,
-          feedback:
-              'Área de oportunidad identificada. Se recomienda incrementar gradualmente el uso de materiales en idioma extranjero.',
-        ),
-      ],
-      sentimentFeedback: [
-        SentimentFeedback(
-          sentiment: 'positive',
-          percentage: 60,
-          feedback:
-              'Los estudiantes valoran especialmente la claridad explicativa y la disponibilidad del docente para resolver dudas.',
-        ),
-        SentimentFeedback(
-          sentiment: 'neutral',
-          percentage: 30,
-          feedback:
-              'Algunos estudiantes sugieren más ejemplos prácticos y mayor variedad en las actividades de clase.',
-        ),
-        SentimentFeedback(
-          sentiment: 'negative',
-          percentage: 10,
-          feedback:
-              'Pocas menciones negativas, principalmente relacionadas con el ritmo de las clases y la retroalimentación de trabajos.',
-        ),
-      ],
-    );
-  }
-
-  // ==================== CONVERSIÓN DE DATOS ====================
+  // ==================== CONVERSIÓN ====================
 
   List<QuestionReport> _convertToQuestionReports(
       List<QuestionResponseData> data) {
-    return data.map((q) {
-      return QuestionReport(
-        id: q.id,
-        text: q.text,
-        category: q.category,
-        aspect: q.aspect,
-        responses: q.responses,
-        average: q.average,
-      );
-    }).toList();
+    return data.map((q) => QuestionReport(
+      id: q.id,
+      text: q.text,
+      category: q.category,
+      aspect: q.aspect,
+      responses: q.responses,
+      average: q.average,
+    )).toList();
   }
 
   // ==================== BUILD ====================
@@ -439,7 +364,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
           backgroundColor: Colors.grey[50],
           body: Column(
             children: [
-              // ── Header con botón PDF ──
               ReportHeader(
                 teacherName: widget.teacher.name,
                 onClose: () {
@@ -464,7 +388,8 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                             averageScore: _responsesData!.averageScore,
                             totalResponses:
                                 _responsesData!.completedEvaluations,
-                            expectedResponses: _responsesData!.totalEvaluations,
+                            expectedResponses:
+                                _responsesData!.totalEvaluations,
                             onRefresh: _refreshResponses,
                           ),
 
@@ -475,8 +400,12 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                       onRefresh: _refreshSubjects,
                     ),
 
-                    // Tab 3: Análisis IA
-                    AIAnalysisTab(insights: _aiInsights),
+                    // Tab 3: Análisis IA — datos reales, sin hardcode
+                    AIAnalysisTab(
+                      teacherId: widget.teacher.id,
+                      teacherName: widget.teacher.name,
+                      periodo: widget.teacher.period,
+                    ),
 
                     // Tab 4: Comentarios
                     CommentsTab(
@@ -628,7 +557,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   Widget _buildLoadingTab() {
     final palette = AppColors.getPaletteForRole(UserRole.admin);
-
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -657,8 +585,8 @@ class _TeacherReportModalState extends State<TeacherReportModal>
               const SizedBox(height: 16),
               const Text(
                 'Error al cargar el informe',
-                style:
-                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
