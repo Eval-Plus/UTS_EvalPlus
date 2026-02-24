@@ -200,35 +200,8 @@ class CommentReport {
 }
 
 // ==============================================
-// MODELOS DE ANÁLISIS IA
+// MODELO DE ANÁLISIS IA
 // ==============================================
-
-/// Feedback de una categoría dentro del análisis de respuestas.
-class EvaluationFeedback {
-  final String category;
-  final double score;
-  final String feedback;
-
-  const EvaluationFeedback({
-    required this.category,
-    required this.score,
-    required this.feedback,
-  });
-}
-
-/// Análisis de sentimiento para una categoría de comentarios.
-class SentimentFeedback {
-  /// Valores válidos: 'positive', 'neutral', 'negative'
-  final String sentiment;
-  final int percentage;
-  final String feedback;
-
-  const SentimentFeedback({
-    required this.sentiment,
-    required this.percentage,
-    required this.feedback,
-  });
-}
 
 /// Insights completos generados por IA para un docente.
 class AIInsights {
@@ -237,21 +210,21 @@ class AIInsights {
   final List<String> improvements;
   final List<String> recommendations;
 
-  /// Análisis por categoría de las respuestas cuantitativas.
-  /// Puede estar vacío si aún no se dispone del análisis.
-  final List<EvaluationFeedback> evaluationFeedback;
+  /// Comentario general sobre las respuestas cuantitativas de las evaluaciones.
+  /// Vacío si el backend aún no lo provee.
+  final String responsesComment;
 
-  /// Análisis de sentimiento de los comentarios anónimos.
-  /// Puede estar vacío si aún no se dispone del análisis.
-  final List<SentimentFeedback> sentimentFeedback;
+  /// Comentario general sobre los comentarios anónimos de los estudiantes.
+  /// Vacío si el backend aún no lo provee.
+  final String commentsComment;
 
   const AIInsights({
     required this.profile,
     required this.strengths,
     required this.improvements,
     required this.recommendations,
-    this.evaluationFeedback = const [],
-    this.sentimentFeedback = const [],
+    this.responsesComment = '',
+    this.commentsComment = '',
   });
 }
 

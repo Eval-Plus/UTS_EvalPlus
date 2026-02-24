@@ -17,6 +17,14 @@ class AIAnalysisModel {
   final List<String> improvements;
   final List<String> recommendations;
 
+  /// Comentario general sobre las respuestas cuantitativas de evaluaciones.
+  /// Campo opcional — vacío si el backend no lo incluye aún.
+  final String responsesComment;
+
+  /// Comentario general sobre los comentarios anónimos de estudiantes.
+  /// Campo opcional — vacío si el backend no lo incluye aún.
+  final String commentsComment;
+
   // Metadata
   final DateTime analysisDate;
   final String modelVersion;
@@ -35,6 +43,8 @@ class AIAnalysisModel {
     required this.strengths,
     required this.improvements,
     required this.recommendations,
+    this.responsesComment = '',
+    this.commentsComment = '',
     required this.analysisDate,
     required this.modelVersion,
     required this.evaluationsCount,
@@ -53,6 +63,9 @@ class AIAnalysisModel {
       strengths: _parseStringList(json['strengths']),
       improvements: _parseStringList(json['improvements']),
       recommendations: _parseStringList(json['recommendations']),
+      // Campos opcionales: retornan '' si el backend no los envía todavía
+      responsesComment: json['responsesComment'] as String? ?? '',
+      commentsComment: json['commentsComment'] as String? ?? '',
       analysisDate: DateTime.parse(json['analysisDate'] as String),
       modelVersion: json['modelVersion'] as String? ?? '',
       evaluationsCount: json['evaluationsCount'] as int,

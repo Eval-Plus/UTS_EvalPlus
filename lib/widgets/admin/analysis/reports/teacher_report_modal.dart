@@ -1,10 +1,5 @@
 /// Modal de Informe Completo del Docente
 /// Ubicación: lib/widgets/admin/analysis/reports/teacher_report_modal.dart
-///
-/// CAMBIOS:
-///  - Eliminados datos hardcodeados de _aiInsights
-///  - AIAnalysisTab ahora recibe teacherId, teacherName y periodo
-///  - Se mantiene descarga PDF, carga de respuestas y comentarios
 library;
 
 import 'package:flutter/material.dart';
@@ -69,7 +64,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
   @override
   void dispose() {
     _tabController.dispose();
-    // Limpiar el estado del servicio de IA al cerrar el modal
     AIAnalysisService().reset();
     super.dispose();
   }
@@ -93,7 +87,6 @@ class _TeacherReportModalState extends State<TeacherReportModal>
     try {
       debugPrint('📄 Iniciando generación del PDF...');
 
-      // Obtener insights del servicio de IA para incluirlos en el PDF
       final aiService = AIAnalysisService();
       AIInsights? aiInsights;
       if (aiService.hasAnalysis && aiService.currentAnalysis != null) {
@@ -103,6 +96,8 @@ class _TeacherReportModalState extends State<TeacherReportModal>
           strengths: analysis.strengths,
           improvements: analysis.improvements,
           recommendations: analysis.recommendations,
+          responsesComment: analysis.responsesComment,
+          commentsComment: analysis.commentsComment,
         );
       }
 
@@ -110,12 +105,13 @@ class _TeacherReportModalState extends State<TeacherReportModal>
         teacher: widget.teacher,
         responsesReport: _responsesData,
         comments: _comments,
-        aiInsights: aiInsights ?? const AIInsights(
-          profile: '',
-          strengths: [],
-          improvements: [],
-          recommendations: [],
-        ),
+        aiInsights: aiInsights ??
+            const AIInsights(
+              profile: '',
+              strengths: [],
+              improvements: [],
+              recommendations: [],
+            ),
       );
 
       if (mounted) {
@@ -337,14 +333,16 @@ class _TeacherReportModalState extends State<TeacherReportModal>
 
   List<QuestionReport> _convertToQuestionReports(
       List<QuestionResponseData> data) {
-    return data.map((q) => QuestionReport(
-      id: q.id,
-      text: q.text,
-      category: q.category,
-      aspect: q.aspect,
-      responses: q.responses,
-      average: q.average,
-    )).toList();
+    return data
+        .map((q) => QuestionReport(
+              id: q.id,
+              text: q.text,
+              category: q.category,
+              aspect: q.aspect,
+              responses: q.responses,
+              average: q.average,
+            ))
+        .toList();
   }
 
   // ==================== BUILD ====================
@@ -476,10 +474,12 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                     icon: const Icon(ReportConstants.responsesIcon,
                         size: ReportConstants.tabIconSize),
                     iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
-                    text: showText ? ReportConstants.responsesTabLabel : null,
+                    text:
+                        showText ? ReportConstants.responsesTabLabel : null,
                     child: !showText
                         ? const Text('Resp.',
-                            maxLines: 1, overflow: TextOverflow.ellipsis)
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis)
                         : null,
                   ),
                   Tab(
@@ -487,10 +487,12 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                     icon: const Icon(ReportConstants.subjectsIcon,
                         size: ReportConstants.tabIconSize),
                     iconMargin: EdgeInsets.only(bottom: showText ? 4 : 2),
-                    text: showText ? ReportConstants.subjectsTabLabel : null,
+                    text:
+                        showText ? ReportConstants.subjectsTabLabel : null,
                     child: !showText
                         ? const Text('Mat.',
-                            maxLines: 1, overflow: TextOverflow.ellipsis)
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis)
                         : null,
                   ),
                   Tab(
@@ -501,7 +503,8 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                     text: showText ? ReportConstants.aiTabLabel : null,
                     child: !showText
                         ? const Text('IA',
-                            maxLines: 1, overflow: TextOverflow.ellipsis)
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis)
                         : null,
                   ),
                   Tab(
@@ -541,7 +544,8 @@ class _TeacherReportModalState extends State<TeacherReportModal>
                     text: showText ? ReportConstants.commentsTabLabel : null,
                     child: !showText
                         ? const Text('Com.',
-                            maxLines: 1, overflow: TextOverflow.ellipsis)
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis)
                         : null,
                   ),
                 ],
@@ -585,8 +589,8 @@ class _TeacherReportModalState extends State<TeacherReportModal>
               const SizedBox(height: 16),
               const Text(
                 'Error al cargar el informe',
-                style: TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.bold),
+                style:
+                    TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(

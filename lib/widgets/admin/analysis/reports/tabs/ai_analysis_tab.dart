@@ -42,7 +42,6 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
     _service = AIAnalysisService();
     _service.addListener(_onServiceChanged);
 
-    // Cargar análisis al abrir el tab
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _service.loadAnalysis(
         teacherId: widget.teacherId,
@@ -77,7 +76,6 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
       teacherName: widget.teacherName,
     );
 
-    // Si hubo error en la generación, mostrar snackbar
     if (_service.hasError && mounted) {
       _showErrorSnackbar(_service.errorMessage ?? 'Error al generar análisis');
     }
@@ -96,7 +94,8 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
     );
 
     if (_service.hasError && mounted) {
-      _showErrorSnackbar(_service.errorMessage ?? 'Error al actualizar análisis');
+      _showErrorSnackbar(
+          _service.errorMessage ?? 'Error al actualizar análisis');
     }
   }
 
@@ -131,11 +130,13 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
     final palette = AppColors.getPaletteForRole(UserRole.admin);
 
     return switch (_service.status) {
-      AIAnalysisStatus.idle || AIAnalysisStatus.loading => _buildLoadingTab(palette),
-      AIAnalysisStatus.generating                       => AIRegenerationLoading(palette: palette),
-      AIAnalysisStatus.empty                            => _buildEmptyState(palette),
-      AIAnalysisStatus.error                            => _buildErrorState(palette),
-      AIAnalysisStatus.loaded                           => _buildAnalysisContent(palette),
+      AIAnalysisStatus.idle ||
+      AIAnalysisStatus.loading =>
+        _buildLoadingTab(palette),
+      AIAnalysisStatus.generating => AIRegenerationLoading(palette: palette),
+      AIAnalysisStatus.empty      => _buildEmptyState(palette),
+      AIAnalysisStatus.error      => _buildErrorState(palette),
+      AIAnalysisStatus.loaded     => _buildAnalysisContent(palette),
     };
   }
 
@@ -166,7 +167,6 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Ícono decorativo
             Container(
               width: 100,
               height: 100,
@@ -184,9 +184,7 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
                 color: palette.primary.withOpacity(0.5),
               ),
             ),
-
             const SizedBox(height: 24),
-
             const Text(
               'Sin análisis generado',
               style: TextStyle(
@@ -195,9 +193,7 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
                 color: Color(0xFF1F2937),
               ),
             ),
-
             const SizedBox(height: 10),
-
             Text(
               'Aún no existe un análisis de IA para este docente '
               'en el período ${widget.periodo}.\n'
@@ -210,10 +206,7 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
               ),
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 32),
-
-            // Mostrar error de generación si existe
             if (_service.errorMessage != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
@@ -225,27 +218,20 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.warning_amber_rounded,
-                      size: 16,
-                      color: Color(0xFFEF4444),
-                    ),
+                    const Icon(Icons.warning_amber_rounded,
+                        size: 16, color: Color(0xFFEF4444)),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _service.errorMessage!,
                         style: const TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFFDC2626),
-                        ),
+                            fontSize: 12, color: Color(0xFFDC2626)),
                       ),
                     ),
                   ],
                 ),
               ),
             ],
-
-            // Botón de generar
             ElevatedButton.icon(
               onPressed: _generateAnalysis,
               icon: const Icon(Icons.auto_awesome, size: 18),
@@ -258,9 +244,7 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
                 foregroundColor: Colors.white,
                 elevation: 2,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 14,
-                ),
+                    horizontal: 28, vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
                 ),
@@ -285,10 +269,9 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
             const Text(
               'Error al cargar el análisis',
               style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1F2937),
-              ),
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1F2937)),
             ),
             const SizedBox(height: 8),
             Text(
@@ -364,7 +347,8 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
             backgroundColor: palette.primary,
             foregroundColor: Colors.white,
             elevation: 2,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            padding:
+                const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -379,16 +363,20 @@ class _AIAnalysisTabState extends State<AIAnalysisTab> {
   // CONVERSIÓN DE MODELO
   // ─────────────────────────────────────────
 
-  /// Convierte AIAnalysisModel (backend) → AIInsights (widgets)
+  /// Convierte [AIAnalysisModel] (backend) → [AIInsights] (widgets).
+  ///
+  /// Los campos [responsesComment] y [commentsComment] se leen del backend
+  /// si existen. Si el backend aún no los devuelve, quedarán vacíos y el
+  /// widget mostrará un placeholder informativo.
   AIInsights _mapToAIInsights(AIAnalysisModel analysis) {
     return AIInsights(
       profile: analysis.profile,
       strengths: analysis.strengths,
       improvements: analysis.improvements,
       recommendations: analysis.recommendations,
-      // evaluationFeedback y sentimentFeedback no vienen del backend por ahora
-      evaluationFeedback: const [],
-      sentimentFeedback: const [],
+      // Lee los campos del modelo; si no existen en el JSON retornan ''
+      responsesComment: analysis.responsesComment,
+      commentsComment: analysis.commentsComment,
     );
   }
 }
