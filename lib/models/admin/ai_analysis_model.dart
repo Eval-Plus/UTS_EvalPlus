@@ -11,18 +11,18 @@ class AIAnalysisModel {
   final int teacherId;
   final String periodo;
 
-  // Contenido del análisis
+  // Contenido principal del análisis
   final String profile;
   final List<String> strengths;
   final List<String> improvements;
   final List<String> recommendations;
 
-  /// Comentario general sobre las respuestas cuantitativas de evaluaciones.
-  /// Campo opcional — vacío si el backend no lo incluye aún.
+  /// Comentario general sobre las respuestas cuantitativas.
+  /// Vacío si el backend no lo incluye.
   final String responsesComment;
 
   /// Comentario general sobre los comentarios anónimos de estudiantes.
-  /// Campo opcional — vacío si el backend no lo incluye aún.
+  /// Vacío si el backend no lo incluye.
   final String commentsComment;
 
   // Metadata
@@ -56,30 +56,34 @@ class AIAnalysisModel {
 
   factory AIAnalysisModel.fromJson(Map<String, dynamic> json) {
     return AIAnalysisModel(
-      id: json['id'] as int,
-      teacherId: json['teacherId'] as int,
-      periodo: json['periodo'] as String,
-      profile: json['profile'] as String,
-      strengths: _parseStringList(json['strengths']),
-      improvements: _parseStringList(json['improvements']),
+      id:              json['id'] as int,
+      teacherId:       json['teacherId'] as int,
+      periodo:         json['periodo'] as String,
+      profile:         json['profile'] as String,
+      strengths:       _parseStringList(json['strengths']),
+      improvements:    _parseStringList(json['improvements']),
       recommendations: _parseStringList(json['recommendations']),
-      // Campos opcionales: retornan '' si el backend no los envía todavía
-      responsesComment: json['responsesComment'] as String? ?? '',
-      commentsComment: json['commentsComment'] as String? ?? '',
-      analysisDate: DateTime.parse(json['analysisDate'] as String),
-      modelVersion: json['modelVersion'] as String? ?? '',
+      // El backend puede devolver camelCase o snake_case según la versión
+      responsesComment: (json['responsesComment'] ?? json['responses_comment'] ?? '') as String,
+      commentsComment:  (json['commentsComment']  ?? json['comments_comment']  ?? '') as String,
+      analysisDate:    DateTime.parse(json['analysisDate'] as String),
+      modelVersion:    json['modelVersion'] as String? ?? '',
       evaluationsCount: json['evaluationsCount'] as int,
-      responsesCount: json['responsesCount'] as int,
-      averageScore: (json['averageScore'] as num).toDouble(),
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      responsesCount:   json['responsesCount'] as int,
+      averageScore:     (json['averageScore'] as num).toDouble(),
+      createdAt:       DateTime.parse(json['createdAt'] as String),
+      updatedAt:       DateTime.parse(json['updatedAt'] as String),
     );
   }
 
-  /// Parsea campos JSON que pueden ser List<dynamic> o ya List<String>
+  /// Parsea campos JSON que pueden ser List<dynamic> o List<String>
   static List<String> _parseStringList(dynamic value) {
     if (value == null) return [];
     if (value is List) return value.map((e) => e.toString()).toList();
     return [];
   }
+
+  /// Retorna true si el análisis tiene comentarios narrativos del LLM
+  bool get hasResponsesComment => responsesComment.isNotEmpty;
+  bool get hasCommentsComment  => commentsComment.isNotEmpty;
 }
