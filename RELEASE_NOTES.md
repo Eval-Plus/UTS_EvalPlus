@@ -1,21 +1,29 @@
-## v1.0.0-stable (2026-02-21)
-### 🎉 Primera versión estable — Salida a producción
-Esta versión marca el **lanzamiento oficial a producción de EvalPlus**. La aplicación se considera funcional y completa en su núcleo. Los cambios futuros esperados se limitan a mejoras de diseño y la integración pendiente del módulo *Análisis de datos del docente con IA*, cuya arquitectura ya está preparada en cliente y API.
+## v1.1.0-stable (2026-02-25)
+### 🤖 Análisis de datos del docente con IA — Ahora funcional
+
+Esta versión activa completamente el módulo de **Análisis de datos del docente con IA**, que estaba planteado arquitectónicamente desde v1.0.0-stable pero pendiente de integración. El módulo ya es funcional de extremo a extremo: desde la generación del análisis en la API hasta su visualización en la aplicación Flutter.
 
 ---
 
-### Cambios respecto a v0.5.5-rc
+### Cambios respecto a v1.0.0-stable
 
-#### 🎨 Mejoras de UI/Diseño
-- En `careers_content.dart` se añadió una nueva función en el modelo para mostrar **iconos diferenciados por carrera**, mejorando la identificación visual de cada una
+#### 🤖 Módulo de Análisis con IA (nuevo — funcional)
+- Integración completa del endpoint de generación y consulta de análisis IA en la aplicación Flutter
+- El informe completo del docente ahora incluye el panel de análisis generado por IA con los siguientes campos:
+  - **Perfil docente**: valoración global de hasta 30 palabras basada en respuestas y comentarios
+  - **Fortalezas**: hasta 2 fortalezas identificadas con evidencia en los datos reales
+  - **Oportunidades de mejora**: hasta 2 áreas con evidencia real de bajo desempeño
+  - **Recomendaciones**: hasta 2 acciones concretas derivadas de las oportunidades de mejora
+  - **Análisis de respuestas**: conclusión interpretativa de las puntuaciones cuantitativas (máx. 40 palabras)
+  - **Análisis de comentarios**: conclusión sobre la percepción estudiantil con tasa de satisfacción en porcentaje (máx. 40 palabras)
 
-#### 📄 Mejoras en generación de PDF
-- Mejoras visuales para facilitar la lectura del contenido generado
-- Uso de helpers como `withOpacity` para evitar textos con contraste insuficiente o invisibles sobre fondos de color
-
-#### 🧹 Limpieza de funciones no utilizadas
-- Se comentó parte de `_actionButtons` para **desactivar botones de acciones no planificadas** en el corto plazo: exportar a Excel, descargar y compartir
-- Esto simplifica la interfaz y evita exponer funcionalidades incompletas en producción
+#### 🛠️ Mejoras en la API (backend)
+- Parseo robusto de la respuesta del modelo LLaMA con tres estrategias de extracción en cascada (marcadores explícitos → bloque markdown → búsqueda de llaves)
+- Prompt del sistema rediseñado para generar **conclusiones interpretativas**, no un reflejo literal de los datos
+- Se prohíbe explícitamente la alucinación: el modelo solo puede basarse en los datos proporcionados
+- Normalización y truncado server-side de todos los campos como segunda línea de defensa
+- `MAX_TOKENS` ajustado a 2000 para garantizar generación completa sin desperdiciar tokens
+- Nuevos campos `responses_comment` y `comments_comment` añadidos a la tabla `ai_analysis` (migración incluida)
 
 ---
 
@@ -29,20 +37,11 @@ Esta versión marca el **lanzamiento oficial a producción de EvalPlus**. La apl
 | Informes docentes | ✅ Completo |
 | Generación de PDF | ✅ Completo |
 | Pull-to-refresh & empty states | ✅ Completo |
-| **Análisis de datos del docente con IA** | 🔜 Pendiente (API + App listos para integrar) |
-
----
-
-### Funcionalidad pendiente — Análisis con IA
-El módulo de **Análisis de datos del docente con IA** está completamente planteado a nivel de arquitectura. Su activación únicamente requiere:
-1. Actualizar el endpoint correspondiente en la API
-2. Conectar la llamada desde la aplicación Flutter
-
-No implica cambios estructurales; es una integración puntual.
+| **Análisis de datos del docente con IA** | ✅ Completo |
 
 ---
 
 **Tipo:** Stable Release  
-**Fecha de lanzamiento:** 21 de Febrero, 2026  
+**Fecha de lanzamiento:** 25 de Febrero, 2026  
 **Compilación:** `flutter build apk --split-per-abi --release`  
-**Tag:** v1.0.0-stable
+**Tag:** v1.1.0-stable
